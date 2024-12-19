@@ -1,0 +1,77 @@
+<div class="container-fluid">
+    <div class="row g-1 mt-2 justify-content-md-center mb-4">
+        <div class="col-2">
+            <div class="dx-field-label">Fecha Inicial</div>
+            <div class="dx-field-value">
+                <dx-date-box
+                    type="date"
+                    [value]="now"
+                    [(ngModel)]="fechaInicial"
+                    name="fechaInicial"
+                    [displayFormat]="'dd/MM/yyyy'"
+                    [inputAttr]="{ 'aria-label': 'Date' }"
+                >
+                </dx-date-box>
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="dx-field-label">Fecha Final</div>
+            <div class="dx-field-value">
+                <dx-date-box
+                    type="date"
+                    [value]="now"
+                    [(ngModel)]="fechaFinal"
+                    name="fechaFinal"
+                    [displayFormat]="'dd/MM/yyyy'"
+                    [inputAttr]="{ 'aria-label': 'Date' }"
+                >
+                </dx-date-box>
+            </div>
+        </div>
+        <div class="col-4 pt-2 text-end">
+            <dx-button text="Buscar"
+                stylingMode="contained"
+                type="default"
+                [width]="120"
+                icon="fa-solid fa-magnifying-glass"
+                (onClick)="buscar()">
+            </dx-button>
+        </div>
+    </div>
+    <div class="row g-1 mt-2 justify-content-md-center mb-4">
+      <div class="col-8">
+        <h3>Reporte de marcaciones</h3>
+        <div id="data-grid">
+            <dx-data-grid
+                id="gridContainer"
+                [dataSource]="marcaciones"
+                [showBorders]="true"
+                [showColumnLines]="true"
+                [showRowLines]="true"
+                [allowColumnResizing]="true"
+            >
+              <dxo-paging [pageSize]="15"> </dxo-paging>
+              <dxo-pager
+                  [visible]="true"
+                  [showPageSizeSelector]="true"
+                  [allowedPageSizes]="[15, 25, 50, 100]"
+              ></dxo-pager>
+          
+              <dxi-column dataField="empleadoNombres" caption="Empleado" alignment='left'></dxi-column>
+              <dxi-column dataField="dFecha" caption="Fecha" [width]="200" dataType="date"></dxi-column>
+              <dxi-column dataField="cHora" caption="Hora" [width]="200" dataType="datetime" format="hh:mm:ss aa"></dxi-column>
+              <dxi-column dataField="nTipo" caption="Tipo de marca" [width]="200"></dxi-column>
+              <dxi-column dataField="cDispositivo" caption="Dispositivo" [width]="200"></dxi-column>
+            </dx-data-grid>
+
+            <div id="messageBox" style="display: none; background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;">
+              <!-- El mensaje se inyecta aquí -->
+            </div>
+            
+            <block-ui >
+              <!-- Markup here -->
+            </block-ui>
+        </div>
+      </div>
+    </div>
+</div>

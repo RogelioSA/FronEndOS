@@ -1,0 +1,60 @@
+<div class="container-fluid">
+  <div class="row justify-content-md-center mt-2">
+    <div class="col-8">
+        <h3>Rol Menu Mantenimiento</h3>
+    </div>
+  </div>
+  <div class="row g-1 mt-2 justify-content-md-center">
+    <div class="col-8">
+      <div id="data-grid">
+        <dx-data-grid
+          id="gridContainer"
+          [dataSource]="descansos"
+          keyExpr="nCodigo"
+          [showBorders]="true"
+          (onRowUpdating)="actualizar($event)"
+          (onRowInserted)="insertar($event)"
+          (onRowRemoved)="eliminar($event)"
+          [columnHidingEnabled]="true"
+          [rowAlternationEnabled]="true"
+          [showColumnLines]="true"
+          [showRowLines]="true"
+          [allowColumnResizing]="true"
+        >
+          <dxo-paging [pageSize]="15"> </dxo-paging>
+          <dxo-pager
+              [visible]="true"
+              [showPageSizeSelector]="true"
+              [allowedPageSizes]="[15, 25, 50, 100]"
+          ></dxo-pager>
+          <dxo-editing
+            mode="row"
+            [allowUpdating]="true"
+            [allowAdding]="true"
+            [allowDeleting]="true"
+            [selectTextOnEditStart]="true"
+            startEditAction="click"
+          >
+          </dxo-editing>
+
+          <dxi-column dataField="nCodigo" caption="Codigo" [width]="70" [allowEditing]="false" alignment='center'></dxi-column>
+          <dxi-column dataField="cNombre" caption="Nombre"></dxi-column>
+          <dxi-column dataField="cHoraInicial" caption="Hora Inicial" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
+          <dxi-column dataField="cHoraFinal" caption="Hora Final" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
+          <dxi-column dataField="nDuracion" caption="Duracion" dataType="number" [editorOptions]="{ format: '#'}"></dxi-column>
+
+          <dxi-column type="buttons">
+            <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
+            <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
+            <dxi-button name="save" icon="fa-solid fa-floppy-disk" hint="Guardar"></dxi-button>
+            <dxi-button name="cancel" icon="fa-solid fa-ban" hint="Cancelar"></dxi-button>
+          </dxi-column>
+
+        </dx-data-grid>
+        <block-ui >
+          <!-- Markup here -->
+        </block-ui>
+      </div>
+    </div>
+  </div>
+</div>

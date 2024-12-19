@@ -1,0 +1,21 @@
+.marcacion-container{
+    place-items: center;
+    display: grid;
+}
+
+.h-screen{
+    height: 80vh;
+}
+
+.w-full{
+    width: 100%;
+}
+
+.small-text {
+    font-size: 0.8rem;  /* Ajusta el tamaño según sea necesario */
+}
+
+h3{
+    font-family: Rajdhani,sans-serif;
+    font-style: italic;
+}

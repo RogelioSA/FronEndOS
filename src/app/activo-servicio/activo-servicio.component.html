@@ -1,0 +1,84 @@
+<div class="container-fluid">
+    <div class="row g-1 mt-2 justify-content-md-center">
+        <div class="col-4">
+            <h3>Activos</h3>
+        </div>
+        <div class="col-4 text-end">
+            <dx-button text="Crear"
+                stylingMode="contained"
+                type="default"
+                [width]="150"
+                icon="fa-solid fa-plus"
+                (onClick)="crearNuevo()" >
+            </dx-button>
+        </div>
+    </div>
+    <div class="row g-1 mt-2 justify-content-md-center">
+      <div class="col-8">
+        <div id="data-grid">
+            <dx-data-grid
+              id="gridContainer"
+              [dataSource]="activos"
+              keyExpr="nCodigo"
+              [showBorders]="true"
+              (onRowRemoved)="eliminar($event)"
+              [rowAlternationEnabled]="true"
+              [showColumnLines]="true"
+              [showRowLines]="true"
+              [allowColumnResizing]="true"
+              [columnAutoWidth]="true"
+            >
+              <dxo-paging [pageSize]="15"> </dxo-paging>
+              <dxo-pager
+                  [visible]="true"
+                  [showPageSizeSelector]="true"
+                  [allowedPageSizes]="[15, 25, 50, 100]"
+              ></dxo-pager>
+              <dxo-editing
+                mode="row"
+                [allowDeleting]="true"
+                [selectTextOnEditStart]="true"
+                startEditAction="click"
+              >
+              </dxo-editing>
+          
+              <!-- <dxi-column caption="#" [width]="50">
+                <ng-template dxTemplate="cell" let-cellData="cellData" let-rowIndex="rowIndex">
+                  {{ rowIndex + 1 }}
+                </ng-template>
+              </dxi-column> -->
+              <dxi-column dataField="nCodigo" caption="Codigo" [width]="70" [allowEditing]="false" alignment='center'></dxi-column>
+              <!-- <dxi-column dataField="nDepartamento" caption="Departamento" [width]="170" alignment='center'>
+                <dxo-lookup [dataSource]="departamentos" displayExpr="cNombre" valueExpr="nCodigo">
+                </dxo-lookup>
+              </dxi-column> -->
+              <dxi-column dataField="cNombre" caption="Nombre" [width]="200" cellTemplate="cellTemplate"></dxi-column>
+              <dxi-column dataField="cDetalle" caption="Detalle"></dxi-column>
+              <dxi-column dataField="cNumeroSerie" caption="Numero Serie" [width]="200"></dxi-column>
+              <dxi-column dataField="cColor" caption="Color" [width]="150"></dxi-column>
+              <dxi-column dataField="nAnioFabricacion" caption="Año de Fabricacion" [width]="150" alignment='left'></dxi-column>
+
+              <div *dxTemplate="let cell of 'cellTemplate'">
+                <a href="" (click)="editar($event,cell)" target="_blank">{{ cell.value }}</a>
+              </div>
+
+              <dxi-column type="buttons">
+                <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
+                <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
+                <dxi-button name="save" icon="fa-solid fa-floppy-disk" hint="Guardar"></dxi-button>
+                <dxi-button name="cancel" icon="fa-solid fa-ban" hint="Cancelar"></dxi-button>
+              </dxi-column>
+
+              <!-- <dxi-column dataField="StateID" caption="State" [width]="125">
+              <dxi-column dataField="StateID" caption="State" [width]="125"></dxi-column> -->
+                <!-- <dxo-lookup [dataSource]="states" displayExpr="Name" valueExpr="ID">
+                </dxo-lookup> -->
+              <!-- </dxi-column> -->
+              <!-- <dxi-column dataField="BirthDate" dataType="date"></dxi-column> -->
+            </dx-data-grid>
+            <block-ui >
+              <!-- Markup here -->
+            </block-ui>
+    </div>
+  </div>
+</div>

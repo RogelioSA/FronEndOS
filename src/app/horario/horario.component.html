@@ -1,0 +1,100 @@
+<div class="container-fluid">
+    <div class="row justify-content-md-center mt-2">
+        <div class="col-10">
+            <h3>Horarios Mantenimiento</h3>
+        </div>
+    </div>
+    <div class="row g-3 mt-2 justify-content-md-center">
+        <div class="col-6">
+            <div id="data-grid">
+                <dx-data-grid #dataGrid
+                id="gridContainer"
+                [dataSource]="horarios"
+                keyExpr="nCodigo"
+                [showBorders]="true"
+                (onRowUpdating)="actualizar($event)"
+                (onRowInserted)="insertar($event)"
+                (onRowRemoved)="eliminar($event)"
+                (onSaved)="guardando($event)"
+                (onEditingStart)="iniciaEdicion($event)"
+                (onEditCanceled)="cancelaEdicion($event)"
+                (onInitNewRow)="agregarNuevaFila($event)"
+                [showColumnLines]="true"
+                [showRowLines]="true"
+                [allowColumnResizing]="true"
+                [(selectedRowKeys)]="filasSeleccionadasHorario"
+                (onSelectionChanged)="onSelectionChangedGrid($event)"
+                >
+                <dxo-paging [pageSize]="15"> </dxo-paging>
+                <dxo-pager
+                    [visible]="true"
+                    [showPageSizeSelector]="true"
+                    [allowedPageSizes]="[15, 25, 50, 100]"
+                ></dxo-pager>
+                <dxo-editing
+                    mode="row"
+                    [allowUpdating]="true"
+                    [allowAdding]="true"
+                    [allowDeleting]="true"
+                    [selectTextOnEditStart]="true"
+                    startEditAction="click"
+                >
+                </dxo-editing>
+
+                <dxo-selection mode="single"></dxo-selection>
+
+                <dxi-column dataField="nCodigo" caption="Codigo" [width]="70" [allowEditing]="false" alignment='center'></dxi-column>
+                <dxi-column dataField="cNombre" caption="Nombre"></dxi-column>
+                <dxi-column dataField="cEntrada" caption="Entrada" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
+                <dxi-column dataField="cInicioEntrada" caption="Inicio Entrada" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
+                <dxi-column dataField="cFinalEntrada" caption="Final Entrada" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
+                <dxi-column dataField="cSalida" caption="Salida" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
+                <dxi-column dataField="cInicioSalida" caption="Inicio Salida" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
+                <dxi-column dataField="cFinalSalida" caption="Final Salida" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
+                <dxi-column dataField="nDiasTrabajo" caption="Dias Trabajo" dataType="number" [editorOptions]="{ format: '#'}"></dxi-column>
+
+                <dxi-column type="buttons">
+                    <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
+                    <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
+                    <dxi-button name="save" icon="fa-solid fa-floppy-disk" hint="Guardar"></dxi-button>
+                    <dxi-button name="cancel" icon="fa-solid fa-ban" hint="Cancelar"></dxi-button>
+                </dxi-column>
+
+                </dx-data-grid>
+                <block-ui >
+                <!-- Markup here -->
+                </block-ui>
+            </div>
+        </div>
+        <div class="col-4">
+            <div id="tree-list">
+                <dx-tree-list #treeList
+                    [dataSource]="descansos"
+                    keyExpr="nCodigo"
+                    [showColumnLines]="true"
+                    [showRowLines]="true"
+                    [showBorders]="true"
+                    [columnAutoWidth]="true"
+                    [(selectedRowKeys)]="filasSeleccionadasDescanso"
+                    >
+                    <dxo-scrolling mode="standard"></dxo-scrolling>
+                    <dxo-paging [enabled]="true" [pageSize]="15"> </dxo-paging>
+                    <dxo-pager
+                        [showPageSizeSelector]="true"
+                        [allowedPageSizes]="[15, 20]"
+                        [showInfo]="true"
+                    >
+                    </dxo-pager>
+                    <dxo-search-panel [visible]="true" width="250"></dxo-search-panel>
+                    <dxo-selection mode="multiple" [recursive]="false">
+                    </dxo-selection>
+                    <dxi-column dataField="nCodigo" caption="Codigo" [width]="70" [allowEditing]="false" alignment='center'></dxi-column>
+                    <dxi-column dataField="cNombre" caption="Nombre"></dxi-column>
+                    <dxi-column dataField="cHoraInicial" caption="Hora Inicial" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
+                    <dxi-column dataField="cHoraFinal" caption="Hora Final" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
+                    <dxi-column dataField="nDuracion" caption="Duracion" dataType="number" [editorOptions]="{ format: '#'}"></dxi-column>
+                </dx-tree-list>
+            </div>
+        </div>
+    </div>
+</div>

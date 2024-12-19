@@ -1,0 +1,153 @@
+<div class="container-fluid">
+    <div class="row g-1 mt-2 justify-content-md-center mb-4">
+      <div class="col-8">
+        <h3>Personal Mantenimiento</h3>
+        <div id="data-grid">
+            <dx-data-grid
+              id="gridContainer"
+              [dataSource]="personal"
+              keyExpr="nCodigo"
+              [showBorders]="true"
+              (onRowUpdating)="actualizar($event)"
+              (onRowInserted)="insertar($event)"
+              (onRowRemoved)="eliminar($event)"
+              [rowAlternationEnabled]="true"
+              [showColumnLines]="true"
+              [showRowLines]="true"
+              [allowColumnResizing]="true"
+              [columnAutoWidth]="true"
+              [editing]="{
+                mode: 'popup',
+                allowUpdating: true,
+                popup: {
+                title: 'Editar Registro',
+                showTitle: true,
+                width: 900,
+                height: 600,
+                position: { my: 'center', at: 'center' }
+                },
+            }"
+            >
+            <dxo-paging [pageSize]="15"> </dxo-paging>
+            <dxo-pager
+                [visible]="true"
+                [showPageSizeSelector]="true"
+                [allowedPageSizes]="[15, 25, 50, 100]"
+            ></dxo-pager>
+              <dxo-editing
+                mode="popup"
+                [allowUpdating]="true"
+                [allowAdding]="true"
+                [allowDeleting]="true"
+                [selectTextOnEditStart]="true"
+                startEditAction="click"
+                use-icons="true"
+              >
+              </dxo-editing>
+
+              <dxo-export [enabled]="true" [allowExportSelectedData]="true"></dxo-export>
+
+              <dxi-column type="buttons">
+                <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
+                <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
+                <dxi-button name="save" icon="fa-solid fa-floppy-disk" hint="Guardar"></dxi-button>
+                <dxi-button name="cancel" icon="fa-solid fa-ban" hint="Cancelar"></dxi-button>
+              </dxi-column>
+          
+              <dxi-column dataField="nCodigo" caption="Codigo" [width]="70" [allowEditing]="false" alignment='center'></dxi-column>
+
+              <dxi-column dataField="cNombres" caption="Nombres">
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="cApPater" caption="Apellido Paterno">
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="cApMater" caption="Apellido Materno">
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="dFechaNacimiento" caption="Fecha Nacimiento" dataType="date">
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="cSexo" caption="Sexo">
+                <dxo-lookup [dataSource]="sexo" displayExpr="cNombre" valueExpr="nCodigo">
+                </dxo-lookup>
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="cDNI" caption="DNI" dataType="number" [editorOptions]="{ format: '#'}">
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+                <dxi-validation-rule
+                    type="stringLength"
+                    [min]="8"
+                    [max]="8"
+                    message="El DNI solo puede tener 8 digitos."
+                ></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="nCargo" caption="Cargo">
+                <dxo-lookup [dataSource]="cargos" displayExpr="cNombre" valueExpr="nCodigo">
+                </dxo-lookup>
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="nArea" caption="Area">
+                <dxo-lookup [dataSource]="areas" displayExpr="cNombre" valueExpr="nCodigo">
+                </dxo-lookup>
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="dFechaIngreso" caption="Fecha Ingreso" dataType="date">
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="nContratoTipo" caption="Tipo Contrato">
+                <dxo-lookup [dataSource]="contratoTipos" displayExpr="cNombre" valueExpr="nCodigo">
+                </dxo-lookup>
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="nCondicionContractual" caption="Condicion Contractual">
+                <dxo-lookup [dataSource]="condiciones" displayExpr="cNombre" valueExpr="nCodigo">
+                </dxo-lookup>
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="nPersonalSituacion" caption="Personal Situacion">
+                <dxo-lookup [dataSource]="situaciones" displayExpr="cNombre" valueExpr="nCodigo">
+                </dxo-lookup>
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="cCorreo" caption="Correo">
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+                <dxi-validation-rule type="email"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="cCelular" caption="Celular" dataType="number" [editorOptions]="{ format: '#'}">
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="nLicenciaCategoria" caption="Licencia Categoria">
+                <dxo-lookup [dataSource]="categorias" displayExpr="cNombre" valueExpr="nCodigo">
+                </dxo-lookup>
+              </dxi-column>
+
+              <dxi-column dataField="cUsuario" caption="Usuario">
+                <dxi-validation-rule type="required"></dxi-validation-rule>
+              </dxi-column>
+
+              <dxi-column dataField="lEstado" caption="Estado">
+              </dxi-column>
+
+              
+            </dx-data-grid>
+            <block-ui >
+              <!-- Markup here -->
+            </block-ui>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,87 @@
+<div class="container-fluid">
+    <div class="row justify-content-md-center mt-2">
+        <div class="col-8">
+            <h3>Rol Usuario Mantenimiento</h3>
+        </div>
+    </div>
+    <div class="row g-1 mt-2 justify-content-md-center mb-4">
+        <div class="col-4">
+            <div id="data-grid">
+                <dx-data-grid
+                    id="gridContainer"
+                    [dataSource]="roles"
+                    keyExpr="nCodigo"
+                    [showBorders]="true"
+                    [rowAlternationEnabled]="true"
+                    [showColumnLines]="true"
+                    [showRowLines]="true"
+                    [allowColumnResizing]="true"
+                    [(selectedRowKeys)]="filasSeleccionadasRol"
+                    (onSelectionChanged)="onSelectionChangedGrid($event)">
+                >
+                <dxo-paging [pageSize]="15"> </dxo-paging>
+                <dxo-pager
+                    [visible]="true"
+                    [showPageSizeSelector]="true"
+                    [allowedPageSizes]="[15, 20]"
+                ></dxo-pager>
+                <dxo-search-panel
+                    [visible]="true"
+                    [highlightCaseSensitive]="true"
+                ></dxo-search-panel>
+                <dxo-selection mode="single"></dxo-selection>
+                
+                    <dxi-column dataField="cNombre" caption="Nombre" [width]="180"></dxi-column>
+                    <dxi-column dataField="cDetalle" caption="Detalle" ></dxi-column>
+
+                </dx-data-grid>
+                
+                <block-ui >
+                    <!-- Markup here -->
+                </block-ui>
+            </div>
+        </div>
+        <div class="col-4">
+            <div id="tree-list">
+                <dx-tree-list #treeList
+                    [dataSource]="usuarios"
+                    keyExpr="nCodigo"
+                    parentIdExpr="nPadre"
+                    [showColumnLines]="true"
+                    [showRowLines]="true"
+                    [showBorders]="true"
+                    [columnAutoWidth]="true"
+                    [(selectedRowKeys)]="filasSeleccionadasUsuario"
+                    (onSelectionChanged)="onSelectionChangedTree($event)"
+                    >
+                    <dxo-scrolling mode="standard"></dxo-scrolling>
+                    <dxo-paging [enabled]="true" [pageSize]="15"> </dxo-paging>
+                    <dxo-pager
+                        [showPageSizeSelector]="true"
+                        [allowedPageSizes]="[15, 20]"
+                        [showInfo]="true"
+                    >
+                    </dxo-pager>
+                    <dxo-search-panel [visible]="true" width="250"></dxo-search-panel>
+                    <dxo-selection mode="multiple" [recursive]="false">
+                    </dxo-selection>
+                    <dxi-column dataField="cUsuario" caption="Usuario"></dxi-column>
+                    <dxi-column dataField="cCorreo" caption="Correo"></dxi-column>
+                </dx-tree-list>
+            </div>
+        </div>
+    
+    </div>
+    <div class="row justify-content-md-center">
+        <div class="col-8">
+            <dx-button text="Guardar"
+                stylingMode="contained"
+                type="default"
+                [width]="120"
+                icon="fa-solid fa-floppy-disk"
+                (onClick)="guardarCambios()">
+            </dx-button>
+        </div>
+    </div>
+    <dx-toast [(visible)]="visibleToast" type=error [message]="mensajeToast"></dx-toast>
+</div>

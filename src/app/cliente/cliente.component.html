@@ -1,0 +1,77 @@
+<div class="container-fluid">
+    <div class="row g-1 mt-2 justify-content-md-center mb-4">
+      <div class="col-8">
+        <h3>Cliente Mantenimiento</h3>
+        <div id="data-grid">
+            <dx-data-grid
+                id="gridContainer"
+                [dataSource]="clientes"
+                keyExpr="nCodigo"
+                [showBorders]="true"
+                (onRowUpdating)="actualizar($event)"
+                (onRowInserted)="insertar($event)"
+                (onRowRemoved)="eliminar($event)"
+                [rowAlternationEnabled]="true"
+                [showColumnLines]="true"
+                [showRowLines]="true"
+                [allowColumnResizing]="true"
+            >
+              <dxo-paging [pageSize]="15"> </dxo-paging>
+              <dxo-pager
+                  [visible]="true"
+                  [showPageSizeSelector]="true"
+                  [allowedPageSizes]="[15, 25, 50, 100]"
+              ></dxo-pager>
+              <dxo-editing
+                mode="row"
+                [allowUpdating]="true"
+                [allowAdding]="true"
+                [allowDeleting]="true"
+                [selectTextOnEditStart]="true"
+                startEditAction="click"
+                use-icons="true"
+              >
+              </dxo-editing>
+          
+              <dxi-column dataField="nCodigo" caption="Codigo" [width]="70" [allowEditing]="false" alignment='center'></dxi-column>
+              <dxi-column dataField="cRUC" caption="RUC" dataType="number" [editorOptions]="{ format: '#'}" alignment='left '>
+                <dxi-validation-rule
+                    type="stringLength"
+                    [min]="11"
+                    [max]="11"
+                    message="El RUC solo debe tener 11 digitos."
+                ></dxi-validation-rule>
+              </dxi-column>
+              <dxi-column dataField="cRazonSocial" caption="Razon Social"></dxi-column>
+              <dxi-column dataField="cNombres" caption="Nombres"></dxi-column>
+              <dxi-column dataField="cApePat" caption="Apellido Paterno"></dxi-column>
+              <dxi-column dataField="cApeMat" caption="Apellido Materno"></dxi-column>
+              <dxi-column dataField="cDNI" caption="DNI" dataType="number" [editorOptions]="{ format: '#'}" alignment='left'>
+                <dxi-validation-rule
+                    type="stringLength"
+                    [min]="0"
+                    [max]="8"
+                    message="El DNI solo debe tener 8 digitos."
+                ></dxi-validation-rule>
+              </dxi-column>
+              <!-- <dxi-column dataField="prueba" caption="prueba" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column> -->
+
+              <dxi-column type="buttons">
+                <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
+                <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
+                <dxi-button name="save" icon="fa-solid fa-floppy-disk" hint="Guardar"></dxi-button>
+                <dxi-button name="cancel" icon="fa-solid fa-ban" hint="Cancelar"></dxi-button>
+              </dxi-column>
+            </dx-data-grid>
+
+            <div id="messageBox" style="display: none; background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;">
+              <!-- El mensaje se inyecta aquí -->
+            </div>
+            
+            <block-ui >
+              <!-- Markup here -->
+            </block-ui>
+        </div>
+      </div>
+    </div>
+</div>

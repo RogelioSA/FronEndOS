@@ -1,0 +1,47 @@
+
+<div class="container-fluid">
+    <div class="row justify-content-md-center" style="background-color: #084DA6;">
+      <div class="col-8">
+        <div class="navbar">
+          <div class="logo">
+              <img src="../../assets/conveyorIcono.jpg" alt="Logo" style="width: 100px; height: 60px;">
+          </div>
+          <div id="menuContainer">
+              <dx-menu
+                  #menu
+                  [dataSource]="menuBar"
+                  displayExpr="cNombre"
+                  showFirstSubmenuMode="onHover"
+                  orientation="horizontal"
+                  [hideSubmenuOnMouseLeave]="true"
+                  [adaptivityEnabled]= "isMobile"
+                  id = "menu"
+                  
+                  (onItemClick)="onMenuItemClick($event)"
+                  >
+              </dx-menu>
+          </div>
+      </div>
+      </div>
+        <!-- <div class="topnav" id="myTopnav">
+            <a href="#home" class="active">Home</a>
+            <a href="#news">News</a>
+            <a href="#contact">Contact</a>
+            <div class="dropdown">
+              <button class="dropbtn">Dropdown 
+                <i class="fa fa-caret-down"></i>
+              </button>
+              <div class="dropdown-content">
+                <a href="#">Link 1</a>
+                <a href="#">Link 2</a>
+                <a href="#">Link 3</a>
+              </div>
+            </div> 
+            <a href="#about">About</a>
+            <a href="javascript:void(0);" style="font-size:15px;" class="icon" onclick="myFunction()">&#9776;</a>
+          </div> -->
+        
+    </div>
+
+</div>
+

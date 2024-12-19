@@ -1,0 +1,33 @@
+<div class="login-container h-screen">
+
+  <!-- <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div> -->
+
+  <form (ngSubmit)="onLogin()" [ngClass]="{'was-validated': formSubmitted}" novalidate="">
+
+    <div class="form-group has-validation row">
+      <h2 class="text-center mb-4">Ingreso</h2>
+      <div class="col-sm-12">
+        <p class="small-text text-danger" *ngIf="errorMessage">{{errorMessage}}</p>
+        <input type="text" class="form-control" id="inputUsuario" [(ngModel)]="username" name="username" placeholder="Usuario" required="" #usernameField="ngModel">
+        <div class="invalid-feedback" *ngIf="usernameField.invalid && (usernameField.touched || usernameField.dirty)">
+          Please choose a username.
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group row mt-4">
+      <div class="col-sm-12">
+        <input type="password" class="form-control" id="inputUsuario" [(ngModel)]="password" name="password" placeholder="Contraseña" required #passwordField="ngModel">
+        <div class="invalid-feedback" *ngIf="passwordField.invalid && (passwordField.touched || passwordField.dirty)">
+          Please choose a password.
+        </div>
+        <!-- <p class="small-text text-danger" *ngIf="mostrarRequerido">Contraseña requerida</p> -->
+      </div>
+    </div>
+
+    <input type="submit" class="block w-full rounded bg-primary text-white p-2 mt-4" value="Ingresar">
+
+  </form>
+</div>

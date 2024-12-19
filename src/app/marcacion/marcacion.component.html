@@ -1,0 +1,22 @@
+<div class="marcacion-container h-screen">
+    <div class="row">
+        <div class="col-12 mb-4 text-center">
+            <h2 class="text-center">Marcación</h2>
+            <app-analog-clock #reloj></app-analog-clock>
+            <h3>({{ fecha }})</h3>
+            <h3>{{ claims.cApPater | uppercase }} {{ claims.cApMater | uppercase }} </h3>
+            <h3>{{ claims.cNombres | uppercase }}</h3>
+        </div>
+        <div class="col-12 text-center">
+            <dx-button text="Marcar asistencia"
+                    stylingMode="contained"
+                    type="default"
+                    [width]="250"
+                    icon="fa-solid fa-check"
+                    (onClick)="marcar()">
+            </dx-button>
+        </div>
+        
+    </div>
+    
+</div>
