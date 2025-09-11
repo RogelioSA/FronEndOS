@@ -1,3 +1,5 @@
 
-<app-menu-bar *ngIf="showComponent"></app-menu-bar>
+@if (showComponent) {
+  <app-menu-bar></app-menu-bar>
+}
 <router-outlet><router-outlet />
