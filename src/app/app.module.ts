@@ -7,7 +7,7 @@ import { DxButtonModule, DxDataGridModule, DxToastModule, DxPopupModule, DxSelec
 import { MenuBarComponent } from './menu-bar/menu-bar.component';
 import { DxMenuModule, DxMenuTypes } from 'devextreme-angular/ui/menu';
 import { RolComponent } from './rol/rol.component';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { BlockUIModule } from 'ng-block-ui';
 import { MenuComponent } from './menu/menu.component';
 import { DepartamentoComponent } from './departamento/departamento.component';
@@ -37,61 +37,54 @@ import { ParametroActivoServicioComponent } from './parametro-activo-servicio/pa
 import { MarcaComponent } from './marca/marca.component';
 import { EditActivoComponent } from './edit-activo/edit-activo.component';
 
-@NgModule({
-  declarations: [
-    AppComponent,
-    MenuBarComponent,
-    RolComponent,
-    MenuComponent,
-    DepartamentoComponent,
-    AreaComponent,
-    CondicionContractualComponent,
-    ContratoTipoComponent,
-    CargoComponent,
-    PersonalComponent,
-    PersonalSituacionComponent,
-    InicioComponent,
-    RolMenuComponent,
-    RolUsuarioComponent,
-    LoginComponent,
-    ActivoServicioComponent,
-    TipoServicioComponent,
-    DescansoComponent,
-    HorarioComponent,
-    PersonalHorarioComponent,
-    ReporteMarcacionComponent,
-    MarcacionComponent,
-    AnalogClockComponent,
-    ClienteComponent,
-    TipoActivoServicioComponent,
-    ParametroActivoServicioComponent,
-    MarcaComponent,
-    EditActivoComponent
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    DxButtonModule,
-    DxDataGridModule,
-    DxMenuModule,
-    HttpClientModule,
-    BlockUIModule.forRoot(),
-    DxTreeListModule,
-    DxToastModule,
-    FormsModule,
-    DxPopupModule,
-    DxSelectBoxModule,
-    DxDateBoxModule,
-    DxFormModule,
-    DxTextBoxModule,
-    DxNumberBoxModule,
-    DxValidatorModule,
-    DxTabsModule,
-    DxTabPanelModule
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
-})
+@NgModule({ declarations: [
+        AppComponent,
+        MenuBarComponent,
+        RolComponent,
+        MenuComponent,
+        DepartamentoComponent,
+        AreaComponent,
+        CondicionContractualComponent,
+        ContratoTipoComponent,
+        CargoComponent,
+        PersonalComponent,
+        PersonalSituacionComponent,
+        InicioComponent,
+        RolMenuComponent,
+        RolUsuarioComponent,
+        LoginComponent,
+        ActivoServicioComponent,
+        TipoServicioComponent,
+        DescansoComponent,
+        HorarioComponent,
+        PersonalHorarioComponent,
+        ReporteMarcacionComponent,
+        MarcacionComponent,
+        AnalogClockComponent,
+        ClienteComponent,
+        TipoActivoServicioComponent,
+        ParametroActivoServicioComponent,
+        MarcaComponent,
+        EditActivoComponent
+    ],
+    bootstrap: [AppComponent], imports: [BrowserModule,
+        AppRoutingModule,
+        DxButtonModule,
+        DxDataGridModule,
+        DxMenuModule,
+        BlockUIModule.forRoot(),
+        DxTreeListModule,
+        DxToastModule,
+        FormsModule,
+        DxPopupModule,
+        DxSelectBoxModule,
+        DxDateBoxModule,
+        DxFormModule,
+        DxTextBoxModule,
+        DxNumberBoxModule,
+        DxValidatorModule,
+        DxTabsModule,
+        DxTabPanelModule], providers: [provideHttpClient(withInterceptorsFromDi())] })
 export class AppModule {
   
  }
