@@ -4,9 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 @Component({
-  selector: 'app-parametro-activo-servicio',
-  templateUrl: './parametro-activo-servicio.component.html',
-  styleUrl: './parametro-activo-servicio.component.css'
+    selector: 'app-parametro-activo-servicio',
+    templateUrl: './parametro-activo-servicio.component.html',
+    styleUrl: './parametro-activo-servicio.component.css',
+    standalone: false
 })
 export class ParametroActivoServicioComponent {
 

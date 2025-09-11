@@ -5,9 +5,10 @@ import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-activo-servicio',
-  templateUrl: './activo-servicio.component.html',
-  styleUrl: './activo-servicio.component.css'
+    selector: 'app-activo-servicio',
+    templateUrl: './activo-servicio.component.html',
+    styleUrl: './activo-servicio.component.css',
+    standalone: false
 })
 export class ActivoServicioComponent {
 

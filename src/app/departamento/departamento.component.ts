@@ -4,9 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 @Component({
-  selector: 'app-departamento',
-  templateUrl: './departamento.component.html',
-  styleUrl: './departamento.component.css'
+    selector: 'app-departamento',
+    templateUrl: './departamento.component.html',
+    styleUrl: './departamento.component.css',
+    standalone: false
 })
 export class DepartamentoComponent {
 

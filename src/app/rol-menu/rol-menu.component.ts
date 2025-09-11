@@ -5,9 +5,10 @@ import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { DxTreeListComponent } from 'devextreme-angular';
 
 @Component({
-  selector: 'app-rol-menu',
-  templateUrl: './rol-menu.component.html',
-  styleUrl: './rol-menu.component.css'
+    selector: 'app-rol-menu',
+    templateUrl: './rol-menu.component.html',
+    styleUrl: './rol-menu.component.css',
+    standalone: false
 })
 export class RolMenuComponent {
 

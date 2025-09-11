@@ -4,9 +4,10 @@ import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { AuthService } from '../services/auth.service';
 
 @Component({
-  selector: 'app-marcacion',
-  templateUrl: './marcacion.component.html',
-  styleUrl: './marcacion.component.css'
+    selector: 'app-marcacion',
+    templateUrl: './marcacion.component.html',
+    styleUrl: './marcacion.component.css',
+    standalone: false
 })
 export class MarcacionComponent {
 

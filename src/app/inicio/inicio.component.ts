@@ -2,9 +2,10 @@ import { Component } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 
 @Component({
-  selector: 'app-inicio',
-  templateUrl: './inicio.component.html',
-  styleUrl: './inicio.component.css'
+    selector: 'app-inicio',
+    templateUrl: './inicio.component.html',
+    styleUrl: './inicio.component.css',
+    standalone: false
 })
 export class InicioComponent {
 

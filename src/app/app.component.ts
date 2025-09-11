@@ -5,9 +5,10 @@ import * as messages from 'devextreme/localization/messages/es.json';
 import { filter } from 'rxjs';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.css',
+    standalone: false
 })
 export class AppComponent {
   title = 'ProyectoLoJusto';

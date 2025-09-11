@@ -5,10 +5,11 @@ import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { DatePipe } from '@angular/common';
 
 @Component({
-  selector: 'app-reporte-marcacion',
-  templateUrl: './reporte-marcacion.component.html',
-  styleUrl: './reporte-marcacion.component.css',
-  providers: [DatePipe]
+    selector: 'app-reporte-marcacion',
+    templateUrl: './reporte-marcacion.component.html',
+    styleUrl: './reporte-marcacion.component.css',
+    providers: [DatePipe],
+    standalone: false
 })
 export class ReporteMarcacionComponent {
 

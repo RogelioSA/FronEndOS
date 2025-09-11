@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 
 @Component({
-  selector: 'app-analog-clock',
-  templateUrl: './analog-clock.component.html',
-  styleUrl: './analog-clock.component.css'
+    selector: 'app-analog-clock',
+    templateUrl: './analog-clock.component.html',
+    styleUrl: './analog-clock.component.css',
+    standalone: false
 })
 export class AnalogClockComponent implements OnInit, OnDestroy {
 

@@ -6,9 +6,10 @@ import { Router } from '@angular/router';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 @Component({
-  selector: 'app-menu-bar',
-  templateUrl: './menu-bar.component.html',
-  styleUrl: './menu-bar.component.css'
+    selector: 'app-menu-bar',
+    templateUrl: './menu-bar.component.html',
+    styleUrl: './menu-bar.component.css',
+    standalone: false
 })
 export class MenuBarComponent {
 

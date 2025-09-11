@@ -4,9 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 @Component({
-  selector: 'app-marca',
-  templateUrl: './marca.component.html',
-  styleUrl: './marca.component.css'
+    selector: 'app-marca',
+    templateUrl: './marca.component.html',
+    styleUrl: './marca.component.css',
+    standalone: false
 })
 export class MarcaComponent {
 

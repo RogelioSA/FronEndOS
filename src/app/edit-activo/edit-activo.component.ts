@@ -20,9 +20,10 @@ interface Activo{
 }
 
 @Component({
-  selector: 'app-edit-activo',
-  templateUrl: './edit-activo.component.html',
-  styleUrl: './edit-activo.component.css'
+    selector: 'app-edit-activo',
+    templateUrl: './edit-activo.component.html',
+    styleUrl: './edit-activo.component.css',
+    standalone: false
 })
 export class EditActivoComponent {
 

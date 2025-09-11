@@ -4,9 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 @Component({
-  selector: 'app-condicion-contractual',
-  templateUrl: './condicion-contractual.component.html',
-  styleUrl: './condicion-contractual.component.css'
+    selector: 'app-condicion-contractual',
+    templateUrl: './condicion-contractual.component.html',
+    styleUrl: './condicion-contractual.component.css',
+    standalone: false
 })
 export class CondicionContractualComponent {
   

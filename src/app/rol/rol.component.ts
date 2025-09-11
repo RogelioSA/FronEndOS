@@ -4,9 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 @Component({
-  selector: 'app-rol',
-  templateUrl: './rol.component.html',
-  styleUrl: './rol.component.css'
+    selector: 'app-rol',
+    templateUrl: './rol.component.html',
+    styleUrl: './rol.component.css',
+    standalone: false
 })
 export class RolComponent implements OnInit {
 

@@ -5,9 +5,10 @@ import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { DxTreeListComponent } from 'devextreme-angular';
 
 @Component({
-  selector: 'app-rol-usuario',
-  templateUrl: './rol-usuario.component.html',
-  styleUrl: './rol-usuario.component.css'
+    selector: 'app-rol-usuario',
+    templateUrl: './rol-usuario.component.html',
+    styleUrl: './rol-usuario.component.css',
+    standalone: false
 })
 export class RolUsuarioComponent {
 

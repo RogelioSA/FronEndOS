@@ -4,9 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 @Component({
-  selector: 'app-tipo-activo-servicio',
-  templateUrl: './tipo-activo-servicio.component.html',
-  styleUrl: './tipo-activo-servicio.component.css'
+    selector: 'app-tipo-activo-servicio',
+    templateUrl: './tipo-activo-servicio.component.html',
+    styleUrl: './tipo-activo-servicio.component.css',
+    standalone: false
 })
 export class TipoActivoServicioComponent {
 

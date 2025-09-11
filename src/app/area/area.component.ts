@@ -4,9 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 @Component({
-  selector: 'app-area',
-  templateUrl: './area.component.html',
-  styleUrl: './area.component.css'
+    selector: 'app-area',
+    templateUrl: './area.component.html',
+    styleUrl: './area.component.css',
+    standalone: false
 })
 export class AreaComponent {
 

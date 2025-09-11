@@ -5,9 +5,10 @@ import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 
 @Component({
-  selector: 'app-cliente',
-  templateUrl: './cliente.component.html',
-  styleUrl: './cliente.component.css'
+    selector: 'app-cliente',
+    templateUrl: './cliente.component.html',
+    styleUrl: './cliente.component.css',
+    standalone: false
 })
 export class ClienteComponent {
 

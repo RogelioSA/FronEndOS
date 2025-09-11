@@ -5,9 +5,10 @@ import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import * as XLSX from 'xlsx';
 
 @Component({
-  selector: 'app-personal-horario',
-  templateUrl: './personal-horario.component.html',
-  styleUrl: './personal-horario.component.css'
+    selector: 'app-personal-horario',
+    templateUrl: './personal-horario.component.html',
+    styleUrl: './personal-horario.component.css',
+    standalone: false
 })
 export class PersonalHorarioComponent {
 

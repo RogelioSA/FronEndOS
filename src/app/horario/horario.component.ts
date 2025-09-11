@@ -5,9 +5,10 @@ import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { DxDataGridComponent } from 'devextreme-angular';
 
 @Component({
-  selector: 'app-horario',
-  templateUrl: './horario.component.html',
-  styleUrl: './horario.component.css'
+    selector: 'app-horario',
+    templateUrl: './horario.component.html',
+    styleUrl: './horario.component.css',
+    standalone: false
 })
 export class HorarioComponent {
 

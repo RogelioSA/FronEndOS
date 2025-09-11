@@ -4,9 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 @Component({
-  selector: 'app-personal',
-  templateUrl: './personal.component.html',
-  styleUrl: './personal.component.css'
+    selector: 'app-personal',
+    templateUrl: './personal.component.html',
+    styleUrl: './personal.component.css',
+    standalone: false
 })
 export class PersonalComponent {
 

@@ -4,9 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 @Component({
-  selector: 'app-contrato-tipo',
-  templateUrl: './contrato-tipo.component.html',
-  styleUrl: './contrato-tipo.component.css'
+    selector: 'app-contrato-tipo',
+    templateUrl: './contrato-tipo.component.html',
+    styleUrl: './contrato-tipo.component.css',
+    standalone: false
 })
 export class ContratoTipoComponent {
 
