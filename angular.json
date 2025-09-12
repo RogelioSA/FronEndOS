@@ -48,13 +48,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "5Mb",
+                  "maximumError": "10Mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "5Mb",
+                  "maximumError": "10Mb"
                 }
               ],
               "outputHashing": "all"
@@ -131,5 +131,8 @@
     "@schematics/angular:resolver": {
       "typeSeparator": "."
     }
+  },
+  "cli": {
+    "analytics": "c95c6860-647e-4f6a-bc69-5737f364a9d4"
   }
 }
