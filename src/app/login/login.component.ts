@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
@@ -8,7 +8,7 @@ import { AuthService } from '../services/auth.service';
     styleUrls: ['./login.component.css'],
     standalone: false
 })
-export class LoginComponent implements OnInit{
+export class LoginComponent{
   username: string = '';
   password: string = '';
   errorMessage: string = '';
@@ -16,10 +16,6 @@ export class LoginComponent implements OnInit{
   formSubmitted = false;
 
   constructor(private authService: AuthService, private router: Router) {}
-
-  ngOnInit(): void {
-    this.setupLicenseObserver();
-  }
 
   onLogin(): void {
 
@@ -41,22 +37,5 @@ export class LoginComponent implements OnInit{
         this.errorMessage = 'Login fallido. Verifica tus credenciales.';
       }
     );
-  }
-
-  setupLicenseObserver() {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeName === 'DX-LICENSE') {
-            (node as HTMLElement).remove();
-          }
-        });
-      });
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
   }
 }
