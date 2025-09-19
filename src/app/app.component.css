@@ -1,5 +1,8 @@
 ::ng-deep .dx-header-row{
-    background-color: #084DA6;
+    background-color: #202938;
     color: white;
     font-weight: bold;
 }
+@theme {
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  }

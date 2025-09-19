@@ -5,22 +5,20 @@ import { Observable } from "rxjs";
 @Injectable({providedIn: 'root'})
 export class ApiService{
 
-    private baseUrl = 'https://localhost:7044/api';
+    private baseUrl = 'https://7p4yx3l258.execute-api.us-east-1.amazonaws.com';
 
     constructor(private https: HttpClient){}
 
     // Función para obtener el token desde las cookies
     private getToken(): string | null {
-        const name = 'token=';
-        const decodedCookie = decodeURIComponent(document.cookie);
-        const ca = decodedCookie.split(';');
-        for (let i = 0; i < ca.length; i++) {
-        let c = ca[i].trim();
-        if (c.indexOf(name) === 0) {
-            return c.substring(name.length, c.length);
-        }
-        }
-        return null;
+      return localStorage.getItem('auth_token'); // ya lo guardas así en login()
+    }
+    
+    getHttpHeaders(): HttpHeaders {
+      const token = localStorage.getItem('auth_token');
+      return token 
+        ? new HttpHeaders().set('Authorization', `Bearer ${token}`) 
+        : new HttpHeaders();
     }
 
     // Función para obtener los encabezados con el token
@@ -135,8 +133,9 @@ export class ApiService{
     }
 
     getMenus(): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Seguridad/GetMenu`, {
-        });
+      return this.https.get(`${this.baseUrl}/security/Formulario`, {
+        headers: this.getHttpHeaders()
+      });
     }
 
     sincronizarMenu(menu: any ): Observable<any> {

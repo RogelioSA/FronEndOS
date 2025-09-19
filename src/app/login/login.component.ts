@@ -9,7 +9,7 @@ import { AuthService } from '../services/auth.service';
     standalone: false
 })
 export class LoginComponent{
-  username: string = '';
+  email: string = '';
   password: string = '';
   errorMessage: string = '';
   mostrarRequerido: boolean = false;
@@ -21,12 +21,12 @@ export class LoginComponent{
 
     this.formSubmitted = true;
 
-    if(this.username === '' || this.password === ''){
+    if(this.email === '' || this.password === ''){
       this.mostrarRequerido = true;
       return;
     }
 
-    this.authService.login(this.username, this.password).subscribe(
+    this.authService.login(this.email, this.password).subscribe(
       (response) => {
         // Si el login es exitoso, redirige a la página de inicio
         this.router.navigate(['/inicio']);

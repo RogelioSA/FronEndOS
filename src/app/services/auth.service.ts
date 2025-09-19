@@ -15,20 +15,20 @@ interface PayloadJwtPersonalizado extends JwtPayload {
 @Injectable({providedIn: 'root'})
 export class AuthService{
 
-    private apiUrl = 'https://localhost:7044/api'; // Cambia por tu URL del servidor
+    private apiUrl = 'https://7p4yx3l258.execute-api.us-east-1.amazonaws.com/security'; // Cambia por tu URL del servidor
     private loginUrl = `${this.apiUrl}/Auth/login`;
 
     constructor(private http: HttpClient) {}
 
     // Función para hacer login y obtener el token
-    login(username: string, password: string): Observable<any> {
-        const body = { username, password };
+    login(email: string, password: string): Observable<any> {
+        const body = { email, password };
         
         return this.http.post<any>(this.loginUrl, body).pipe(
         tap(response => {
-            if (response.token) {
+            if (response.accessToken) {
             // Almacenar el token en localStorage o sessionStorage
-            localStorage.setItem('auth_token', response.token);
+            localStorage.setItem('auth_token', response.accessToken);
             }
         })
         );

@@ -1,19 +1,18 @@
-<div class="inicio-container h-screen">
-    <div class="row">
-        <div class="col-12">
-            <h2 class="text-center">Inicio</h2>
-            <br>
-            <br>
-            <dx-button text="Cerrar Sesión"
-                    stylingMode="contained"
-                    type="default"
-                    [width]="250"
-                    icon="fa-solid fa-right-from-bracket"
-                    type="danger"
-                    (onClick)="buscar()">
+<div
+    class="inicio-container min-h-[calc(80vh)] flex items-center justify-center bg-gradient-to-br from-sky-50 via-white to-slate-50 px-4">
+    <div
+        class="w-full max-w-md mx-auto p-8 bg-white/75 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 h-[90%]">
+        <h2 class="text-3xl font-semibold text-slate-800 mb-6 text-center pb-2">
+            Bienvenido
+        </h2>
+
+        <div class="flex justify-center">
+            <dx-button text="Cerrar Sesión" stylingMode="contained" type="danger" icon="fa-solid fa-right-from-bracket"
+                [width]="250" aria-label="Cerrar sesión" class="!bg-red-600 !text-white !rounded-full !shadow-xl 
+               hover:!bg-red-700 focus:!ring-4 focus:!ring-red-300 
+               transition-transform duration-200 ease-in-out 
+               hover:-translate-y-0.5">
             </dx-button>
         </div>
-        
     </div>
-    
 </div>
