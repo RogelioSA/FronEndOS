@@ -7,7 +7,12 @@
     </div>
 
     <!-- Menú -->
-    <div id="menuContainer" class="flex-1 flex justify-end">
+    <div 
+      id="menuContainer" 
+      class="flex-1 flex justify-end items-center px-6 py-3 
+            bg-gradient-to-r from-[#064e3b]  to-[#047857] 
+            shadow-lg rounded-xl">
+      
       <dx-menu
         #menu
         [dataSource]="menuBar"
@@ -17,10 +22,10 @@
         [hideSubmenuOnMouseLeave]="true"
         [adaptivityEnabled]="isMobile"
         id="menu"
-        class="text-white font-medium"
-        (onItemClick)="onMenuItemClick($event)">
+        class="text-white font-semibold tracking-wide text-lg">
       </dx-menu>
     </div>
+
 
   </div>
 </div>

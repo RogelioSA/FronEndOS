@@ -42,14 +42,3 @@ span {
     color: #343840;
     font-weight: bold;
 }
-
-/* ::ng-deep  .logout-item .dx-menu-item{ */
-::ng-deep  .logout-item{
-    margin-left: auto !important; /* Mueve el botón a la derecha */
-    background-color: blue !important;
-}
-
-::ng-deep .dx-overlay-content{
-    border-radius: 8px;
-    background-color: blue;
-}

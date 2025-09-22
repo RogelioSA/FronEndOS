@@ -49,25 +49,36 @@ export class MenuBarComponent {
       const obser = this.apiService.getMenus();
       const result = await firstValueFrom(obser);
 
-      this.menus = result.data;
+      this.menus = result.map((m: any) => ({
+        cNombre: m.nombre,
+        nCodigo: m.id,
+        nPadre: m.parentId ?? 0,
+        cPath: m.controlador && m.action ? `/${m.controlador}/${m.action}` : '#',
+        nOrden: m.orden,
+        items: m.children ?? [],
+        migrado: false
+      }));
 
       let usuario = {
-                            text: this.claims.cUsuario,
-                            cNombre: this.claims.cUsuario,
-                            nCodigo: 990,
-                            cPath: '#',
-                            nPadre: 0,
-                            nOrden: 999,
-                            cssClass: 'logout-item',  // Añadimos una clase personalizada para el botón de logout
-                          };
+        cNombre: this.claims.cUsuario,
+        nCodigo: 990,
+        nPadre: 0,
+        nOrden: 999,
+        cPath: '#',
+        cssClass: 'logout-item',
+        items: []
+      };
       
       let cerrarSesion = {
-                                cNombre: 'Cerrar Sesión',
-                                nCodigo: 999,
-                                nPadre: 990
-      }
-      this.menus.push(usuario);
-      this.menus.push(cerrarSesion);
+        cNombre: 'Cerrar Sesión',
+        nCodigo: 999,
+        nPadre: 990,
+        nOrden: 1000,
+        cPath: '#',
+        items: []
+      };
+      this.menus.push(usuario, cerrarSesion);
+      
     }catch(error){
       console.log('Error traendo los menus.')
     }finally{
