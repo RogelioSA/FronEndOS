@@ -21,12 +21,15 @@ export class CargoComponent {
 
     this.traerCargos();
 
-    this.estados = [{ID:'A', Name: 'Activo'},{ID: 'I', Name: 'Inactivo'}];
+    this.estados = [
+      { ID: true, Name: 'Activo' },
+      { ID: false, Name: 'Inactivo' }
+    ];
 
   }
 
   async traerCargos(){
-    this.blockUI.start('Cargando...'); // Start blocking
+    this.blockUI.start('Cargando...');
 
     console.log("traer cargos");
 
@@ -34,7 +37,11 @@ export class CargoComponent {
       const obser = this.apiService.getCargos();
       const result = await firstValueFrom(obser);
 
-      this.cargos = result.data;
+      this.cargos = result.map((t: any) => ({
+        nCodigo: t.id,
+        cNombre: t.nombre,
+        cDetalle: t.estado
+      }));
     }catch(error){
       console.log('Error traendo los cargos.')
     }finally{
@@ -46,67 +53,63 @@ export class CargoComponent {
     console.log(event);
   }
 
-  actualizar(event : any){
-
-    let registro = event.newData;
-    registro.nCodigo = event.oldData.nCodigo;
-    registro.cTipo = "actualizar";
-
-    this.apiService.sincronizarCargo(registro).subscribe(
+  actualizar(event: any) {
+    const data = { ...event.oldData, ...event.newData };
+  
+    let registro = {
+      nombre: data.cNombre,
+      estado: data.cDetalle
+    };
+  
+    this.apiService.actualizarCargo(data.nCodigo, registro).subscribe(
       (response: any) => {
+        console.log('Registro actualizado:', response);
         this.traerCargos();
       },
       (error: any) => {
         console.error('Error al actualizar registro.', error);
       }
     );
-
-    console.log(registro);
-
-    console.log(event);
+  
+    console.log("Registro enviado:", registro);
+    console.log("Evento:", event);
   }
+  
 
-  insertar(event : any){
-
+  insertar(event: any) {
     let registro = {
-      cNombre: event.data.cNombre,
-      cDetalle: event.data.cDetalle,
-      cTipo: "insertar"
-    }
-
-    this.apiService.sincronizarCargo(registro).subscribe(
+      nombre: event.data.cNombre,
+      estado: event.data.cDetalle 
+    };
+  
+    this.apiService.crearCargo(registro).subscribe(
       (response: any) => {
-        this.traerCargos();
+        console.log('Registro creado:', response);
+        this.traerCargos(); 
       },
       (error: any) => {
         console.error('Error al insertar registro.', error);
       }
     );
+  
+    console.log("Registro enviado:", registro);
+  }  
 
-    console.log(registro);
-
-    console.log(event);
-  }
-
-  eliminar(event : any){
-    let registro = {
-      nCodigo : event.data.nCodigo,
-      cTipo : "eliminar"
-    };
-
-    this.apiService.sincronizarCargo(registro).subscribe(
+  eliminar(event: any) {
+    const id = event.data.nCodigo;
+  
+    this.apiService.eliminarCargo(id).subscribe(
       (response: any) => {
-        this.traerCargos();
+        console.log('Registro eliminado:', response);
+        this.traerCargos(); // refrescar tabla
       },
       (error: any) => {
         console.error('Error al eliminar registro.', error);
       }
     );
-
-    console.log(registro);
-
-    console.log(event);
-    
-  }
+  
+    console.log("ID eliminado:", id);
+    console.log("Evento:", event);
+  }  
 
 }

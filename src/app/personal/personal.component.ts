@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
-
+ 
 @Component({
     selector: 'app-personal',
     templateUrl: './personal.component.html',
@@ -56,19 +56,24 @@ export class PersonalComponent {
     }
   }
 
-  async traerCargos(){
+  async traerCargos() {
     console.log("traer cargos");
-
-    try{
+  
+    try {
       const obser = this.apiService.getCargos();
       const result = await firstValueFrom(obser);
-
-      this.cargos = result.data;
-    }catch(error){
-      console.log('Error traendo los cargos.')
-    }finally{
+  
+      // Mapeo de API → formato que espera el lookup
+      this.cargos = result.map((t: any) => ({
+        nCodigo: t.id,
+        cNombre: t.nombre
+      }));
+  
+    } catch (error) {
+      console.log('Error trayendo los cargos.', error);
     }
   }
+  
 
   async traerAreas(){
     console.log("traer areas");
@@ -84,19 +89,24 @@ export class PersonalComponent {
     }
   }
 
-  async traerContratoTipos(){
+  async traerContratoTipos() {
     console.log("traer tipos");
-
-    try{
+  
+    try {
       const obser = this.apiService.getContratoTipos();
       const result = await firstValueFrom(obser);
-
-      this.contratoTipos = result.data;
-    }catch(error){
-      console.log('Error traendo los tipos.')
-    }finally{
+  
+      // Mapeo API → formato para el lookup
+      this.contratoTipos = result.map((t: any) => ({
+        nCodigo: t.id,
+        cNombre: t.nombre
+      }));
+  
+    } catch (error) {
+      console.log('Error trayendo los tipos.', error);
     }
   }
+  
 
   async traerSituaciones(){
     console.log("traer situaciones");

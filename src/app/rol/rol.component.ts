@@ -39,34 +39,46 @@ export class RolComponent implements OnInit {
 
   }
 
-  async traerRoles(){
-    this.blockUI.start('Cargando...'); // Start blocking
-
+  async traerRoles() {
+    this.blockUI.start('Cargando...');
+  
     console.log("traer roles");
-
-    try{
+  
+    try {
       const obser = this.apiService.getRoles();
       const result = await firstValueFrom(obser);
-
-      this.roles = result.data;
-    }catch(error){
-      console.log('Error traendo los roles.')
-    }finally{
+  
+      // Mapeo API → formato tabla
+      this.roles = result.map((t: any) => ({
+        nCodigo: t.id,                // ID del rol
+        cNombre: t.name,              // Nombre del rol
+        cDetalle: t.normalizedName,   // Nombre normalizado
+        cEstado: t.concurrencyStamp ? 'A' : 'I' 
+      }));
+  
+    } catch (error) {
+      console.log('Error trayendo los roles.', error);
+    } finally {
       this.blockUI.stop();
     }
   }
+  
 
   guardar(event : any){
     console.log(event);
   }
 
-  actualizar(event : any){
-
-    let registro = event.newData;
-    registro.nCodigo = event.oldData.nCodigo;
-    registro.cTipo = "actualizar";
-
-    this.apiService.sincronizarRol(registro).subscribe(
+  actualizar(event: any) {
+    // roleId viene del registro antiguo
+    const roleId = event.oldData.nCodigo;  
+  
+    // armamos el body en el formato que la API espera
+    const registro = {
+      empresaId: 0,                        // O dinámico si lo tienes
+      name: event.newData.cNombre || event.oldData.cNombre
+    };
+  
+    this.apiService.actualizarRol(roleId, registro).subscribe(
       (response: any) => {
         this.traerRoles();
       },
@@ -74,21 +86,18 @@ export class RolComponent implements OnInit {
         console.error('Error al actualizar registro.', error);
       }
     );
-
-    console.log(registro);
-
-    console.log(event);
+  
+    console.log('roleId:', roleId);
+    console.log('registro:', registro);
   }
+  
 
-  insertar(event : any){
-
+  insertar(event: any) {
     let registro = {
-      cNombre: event.data.cNombre,
-      cDetalle: event.data.cDetalle,
-      cEstado: event.data.cEstado,
-      cTipo: "insertar"
-    }
-
+      empresaId: 0,                        // O el id real de la empresa si lo tienes dinámico
+      name: event.data.cNombre             // Aquí mapeas el campo del grid a "name"
+    };
+  
     this.apiService.sincronizarRol(registro).subscribe(
       (response: any) => {
         this.traerRoles();
@@ -97,31 +106,25 @@ export class RolComponent implements OnInit {
         console.error('Error al insertar registro.', error);
       }
     );
-
+  
     console.log(registro);
-
-    console.log(event);
   }
+  
 
-  eliminar(event : any){
-    let registro = {
-      nCodigo : event.data.nCodigo,
-      cTipo : "eliminar"
-    };
-
-    this.apiService.sincronizarRol(registro).subscribe(
+  eliminar(event: any) {
+    const roleId = event.data.nCodigo; // este es tu identificador
+  
+    this.apiService.eliminarRol(roleId).subscribe(
       (response: any) => {
-        this.traerRoles();
+        this.traerRoles(); // refresca la tabla
       },
       (error: any) => {
         console.error('Error al eliminar registro.', error);
       }
     );
-
-    console.log(registro);
-
-    console.log(event);
-    
+  
+    console.log('Eliminando roleId:', roleId);
   }
+  
 
 }

@@ -32,16 +32,29 @@ export class ApiService{
     }
 
     getRoles(): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Seguridad/GetRol`, {
+        return this.https.get(`${this.baseUrl}/security/Rol`, {
+          headers: this.getHttpHeaders()
         });
     }
 
-    sincronizarRol(rol: any ): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Seguridad/SincronizarRol`, {
-          headers: this.getHeaders(),
-          params: rol
-        });
+    sincronizarRol(data: any): Observable<any> {
+      return this.https.post(`${this.baseUrl}/security/Rol`, data, {
+        headers: this.getHttpHeaders()
+      });
     }
+    
+    actualizarRol(roleId: number, data: any): Observable<any> {
+      return this.https.put(`${this.baseUrl}/security/Rol/${roleId}`, data, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
+    eliminarRol(roleId: number): Observable<any> {
+      return this.https.delete(`${this.baseUrl}/security/Rol/${roleId}`, {
+        headers: this.getHttpHeaders()
+      });
+    }
+    
 
     getDepartamentos(): Observable<any> {
         return this.https.get(`${this.baseUrl}/Maestro/GetDepartamento`, {
@@ -80,7 +93,8 @@ export class ApiService{
     }
 
     getContratoTipos(): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Maestro/GetContratoTipo`, {
+        return this.https.get(`${this.baseUrl}/legal/ContratoTipo`, {
+          headers: this.getHttpHeaders()
         });
     }
 
@@ -90,19 +104,32 @@ export class ApiService{
           params: contratoTipo
         });
     }
-
+    // cargos
     getCargos(): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Maestro/GetCargo`, {
+        return this.https.get(`${this.baseUrl}/rrhh/Cargo`, {
+          headers: this.getHttpHeaders()
         });
     }
 
-    sincronizarCargo(cargo: any ): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Maestro/SincronizarCargo`, {
-          headers: this.getHeaders(),
-          params: cargo
-        });
+    crearCargo(cargo: any): Observable<any> {
+      return this.https.post(`${this.baseUrl}/rrhh/Cargo`, cargo, {
+        headers: this.getHttpHeaders()
+      });
     }
 
+    actualizarCargo(id: number, cargo: any): Observable<any> {
+      return this.https.put(`${this.baseUrl}/rrhh/Cargo/${id}`, cargo, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
+    eliminarCargo(id: number): Observable<any> {
+      return this.https.delete(`${this.baseUrl}/rrhh/Cargo/${id}`, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
+    //
     getPersonalSituaciones(): Observable<any> {
         return this.https.get(`${this.baseUrl}/Maestro/GetPersonalSituacion`, {
         });
@@ -145,14 +172,10 @@ export class ApiService{
         });
     }
 
-    getRolMenus(rol: number ): Observable<any> {
-        const url = `${this.baseUrl}/Seguridad/GetRolMenu`;
-        const params = {
-            nRol: rol
-          };
-        const headers = this.getHeaders();
-        
-        return this.https.get<any>(url, { headers: headers, params: params });
+    getRolById(roleId: number): Observable<any> {
+      return this.https.get<any>(`${this.baseUrl}/security/Rol/${roleId}`, {
+        headers: this.getHttpHeaders()
+      });
     }
 
     sincronizarRolMenu(rol: number, menus: any ): Observable<any> {
@@ -187,18 +210,41 @@ export class ApiService{
         return this.https.get<any>(url, { headers: headers, params: params });
     }
 
+    // mantenimiento
     getTiposServicio(): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Maestro/GetTipoServicio`, {
+        return this.https.get(`${this.baseUrl}/mantto/MantenimientoTipo`, {
+          headers: this.getHttpHeaders()
         });
     }
 
-    sincronizarTipoServicio(tipoServicio: any ): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Maestro/SincronizarTipoServicio`, {
-          headers: this.getHeaders(),
-          params: tipoServicio
-        });
+    sincronizarTipoServicio(tipoServicio: any): Observable<any> {
+      return this.https.post(`${this.baseUrl}/mantto/MantenimientoTipo`, tipoServicio, {
+        headers: this.getHttpHeaders()
+      });
     }
 
+    sincronizarTipoServicioEditar(tipoServicio: any): Observable<any> {
+      // Clonar el objeto sin 'id'
+      const { id, ...body } = tipoServicio;
+    
+      return this.https.put(
+        `${this.baseUrl}/mantto/MantenimientoTipo/${id}`, // ✅ id en la ruta
+        body, // ✅ body sin el id
+        {
+          headers: this.getHttpHeaders()
+        }
+      );
+    }
+
+    eliminarTipoServicio(id: number): Observable<any> {
+      return this.https.delete(
+        `${this.baseUrl}/mantto/MantenimientoTipo/${id}`,
+        { headers: this.getHttpHeaders() }
+      );
+    }
+
+
+    //
     getDescansos(): Observable<any> {
         return this.https.get(`${this.baseUrl}/Horario/GetDescanso`, {
         });

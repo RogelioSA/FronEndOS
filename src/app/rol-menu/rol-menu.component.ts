@@ -37,39 +37,50 @@ export class RolMenuComponent {
 
   }
 
-  async traerRoles(){
+  async traerRoles() {
     console.log("traer roles");
-
-    try{
+    try {
       const obser = this.apiService.getRoles();
       const result = await firstValueFrom(obser);
-
-      this.roles = result.data;
-    }catch(error){
-      console.log('Error traendo los roles.')
-    }finally{ 
+  
+      this.roles = result.map((r: any) => ({
+        nCodigo: r.id,          // id → nCodigo
+        cNombre: r.name,        // name → cNombre
+        cDetalle: r.normalizedName // normalizedName → cDetalle
+      }));
+  
+      console.log("Roles mapeados:", this.roles);
+    } catch (error) {
+      console.log("Error trayendo los roles.", error);
     }
   }
+  
 
-  async traerMenu(){
+  async traerMenu() {
     console.log("traer menus");
-
-    try{
+    try {
       const obser = this.apiService.getMenus();
       const result = await firstValueFrom(obser);
-
-      this.menus = result.data;
-    }catch(error){
-      console.log('Error traendo los menus.')
-    }finally{
+  
+      this.menus = result.map((m: any) => ({
+        nCodigo: m.id,               // id → nCodigo
+        nPadre: m.parentId,          // parentId → nPadre
+        cNombre: m.nombre,           // nombre → cNombre
+        cNombreMostrar: m.nombreCorto // nombreCorto → cNombreMostrar
+      }));
+  
+      console.log("Menus mapeados:", this.menus);
+    } catch (error) {
+      console.log("Error trayendo los menus.", error);
     }
   }
+  
 
   async traerRolMenu(rol : number){
     console.log("traer rolMenus");
 
     try{
-      const obser = this.apiService.getRolMenus(rol);
+      const obser = this.apiService.getRolById(rol);
       const result = await firstValueFrom(obser);
 
       this.filasSeleccionadasMenu = result.data;

@@ -31,7 +31,7 @@ const routes: Routes = [
   //{ path: '', redirectTo: '/home', pathMatch: 'full' },
   //{ path: 'home/:idVendedor', component: HomeComponent },
   
-  //{ path: '#', pathMatch: 'full', redirectTo: '#', },
+  //{ path: '#', pathMatch: 'full', redirectTo: '#', }, 
   { path: 'login', component: LoginComponent },
   { path: 'inicio', component: InicioComponent, canActivate: [AuthGuard]  },
   { path: '', component: InicioComponent, canActivate: [AuthGuard]  },
