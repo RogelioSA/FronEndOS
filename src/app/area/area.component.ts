@@ -43,22 +43,27 @@ export class AreaComponent {
     }
   }
 
-  async traerDepartamentos(){
-    this.blockUI.start('Cargando...'); // Start blocking
-
-    console.log("traer departamentos");
-
-    try{
+  async traerDepartamentos() {
+    this.blockUI.start('Cargando...');
+  
+    try {
       const obser = this.apiService.getDepartamentos();
       const result = await firstValueFrom(obser);
-
-      this.departamentos = result.data;
-    }catch(error){
-      console.log('Error traendo los departamentos.')
-    }finally{
+  
+      // Mapear la data de la API al formato esperado por el grid
+      this.departamentos = result.map((d: any) => ({
+        nCodigo: d.id,
+        cNombre: d.nombre
+      }));
+  
+      console.log("Departamentos cargados:", this.departamentos);
+    } catch (error) {
+      console.log('Error trayendo los departamentos.', error);
+    } finally {
       this.blockUI.stop();
     }
   }
+  
 
   guardar(event : any){
     console.log(event);

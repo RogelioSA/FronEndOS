@@ -27,68 +27,73 @@ export class DepartamentoComponent {
 
   }
 
-  async traerDepartamentos(){
+  async traerDepartamentos() {
     this.blockUI.start('Cargando...'); // Start blocking
-
+  
     console.log("traer departamentos");
-
-    try{
+  
+    try {
       const obser = this.apiService.getDepartamentos();
       const result = await firstValueFrom(obser);
-
-      this.departamentos = result.data;
-    }catch(error){
-      console.log('Error traendo los departamentos.')
-    }finally{
+  
+      // Mapeamos al formato que espera el grid
+      this.departamentos = result.map((d: any) => ({
+        nCodigo: d.id,        // id → nCodigo
+        cNombre: d.nombre,    // nombre → cNombre
+        cDetalle: d.paisId    // opcional: usamos paisId como detalle
+      }));
+  
+      console.log("Departamentos mapeados:", this.departamentos);
+    } catch (error) {
+      console.log('Error trayendo los departamentos.', error);
+    } finally {
       this.blockUI.stop();
     }
   }
+  
 
   guardar(event : any){
     console.log(event);
   }
 
-  actualizar(event : any){
-
-    let registro = event.newData;
-    registro.nCodigo = event.oldData.nCodigo;
-    registro.cTipo = "actualizar";
-
+  async actualizar(event: any) {
     const { newData, oldData } = event;
-
-    // try{
-    //   const obser = this.apiService.sincronizarDepartamento(registro);
-    //   const result = await firstValueFrom(obser);
-    // }catch(error){
-    //   event.component.cancelEditData();
-    //   event.cancel = true;
-    //   this.showMessage('Error al actualizar registro.');
-    //   console.error('Error al actualizar registro.', error);
-    // }
-
-    this.apiService.sincronizarDepartamento(registro).subscribe(
-      (response: any) => {
-        this.traerDepartamentos();
-      },
-      (error: any) => {
-        console.error('Error al actualizar registro.', error);
-      }
-    );
-
-    console.log(registro);
-
-    console.log(event);
-  }
-
-  async insertar(event : any){
-
+  
+    // Construir el body para la API
     let registro = {
-      cNombre: event.data.cNombre,
-      cDetalle: event.data.cDetalle,
-      cTipo: "insertar"
+      nombre: newData.cNombre ?? oldData.cNombre,   // Si no editan, se queda el viejo
+      paisId: Number(newData.cDetalle ?? oldData.cDetalle) || 1
+    };
+  
+    // El ID lo sacamos del dato anterior
+    const id = oldData.nCodigo;
+  
+    try {
+      const obser = this.apiService.actualizarDepartamento(id, registro);
+      const result = await firstValueFrom(obser);
+  
+      this.traerDepartamentos();
+      console.log("Actualizado:", result);
+    } catch (error) {
+      event.component.cancelEditData();
+      event.cancel = true;
+      this.showMessage('Error al actualizar registro.');
+      console.error('Error al actualizar registro.', error);
     }
+  
+    console.log("Registro enviado:", registro);
+    console.log("ID enviado:", id);
+  }
+  
 
-    await this.apiService.sincronizarDepartamento(registro).subscribe(
+  async insertar(event: any) {
+    // Mapear lo que ingresa en la fila a lo que espera la API
+    let registro = {
+      nombre: event.data.cNombre,                 // API espera "nombre"
+      paisId: Number(event.data.cDetalle) || 1    // Si no es número válido => manda 1
+    };
+  
+    this.apiService.crearDepartamento(registro).subscribe(
       (response: any) => {
         this.traerDepartamentos();
       },
@@ -96,32 +101,28 @@ export class DepartamentoComponent {
         console.error('Error al insertar registro.', error);
       }
     );
+  
+    console.log("Registro enviado:", registro);
+    console.log("Evento:", event);
+  }  
 
-    console.log(registro);
-
-    console.log(event);
-  }
-
-  eliminar(event : any){
-    let registro = {
-      nCodigo : event.data.nCodigo,
-      cTipo : "eliminar"
-    };
-
-    this.apiService.sincronizarDepartamento(registro).subscribe(
+  eliminar(event: any) {
+    const id = event.data.nCodigo;
+  
+    this.apiService.eliminarDepartamento(id).subscribe(
       (response: any) => {
-        this.traerDepartamentos();
+        this.traerDepartamentos(); // refrescar lista
+        console.log("Registro eliminado:", response);
       },
       (error: any) => {
         console.error('Error al eliminar registro.', error);
       }
     );
-
-    console.log(registro);
-
+  
+    console.log("ID a eliminar:", id);
     console.log(event);
-    
   }
+  
 
   showMessage(message: string) {
     const messageBox = document.getElementById('messageBox');

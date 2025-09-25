@@ -37,19 +37,26 @@ export class RolUsuarioComponent {
 
   }
 
-  async traerRoles(){
+  async traerRoles() {
     console.log("traer roles");
-
-    try{
+  
+    try {
       const obser = this.apiService.getRoles();
       const result = await firstValueFrom(obser);
-
-      this.roles = result.data;
-    }catch(error){
-      console.log('Error traendo los roles.')
-    }finally{ 
+  
+      // Mapeamos la respuesta al formato que espera el grid
+      this.roles = result.map((r: any) => ({
+        nCodigo: r.id,            // id → nCodigo
+        cNombre: r.name,          // name → cNombre
+        cDetalle: r.normalizedName // normalizedName → cDetalle
+      }));
+  
+      console.log("Roles mapeados:", this.roles);
+    } catch (error) {
+      console.log("Error trayendo los roles.", error);
     }
   }
+  
 
   async traerPersonal(){
     console.log("traer personal");

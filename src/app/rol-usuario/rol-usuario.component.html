@@ -1,11 +1,11 @@
 <div class="container-fluid">
     <div class="row justify-content-md-center mt-2">
-        <div class="col-8">
+        <div class="col-12">
             <h3>Rol Usuario Mantenimiento</h3>
         </div>
     </div>
     <div class="row g-1 mt-2 justify-content-md-center mb-4">
-        <div class="col-4">
+        <div class="col-6">
             <div id="data-grid">
                 <dx-data-grid
                     id="gridContainer"
@@ -41,7 +41,7 @@
                 </block-ui>
             </div>
         </div>
-        <div class="col-4">
+        <div class="col-6">
             <div id="tree-list">
                 <dx-tree-list #treeList
                     [dataSource]="usuarios"
@@ -73,7 +73,7 @@
     
     </div>
     <div class="row justify-content-md-center">
-        <div class="col-8">
+        <div class="col-12">
             <dx-button text="Guardar"
                 stylingMode="contained"
                 type="default"

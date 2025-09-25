@@ -1,11 +1,11 @@
 <div class="container-fluid">
     <div class="row mt-3 justify-content-md-center mb-4">
-        <div class="col-8">
+        <div class="col-12">
             <h3>Personal Horario Mantenimiento</h3>
         </div> 
     </div>
     <div class="row mt-2 justify-content-md-center mb-4">
-        <div class="col-3">
+        <div class="col-4">
             <dx-select-box
                 #company
                 displayExpr="cOrdenInterna"
@@ -16,13 +16,13 @@
                 name="ordenCombo"
             ></dx-select-box>
         </div>
-        <div class="col-3 pt-2">
+        <div class="col-4 pt-2">
             <input type="week" [(ngModel)]="semana" name="semana" style="height: 33px;">
         </div>
         <!-- <div class="col-2">
             <input type="file" (change)="onFileChange($event)" />
         </div> -->
-        <div class="col-2 pt-2 text-end">
+        <div class="col-4 pt-2 text-end">
             <dx-button text="Buscar"
                 stylingMode="contained"
                 type="default"
@@ -33,7 +33,7 @@
         </div>
     </div>
     <div class="row g-1 mt-2 justify-content-md-center mb-4">
-        <div class="col-8">
+        <div class="col-12">
             <div id="data-grid">
                 <dx-data-grid
                 id="gridContainer"

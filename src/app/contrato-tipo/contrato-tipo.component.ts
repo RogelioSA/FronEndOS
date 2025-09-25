@@ -25,56 +25,63 @@ export class ContratoTipoComponent {
 
   }
 
-  async traerContratoTipos(){
-    this.blockUI.start('Cargando...'); // Start blocking
-
-    console.log("traer tipos");
-
-    try{
+  async traerContratoTipos() {
+    this.blockUI.start('Cargando...');
+  
+    try {
       const obser = this.apiService.getContratoTipos();
       const result = await firstValueFrom(obser);
-
-      this.contratoTipos = result.data;
-    }catch(error){
-      console.log('Error traendo los tipos.')
-    }finally{
+  
+      // Mapear al formato que la tabla espera
+      this.contratoTipos = result.map((c: any) => ({
+        nCodigo: c.id,
+        cNombre: c.nombre,
+        cDetalle: c.detalle
+      }));
+  
+      console.log("Contrato Tipos cargados:", this.contratoTipos);
+    } catch (error) {
+      console.log('Error trayendo los tipos.', error);
+    } finally {
       this.blockUI.stop();
     }
   }
+  
 
   guardar(event : any){
     console.log(event);
   }
 
-  actualizar(event : any){
-
-    let registro = event.newData;
-    registro.nCodigo = event.oldData.nCodigo;
-    registro.cTipo = "actualizar";
-
-    this.apiService.sincronizarContratoTipo(registro).subscribe(
+  actualizar(event: any) {
+    const id = event.oldData.nCodigo; // el id que ya existía en la fila
+    const registro = {
+      nombre: event.newData.cNombre ?? event.oldData.cNombre,
+      detalle: event.newData.cDetalle ?? event.oldData.cDetalle
+    };
+  
+    this.apiService.actualizarContratoTipo(id, registro).subscribe(
       (response: any) => {
         this.traerContratoTipos();
       },
       (error: any) => {
         console.error('Error al actualizar registro.', error);
+        event.component.cancelEditData(); // cancela si hubo error
       }
     );
-
-    console.log(registro);
-
-    console.log(event);
+  
+    console.log('Registro enviado:', registro);
+    console.log('Evento:', event);
   }
+  
 
-  insertar(event : any){
-
-    let registro = {
-      cNombre: event.data.cNombre,
-      cDetalle: event.data.cDetalle,
-      cTipo: "insertar"
-    }
-
-    this.apiService.sincronizarContratoTipo(registro).subscribe(
+  insertar(event: any) {
+    // Armamos el body en el formato que pide la API
+    const registro = {
+      nombre: event.data.cNombre,
+      detalle: event.data.cDetalle
+    };
+  
+    this.apiService.crearContratoTipo(registro).subscribe(
       (response: any) => {
         this.traerContratoTipos();
       },
@@ -82,31 +89,28 @@ export class ContratoTipoComponent {
         console.error('Error al insertar registro.', error);
       }
     );
-
-    console.log(registro);
-
-    console.log(event);
+  
+    console.log("Registro enviado:", registro);
+    console.log("Evento:", event);
   }
+  
 
-  eliminar(event : any){
-    let registro = {
-      nCodigo : event.data.nCodigo,
-      cTipo : "eliminar"
-    };
-
-    this.apiService.sincronizarContratoTipo(registro).subscribe(
+  eliminar(event: any) {
+    const id = event.data.nCodigo; // el id de la fila seleccionada
+  
+    this.apiService.eliminarContratoTipo(id).subscribe(
       (response: any) => {
-        this.traerContratoTipos();
+        this.traerContratoTipos(); // refresca la tabla
       },
       (error: any) => {
         console.error('Error al eliminar registro.', error);
+        event.component.cancelEditData(); // cancela en caso de error
       }
     );
-
-    console.log(registro);
-
-    console.log(event);
-    
+  
+    console.log('ID eliminado:', id);
+    console.log('Evento:', event);
   }
+  
 
 }

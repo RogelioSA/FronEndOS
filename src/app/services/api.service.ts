@@ -55,12 +55,31 @@ export class ApiService{
       });
     }
     
-
+ 
+    //departamento
     getDepartamentos(): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Maestro/GetDepartamento`, {
+        return this.https.get(`${this.baseUrl}/general/Departamento`, {
+          headers: this.getHttpHeaders()
         });
     }
 
+    crearDepartamento(data: any): Observable<any> {
+      return this.https.post(`${this.baseUrl}/general/Departamento`, data, {
+        headers: this.getHttpHeaders()
+      });
+    }
+    actualizarDepartamento(id: number, body: any): Observable<any> {
+      return this.https.put(`${this.baseUrl}/general/Departamento/${id}`, body, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
+    eliminarDepartamento(id: number): Observable<any> {
+      return this.https.delete(`${this.baseUrl}/general/Departamento/${id}`, {
+        headers: this.getHttpHeaders()
+      });
+    }
+    
     sincronizarDepartamento(departamento: any ): Observable<any> {
         return this.https.get(`${this.baseUrl}/Maestro/SincronizarDepartamento`, {
           headers: this.getHeaders(),
@@ -91,11 +110,34 @@ export class ApiService{
           params: condicionContract
         });
     }
+    //legal
 
     getContratoTipos(): Observable<any> {
         return this.https.get(`${this.baseUrl}/legal/ContratoTipo`, {
           headers: this.getHttpHeaders()
         });
+    }
+
+    crearContratoTipo(data: any): Observable<any> {
+      return this.https.post(`${this.baseUrl}/legal/ContratoTipo`, {
+          nombre: data.nombre,
+          detalle: data.detalle
+        }, {
+          headers: this.getHttpHeaders()
+        });
+    }
+    actualizarContratoTipo(id: number, data: any): Observable<any> {
+      return this.https.put(`${this.baseUrl}/legal/ContratoTipo/${id}`, {
+          nombre: data.nombre,
+          detalle: data.detalle
+        }, {
+          headers: this.getHttpHeaders()
+        });
+    }
+    eliminarContratoTipo(id: number): Observable<any> {
+      return this.https.delete(`${this.baseUrl}/legal/ContratoTipo/${id}`, {
+        headers: this.getHttpHeaders()
+      });
     }
 
     sincronizarContratoTipo(contratoTipo: any ): Observable<any> {
@@ -159,8 +201,27 @@ export class ApiService{
         });
     }
 
+    //menu
     getMenus(): Observable<any> {
       return this.https.get(`${this.baseUrl}/security/Formulario`, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
+    crearMenu(data: any): Observable<any> {
+      return this.https.post(`${this.baseUrl}/security/Formulario`, data, {
+        headers: this.getHttpHeaders()
+      });
+    }
+    
+    actualizarMenu(id: number, data: any): Observable<any> {
+      return this.https.put(`${this.baseUrl}/security/Formulario/${id}`, data, {
+        headers: this.getHttpHeaders()
+      });
+    }
+    
+    eliminarMenu(id: number): Observable<any> {
+      return this.https.delete(`${this.baseUrl}/security/Formulario/${id}`, {
         headers: this.getHttpHeaders()
       });
     }
@@ -179,7 +240,7 @@ export class ApiService{
     }
 
     sincronizarRolMenu(rol: number, menus: any ): Observable<any> {
-        const url = `${this.baseUrl}/Seguridad/SincronizarRolMenu`;
+        const url = `${this.baseUrl}/security/SincronizarRolMenu`;
         const params = {
             nRol: rol,
             menus: menus
