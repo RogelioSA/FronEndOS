@@ -45,22 +45,29 @@ export class ActivoServicioComponent {
     }
   }
 
-  async traerDepartamentos(){
+  async traerDepartamentos() {
     this.blockUI.start('Cargando...'); // Start blocking
-
+  
     console.log("traer departamentos");
-
-    try{
+  
+    try {
       const obser = this.apiService.getDepartamentos();
       const result = await firstValueFrom(obser);
-
-      this.departamentos = result.data;
-    }catch(error){
-      console.log('Error traendo los departamentos.')
-    }finally{
+  
+      // Aquí ya es un array directo
+      this.departamentos = result.map((d: any) => ({
+        nCodigo: d.id,
+        cNombre: d.nombre,
+        nPaisId: d.paisId ?? 1  // por defecto 1 si viene null
+      }));
+  
+    } catch (error) {
+      console.log('Error trayendo los departamentos.', error);
+    } finally {
       this.blockUI.stop();
     }
   }
+  
 
   guardar(event : any){
     console.log(event);
