@@ -25,7 +25,7 @@ import { MarcacionComponent } from './marcacion/marcacion.component';
 import { TipoActivoServicioComponent } from './tipo-activo-servicio/tipo-activo-servicio.component';
 import { ActivoServicioComponent } from './activo-servicio/activo-servicio.component';
 import { EditActivoComponent } from './edit-activo/edit-activo.component';
-
+import { OrdenesServicioComponent } from './ordenes-servicio/ordenes-servicio.component';
 
 const routes: Routes = [
   //{ path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -59,6 +59,7 @@ const routes: Routes = [
   { path: 'mantenimiento/grupoHorario/horario', component: HorarioComponent, canActivate: [AuthGuard]  },
   { path: 'procesos/marcacion', component: MarcacionComponent, canActivate: [AuthGuard]  },
   { path: 'reporte/marcacion', component: ReporteMarcacionComponent, canActivate: [AuthGuard]  },
+  { path: 'procesos/Servicio', component: OrdenesServicioComponent, canActivate: [AuthGuard]},
 ];
 
 @NgModule({

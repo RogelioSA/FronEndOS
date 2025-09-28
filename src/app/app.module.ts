@@ -36,6 +36,7 @@ import { TipoActivoServicioComponent } from './tipo-activo-servicio/tipo-activo-
 import { ParametroActivoServicioComponent } from './parametro-activo-servicio/parametro-activo-servicio.component';
 import { MarcaComponent } from './marca/marca.component';
 import { EditActivoComponent } from './edit-activo/edit-activo.component';
+import { OrdenesServicioComponent } from './ordenes-servicio/ordenes-servicio.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -65,7 +66,8 @@ import { EditActivoComponent } from './edit-activo/edit-activo.component';
         TipoActivoServicioComponent,
         ParametroActivoServicioComponent,
         MarcaComponent,
-        EditActivoComponent
+        EditActivoComponent,
+        OrdenesServicioComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

@@ -1,0 +1,11 @@
+/* Puedes personalizar colores extra si quieres */
+:host ::ng-deep .dx-datagrid-headers {
+    background-color: #1f2937; /* Tailwind gray-800 */
+    color: white;
+    font-weight: bold;
+  }
+  
+  :host ::ng-deep .dx-datagrid-rowsview .dx-row:nth-child(even) {
+    background-color: #f9fafb; /* Tailwind gray-50 */
+  }
+  

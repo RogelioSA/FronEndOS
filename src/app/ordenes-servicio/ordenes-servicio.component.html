@@ -1,0 +1,131 @@
+<div class="container mx-auto p-2">
+    <!-- Título y botón -->
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-2xl font-bold">Órdenes de Servicio</h2>
+      <button
+      class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+      (click)="crearNuevo()"
+    >
+      Crear Nuevo
+    </button>
+    </div>
+  
+    <!-- Buscador -->
+    <div class="flex justify-end mb-2">
+      <input
+        type="text"
+        placeholder="Buscar..."
+        class="border rounded px-3 py-1 w-64"
+      />
+    </div>
+  
+    <!-- Tabla con DevExtreme -->
+    <dx-data-grid
+      [dataSource]="ordenes"
+      [showBorders]="true"
+      [columnAutoWidth]="true"
+      [rowAlternationEnabled]="true"
+      class="shadow-lg"
+    >
+      <dxo-paging [pageSize]="8"></dxo-paging>
+      <dxo-pager [showPageSizeSelector]="false" [showNavigationButtons]="true"></dxo-pager>
+  
+      <dxi-column dataField="codigo" caption="Código" width="120"></dxi-column>
+    <dxi-column dataField="cliente" caption="Cliente"></dxi-column>
+    <dxi-column dataField="area" caption="Área" width="150"></dxi-column>
+    <dxi-column dataField="servicio" caption="Servicio"></dxi-column>
+  
+      <!-- Opciones de edición/eliminación (simuladas con iconos) -->
+      <dxi-column type="buttons" caption="Acciones" width="120">
+        <dxi-button icon="edit" hint="Editar" [onClick]="editarOrden.bind(this)"></dxi-button>
+        <dxi-button icon="trash" hint="Eliminar" [onClick]="eliminarFila.bind(this)"></dxi-button>
+      </dxi-column>
+    </dx-data-grid>
+
+    <dx-popup
+    [(visible)]="popupVisible"
+    [width]="800"
+    [height]="400"
+    [showTitle]="true"
+    [dragEnabled]="true"
+    [closeOnOutsideClick]="true"
+    [title]="editMode ? 'Editar Orden de Servicio' : 'Nueva Orden de Servicio'"
+  >
+    <div class="grid grid-cols-2 gap-4 p-4">
+      <!-- Lado izquierdo -->
+      <div>
+        <label>Orden Interna *</label>
+        <input
+          class="border w-full px-2 py-1 rounded"
+          [(ngModel)]="selectedOrden.ordenInterna"
+        />
+
+        <label class="block mt-2">Área</label>
+        <input
+          class="border w-full px-2 py-1 rounded"
+          [(ngModel)]="selectedOrden.area"
+        />
+
+        <label class="block mt-2">Correa / Equipo</label>
+        <input
+          class="border w-full px-2 py-1 rounded"
+          [(ngModel)]="selectedOrden.equipo"
+        />
+
+        <label class="block mt-2">Orden de Servicio Base</label>
+        <input
+          class="border w-full px-2 py-1 rounded"
+          [(ngModel)]="selectedOrden.base"
+        />
+      </div>
+
+      <!-- Lado derecho -->
+      <div>
+        <label>Cliente *</label>
+        <input
+          class="border w-full px-2 py-1 rounded"
+          [(ngModel)]="selectedOrden.cliente"
+        />
+
+        <label class="block mt-2">Servicio (Descripción) *</label>
+        <input
+          class="border w-full px-2 py-1 rounded"
+          [(ngModel)]="selectedOrden.servicio"
+        />
+
+        <label class="block mt-2">Tipo de Servicio</label>
+<dx-select-box
+  class="w-full"
+  [items]="tiposServicio"
+  displayExpr="nombre"
+  valueExpr="nombre"
+  [(value)]="selectedOrden.tipoServicio"
+  placeholder="Seleccione un tipo"
+/>
+
+        <label class="block mt-2">Anulado</label>
+        <input
+          type="checkbox"
+          [(ngModel)]="selectedOrden.anulado"
+        />
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex justify-end gap-2 px-6 pb-4">
+      <button
+        class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+        (click)="guardarOrden()"
+      >
+        Guardar Orden de Servicio
+      </button>
+      <button
+        class="border border-yellow-500 text-yellow-500 px-4 py-2 rounded hover:bg-yellow-100"
+        (click)="popupVisible=false"
+      >
+        Cancelar
+      </button>
+    </div>
+  </dx-popup>
+  </div>
+  
