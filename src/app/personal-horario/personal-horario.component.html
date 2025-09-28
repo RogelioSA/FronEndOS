@@ -1,128 +1,130 @@
 <div class="container-fluid">
     <div class="row mt-3 justify-content-md-center mb-4">
-        <div class="col-12">
-            <h3>Personal Horario Mantenimiento</h3>
-        </div> 
+      <div class="col-12">
+        <h3>Personal Horario Mantenimiento</h3>
+      </div>
     </div>
-    <div class="row mt-2 justify-content-md-center mb-4">
-        <div class="col-4">
+  
+    <!-- FILTROS -->
+    <div class="row mt-2 justify-content-md-center mb-4 items-center">
+      <div class="col-4">
+        <dx-select-box
+          displayExpr="cOrdenInterna"
+          [(dataSource)]="ordenes"
+          [(ngModel)]="ordenCombo"
+          placeholder="Selecciona Orden Servicio">
+        </dx-select-box>
+      </div>
+  
+      <div class="col-2">
+        <dx-date-box placeholder="Fecha Desde" [(ngModel)]="fechaDesde"
+                     displayFormat="dd/MM/yyyy" type="date">
+        </dx-date-box>
+      </div>
+  
+      <div class="col-2">
+        <dx-date-box placeholder="Fecha Hasta" [(ngModel)]="fechaHasta"
+                     displayFormat="dd/MM/yyyy" type="date">
+        </dx-date-box>
+      </div>
+  
+      <div class="col-2 text-end">
+        <dx-button text="Buscar" stylingMode="contained" type="default"
+                   icon="fa-solid fa-magnifying-glass" [width]="120"
+                   (onClick)="onBuscar()">
+        </dx-button>
+      </div>
+    </div>
+  
+    <div class="row g-1 mt-2 justify-content-md-center mb-4">
+      <!-- PERSONAL DISPONIBLE -->
+      <div class="col-3">
+        <h5>Personal disponible</h5>
+  
+        <!-- Mensaje si no hay orden/fechas -->
+        <div *ngIf="!ordenCombo || !fechaDesde || !fechaHasta"
+             class="alert alert-warning text-center py-3">
+          Selecciona una orden de servicio y rango de fechas
+        </div>
+  
+        <!-- Grid disponible (muestra todas las filas; sin paginación) -->
+        <dx-data-grid *ngIf="ordenCombo && fechaDesde && fechaHasta"
+          [dataSource]="personalDisponibles"
+          keyExpr="nEmpleado"
+          [showBorders]="true"
+          [selection]="{ mode: 'multiple' }"
+          (onSelectionChanged)="onDisponiblesSelectionChanged($event)">
+          <dxi-column type="selection" width="50"></dxi-column>
+          <dxi-column dataField="cEmpleado" caption="Nombre"></dxi-column>
+
+        </dx-data-grid>
+  
+        <div class="mt-2 flex gap-2 justify-end" *ngIf="ordenCombo && fechaDesde && fechaHasta">
+          <dx-button text="Asignar seleccionados"
+                     [disabled]="!hayDisponiblesSeleccionados"
+                     (onClick)="agregarSeleccionados()">
+          </dx-button>
+        </div>
+      </div>
+  
+      <!-- PERSONAL ASIGNADO -->
+      <div class="col-9">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="flex items-center gap-2">
+            <span>Asignar a seleccionados:</span>
             <dx-select-box
-                #company
-                displayExpr="cOrdenInterna"
-                [inputAttr]="{ 'aria-label': 'Orden Servicio' }"
-                [(dataSource)]="ordenes"
-                label="Selecciona Orden Servicio"
-                [(ngModel)]="ordenCombo"
-                name="ordenCombo"
-            ></dx-select-box>
-        </div>
-        <div class="col-4 pt-2">
-            <input type="week" [(ngModel)]="semana" name="semana" style="height: 33px;">
-        </div>
-        <!-- <div class="col-2">
-            <input type="file" (change)="onFileChange($event)" />
-        </div> -->
-        <div class="col-4 pt-2 text-end">
-            <dx-button text="Buscar"
-                stylingMode="contained"
-                type="default"
-                [width]="120"
-                icon="fa-solid fa-magnifying-glass"
-                (onClick)="buscar()">
+              [dataSource]="horarios" displayExpr="cNombre" valueExpr="nCodigo"
+              [(ngModel)]="horarioParaAsignar"
+              placeholder="Seleccionar horario">
+            </dx-select-box>
+            <dx-button text="Asignar"
+              [disabled]="!horarioParaAsignar || seleccionadosMain.length===0 || !ordenCombo || !fechaDesde || !fechaHasta"
+              (onClick)="asignarHorarioASeleccionados()">
             </dx-button>
-        </div>
-    </div>
-    <div class="row g-1 mt-2 justify-content-md-center mb-4">
-        <div class="col-12">
-            <div id="data-grid">
-                <dx-data-grid
-                id="gridContainer"
-                [dataSource]="personalHorarios"
-                keyExpr="nEmpleado"
-                [showBorders]="true"
-                [showColumnLines]="true"
-                [showRowLines]="true"
-                [allowColumnResizing]="true"
-                [columnAutoWidth]="true"
-                (onRowUpdating)="actualizar($event)"
-                >
-                <dxo-paging [pageSize]="15"> </dxo-paging>
-                <dxo-pager
-                    [visible]="true"
-                    [showPageSizeSelector]="true"
-                    [allowedPageSizes]="[15, 25, 50, 100]"
-                ></dxo-pager>
-                <dxo-editing
-                    mode="cell"
-                    [allowUpdating]="true"
-                    [selectTextOnEditStart]="true"
-                    startEditAction="click"
-                    use-icons="true"
-                >
-                </dxo-editing>
-            
-                <dxi-column dataField="cEmpleado" caption="Nombres" [allowEditing]="false" alignment='left'></dxi-column>
-
-                <dxi-column dataField="nLunes" caption="Lunes" [width]="140" alignment='center'>
-                    <dxo-lookup [dataSource]="horarios" displayExpr="cNombre" valueExpr="nCodigo">
-                    </dxo-lookup>
-                </dxi-column>
-
-                <dxi-column dataField="nMartes" caption="Martes" [width]="140" alignment='center'>
-                    <dxo-lookup [dataSource]="horarios" displayExpr="cNombre" valueExpr="nCodigo">
-                    </dxo-lookup>
-                </dxi-column>
-
-                <dxi-column dataField="nMiercoles" caption="Miércoles" [width]="140" alignment='center'>
-                    <dxo-lookup [dataSource]="horarios" displayExpr="cNombre" valueExpr="nCodigo">
-                    </dxo-lookup>
-                </dxi-column>
-
-                <dxi-column dataField="nJueves" caption="Jueves" [width]="140" alignment='center'>
-                    <dxo-lookup [dataSource]="horarios" displayExpr="cNombre" valueExpr="nCodigo">
-                    </dxo-lookup>
-                </dxi-column>
-
-                <dxi-column dataField="nViernes" caption="Viernes" [width]="140" alignment='center'>
-                    <dxo-lookup [dataSource]="horarios" displayExpr="cNombre" valueExpr="nCodigo">
-                    </dxo-lookup>
-                </dxi-column>
-
-                <dxi-column dataField="nSabado" caption="Sábado" [width]="140" alignment='center'>
-                    <dxo-lookup [dataSource]="horarios" displayExpr="cNombre" valueExpr="nCodigo">
-                    </dxo-lookup>
-                </dxi-column>
-
-                <dxi-column dataField="nDomingo" caption="Domingo" [width]="140" alignment='center'>
-                    <dxo-lookup [dataSource]="horarios" displayExpr="cNombre" valueExpr="nCodigo">
-                    </dxo-lookup>
-                </dxi-column>
-
-                <!-- <dxi-column dataField="prueba" caption="prueba" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column> -->
-                </dx-data-grid>
-
-                <div id="messageBox" style="display: none; background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;">
-                <!-- El mensaje se inyecta aquí -->
-                </div>
-                
-                <block-ui >
-                <!-- Markup here -->
-                </block-ui>
-            </div>
-        </div>
-    </div>
-    <div class="row g-1 mt-2 justify-content-md-center mb-4">
-        <div class="col-2 pt-2 text-end">
-            <dx-button text="Guardar"
-                stylingMode="contained"
-                type="default"
-                [width]="150"
-                icon="fa-solid fa-floppy-disk"
-                [disabled]="desactivarBotonGuardar"
-                (onClick)="enviarPersonalHorario()">
+          </div>
+  
+          <div class="flex gap-2">
+            <dx-button text="Desasignar seleccionados" type="danger"
+              [disabled]="seleccionadosMain.length===0 || !ordenCombo || !fechaDesde || !fechaHasta"
+              (onClick)="desasignarSeleccionados()">
             </dx-button>
+            <dx-button text="Guardar" stylingMode="contained"
+              [disabled]="desactivarBotonGuardar || !ordenCombo || !fechaDesde || !fechaHasta"
+              (onClick)="enviarPersonalHorario()">
+            </dx-button>
+          </div>
         </div>
+  
+        <!-- Mensaje si no hay orden/fechas -->
+        <div *ngIf="!ordenCombo || !fechaDesde || !fechaHasta"
+             class="alert alert-warning text-center py-3">
+          Selecciona una orden de servicio y rango de fechas
+        </div>
+  
+        <!-- Grid principal (muestra todas las filas; sin paginación) -->
+        <dx-data-grid *ngIf="ordenCombo && fechaDesde && fechaHasta"
+          [dataSource]="personalHorarios"
+          keyExpr="nEmpleado"
+          [showBorders]="true"
+          [allowColumnResizing]="true"
+          [columnAutoWidth]="true"
+          [selection]="{ mode: 'multiple' }"
+          (onSelectionChanged)="onMainGridSelectionChanged($event)"
+          (onRowUpdating)="onRowUpdating($event)">
+          <dxo-editing mode="cell" [allowUpdating]="true" startEditAction="click"></dxo-editing>
+  
+          <dxi-column dataField="cEmpleado" caption="Nombres" [allowEditing]="false"></dxi-column>
+  
+          <ng-container *ngFor="let col of columnasFechas">
+            <dxi-column [dataField]="col.field" [caption]="col.caption" [width]="140" alignment="center">
+              <dxo-lookup [dataSource]="horarios" displayExpr="cNombre" valueExpr="nCodigo"></dxo-lookup>
+            </dxi-column>
+          </ng-container>
+        </dx-data-grid>
+      </div>
     </div>
-</div>
-
-<input type="hidden" id="oculto">
+  </div>
+  
+  <!-- Optional small message box -->
+  <div id="messageBox" style="display:none; position:fixed; right:20px; bottom:20px; background:#f8d7da; color:#721c24; padding:10px; border-radius:6px; font-weight:600;"></div>
+  
