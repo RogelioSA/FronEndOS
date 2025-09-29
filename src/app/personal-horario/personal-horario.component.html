@@ -116,7 +116,7 @@
           <dxi-column dataField="cEmpleado" caption="Nombres" [allowEditing]="false" fixedPosition="left" [fixed]="true"></dxi-column>
   
           <ng-container *ngFor="let col of columnasFechas">
-            <dxi-column [dataField]="col.field" [caption]="col.caption" [width]="140" alignment="center">
+            <dxi-column [dataField]="col.field" [caption]="col.caption" [width]="130" alignment="center">
               <dxo-lookup [dataSource]="horarios" displayExpr="cNombre" valueExpr="nCodigo"></dxo-lookup>
             </dxi-column>
           </ng-container>
