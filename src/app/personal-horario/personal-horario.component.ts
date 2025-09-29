@@ -45,11 +45,11 @@ export class PersonalHorarioComponent {
 
   llenarHorariosPrueba() {
     this.horarios = [
-      { nCodigo: 1, cNombre: 'TIEMPO COMPLETO' },
-      { nCodigo: 2, cNombre: 'MEDIO DIA' },
-      { nCodigo: 3, cNombre: 'TURNO MAÑANA' },
-      { nCodigo: 4, cNombre: 'TURNO NOCHE' },
-      { nCodigo: 5, cNombre: 'DESCANSO' }
+      { nCodigo: 1, cNombre: 'TC' },
+      { nCodigo: 2, cNombre: 'MD' },
+      { nCodigo: 3, cNombre: 'TM' },
+      { nCodigo: 4, cNombre: 'TN' },
+      { nCodigo: 5, cNombre: 'D' }
     ];
   }
 

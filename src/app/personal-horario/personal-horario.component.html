@@ -113,7 +113,7 @@
           (onRowUpdating)="onRowUpdating($event)">
           <dxo-editing mode="cell" [allowUpdating]="true" startEditAction="click"></dxo-editing>
   
-          <dxi-column dataField="cEmpleado" caption="Nombres" [allowEditing]="false"></dxi-column>
+          <dxi-column dataField="cEmpleado" caption="Nombres" [allowEditing]="false" fixedPosition="left" [fixed]="true"></dxi-column>
   
           <ng-container *ngFor="let col of columnasFechas">
             <dxi-column [dataField]="col.field" [caption]="col.caption" [width]="140" alignment="center">

@@ -59,7 +59,7 @@ const routes: Routes = [
   { path: 'mantenimiento/grupoHorario/horario', component: HorarioComponent, canActivate: [AuthGuard]  },
   { path: 'procesos/marcacion', component: MarcacionComponent, canActivate: [AuthGuard]  },
   { path: 'reporte/marcacion', component: ReporteMarcacionComponent, canActivate: [AuthGuard]  },
-  { path: 'procesos/Servicio', component: OrdenesServicioComponent, canActivate: [AuthGuard]},
+  { path: 'procesos/servicio', component: OrdenesServicioComponent, canActivate: [AuthGuard]},
 ];
 
 @NgModule({
