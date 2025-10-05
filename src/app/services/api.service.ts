@@ -190,8 +190,15 @@ export class ApiService{
     }
 
     getPersonal(): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Empleado/GetEmpleado`, {
+        return this.https.get(`${this.baseUrl}/general/Persona`, {
+          headers: this.getHttpHeaders()
         });
+    }
+
+    createPersonal(personal: any): Observable<any> {
+      return this.https.post(`${this.baseUrl}/general/Persona`, personal, {
+        headers: this.getHttpHeaders()
+      });
     }
 
     sincronizarPersonal(personal: any ): Observable<any> {
@@ -199,6 +206,73 @@ export class ApiService{
           headers: this.getHeaders(),
           params: personal
         });
+    }
+
+    getSexo(): Observable<any> {
+      return this.https.get(`${this.baseUrl}/general/Sexo`, {
+        headers: this.getHttpHeaders()
+      });
+    }
+    getLicenciaConducir(): Observable<any> {
+      return this.https.get(`${this.baseUrl}/general/LicenciaConducir`, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
+    getDocumentoTipo(): Observable<any> {
+      return this.https.get(`${this.baseUrl}/general/DocumentoTipo`, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
+    getDistritos(): Observable<any> {
+      return this.https.get(`${this.baseUrl}/general/Distrito`, {
+        headers: this.getHttpHeaders()
+      });
+    }
+    
+    updatePersonal(id: number, data: any): Observable<any> {
+      return this.https.put(
+        `${this.baseUrl}/general/Persona/${id}`,
+        data,
+        { headers: this.getHttpHeaders() }
+      );
+    }
+
+    deletePersonal(id: number): Observable<any> {
+      return this.https.delete(
+        `${this.baseUrl}/general/Persona/${id}`,
+        { headers: this.getHttpHeaders() }
+      );
+    }
+
+    getPersonalById(id: number): Observable<any> {
+      return this.https.get(
+        `${this.baseUrl}/rrhh/Personal/${id}`,
+        { headers: this.getHttpHeaders() }
+      );
+    }
+
+    asignarPersonal(data: any): Observable<any> {
+      return this.https.post(
+        `${this.baseUrl}/personal/asignar`,
+        data,
+        { headers: this.getHttpHeaders() }
+      );
+    }
+
+    getPersonas(): Observable<any[]> {
+      return this.https.get<any[]>(
+        `${this.baseUrl}/general/Persona`,
+        { headers: this.getHttpHeaders() }
+      );
+    }
+
+    getHorarios(): Observable<any> {
+      return this.https.get(
+        `${this.baseUrl}/rrhh/Horario`,
+        { headers: this.getHttpHeaders() }
+      );
     }
 
     //menu
@@ -315,11 +389,6 @@ export class ApiService{
         return this.https.get(`${this.baseUrl}/Horario/SincronizarDescanso`, {
           headers: this.getHeaders(),
           params: descanso
-        });
-    }
-
-    getHorarios(): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Horario/GetHorario`, {
         });
     }
 
