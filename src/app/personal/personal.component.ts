@@ -10,7 +10,7 @@ import { BlockUI, NgBlockUI } from 'ng-block-ui';
     standalone: false
 })
 export class PersonalComponent {
-
+  existeAsignacion: boolean = false;
   personal : [] = [];
   cargos : [] = [];
   areas : [] = [];
@@ -435,61 +435,110 @@ asignarPersonal(e: any) {
     return;
   }
 
+  this.popupVisible = true;
+
+  this.selectedPersonal = {
+    empresaId: fila?.empresaId ?? 1,
+    id: id,
+    marcaAsistencia: true,
+    contratoCabeceraId: null,
+    horarioCabeceraId: null,
+    superiorId: null,
+    personalEstadoId: 1
+  };
+
+  this.selectedHorarioId = null;
+
+  if (!this.horarios?.length) this.traerHorarios();
+  if (!this.superiores?.length) this.traerPersonal();
+
   this.apiService.getPersonalById(id).subscribe({
     next: (resp) => {
-      console.log("✅ Personal encontrado:", resp);
+      if (!resp) {
+        // ✅ No hay asignación previa → modo creación
+        this.existeAsignacion = false;
+        console.log("🆕 No existe asignación previa, modo creación");
+        return;
+      }
 
-      // Cargar datos
+      // ✅ Ya existe asignación → modo edición
+      this.existeAsignacion = true;
+      console.log("✏️ Editando asignación existente:", resp);
+
       this.selectedPersonal = {
-        empresaId: resp.empresaId ?? 1,
+        empresaId: resp.empresaId ?? fila?.empresaId ?? 1,
         id: resp.id,
         marcaAsistencia: resp.marcaAsistencia ?? true,
         contratoCabeceraId: resp.contratoCabeceraId ?? null,
-        horarioCabeceraId: resp.horarioCabeceraId ?? null,
-        superiorId: resp.superiorId != null ? Number(resp.superiorId) : null,
+        horarioCabeceraId: resp.horarioCabecera?.id ?? null,
+        superiorId: null,
         personalEstadoId: resp.personalEstadoId ?? 1
       };
 
-      // 🔹 Si ya tiene un superior, fijamos ese valor
-      if (resp.superiorId) {
-        this.selectedPersonal.superiorId = resp.superiorId;
+      if (resp.horarioCabecera?.id) {
+        const horarioSeleccionado = this.horarios.find(
+          (h: any) => h.id === resp.horarioCabecera.id
+        );
+        if (horarioSeleccionado) this.selectedHorarioId = horarioSeleccionado.id;
       }
 
-      this.popupVisible = true;
+      if (resp.persona?.id) {
+        const superiorEncontrado = this.superiores.find(
+          (s: any) => s.id === resp.persona.id
+        );
+        if (superiorEncontrado) {
+          this.selectedPersonal.superiorId = superiorEncontrado.id;
+        }
+      }
     },
     error: (err) => {
-      console.warn("⚠️ No tiene asignación previa, se creará nuevo", err);
-
-      this.selectedPersonal = {
-        empresaId: 1,
-        id: id,
-        marcaAsistencia: true,
-        contratoCabeceraId: null,
-        horarioCabeceraId: null,
-        superiorId: null,
-        personalEstadoId: 1
-      };
-
-      this.popupVisible = true;
+      this.existeAsignacion = false;
+      console.warn("⚠️ No tiene asignación previa o error:", err);
     }
   });
 }
 
 
 guardarAsignacion() {
-  console.log("Asignación a guardar:", this.selectedPersonal);
+  if (!this.selectedPersonal) {
+    console.error("❌ No hay datos seleccionados para guardar.");
+    return;
+  }
 
-  this.apiService.asignarPersonal(this.selectedPersonal).subscribe({
-    next: (resp) => {
-      console.log("✅ Asignación guardada:", resp);
-      this.popupVisible = false;
-    },
-    error: (err) => {
-      console.error("❌ Error al asignar personal:", err);
-    }
-  });
+  // Construimos el payload
+  const payload = {
+    empresaId: this.selectedPersonal.empresaId,
+    id: this.selectedPersonal.id,
+    marcaAsistencia: this.selectedPersonal.marcaAsistencia,
+    contratoCabeceraId: this.selectedPersonal.contratoCabeceraId,
+    horarioCabeceraId: this.selectedHorarioId,
+    superiorId: this.selectedPersonal.superiorId,
+    personalEstadoId: this.selectedPersonal.personalEstadoId
+  };
+
+  console.log("📤 Datos a enviar:", payload);
+
+  // 🔹 Si el registro ya tiene un ID en backend → editar
+  if (this.selectedPersonal.id && this.existeAsignacion) {
+    this.apiService.editarPersonal(this.selectedPersonal.id, payload).subscribe({
+      next: (resp) => {
+        console.log("✅ Personal actualizado correctamente:", resp);
+        this.popupVisible = false;
+      },
+      error: (err) => console.error("❌ Error al actualizar personal:", err)
+    });
+  } 
+  // 🔹 Si no tiene asignación previa → crear
+  else {
+    this.apiService.crearPersonal(payload).subscribe({
+      next: (resp) => {
+        console.log("✅ Personal creado correctamente:", resp);
+        this.popupVisible = false;
+      },
+      error: (err) => console.error("❌ Error al crear personal:", err)
+    });
+  }
 }
-
 
 
 }

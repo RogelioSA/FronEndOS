@@ -24,6 +24,7 @@
                 [allowColumnResizing]="true"
                 [(selectedRowKeys)]="filasSeleccionadasHorario"
                 (onSelectionChanged)="onSelectionChangedGrid($event)"
+                (onSelectionChanged)="mostrarDetalleHorario($event)"
                 >
                 <dxo-paging [pageSize]="15"> </dxo-paging>
                 <dxo-pager
@@ -45,12 +46,9 @@
 
                 <dxi-column dataField="nCodigo" caption="Codigo" [width]="70" [allowEditing]="false" alignment='center'></dxi-column>
                 <dxi-column dataField="cNombre" caption="Nombre"></dxi-column>
+                <dxi-column dataField="cDescripcion" caption="Descripcion"></dxi-column>
                 <dxi-column dataField="cEntrada" caption="Entrada" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
-                <dxi-column dataField="cInicioEntrada" caption="Inicio Entrada" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
-                <dxi-column dataField="cFinalEntrada" caption="Final Entrada" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
                 <dxi-column dataField="cSalida" caption="Salida" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
-                <dxi-column dataField="cInicioSalida" caption="Inicio Salida" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
-                <dxi-column dataField="cFinalSalida" caption="Final Salida" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
                 <dxi-column dataField="nDiasTrabajo" caption="Dias Trabajo" dataType="number" [editorOptions]="{ format: '#'}"></dxi-column>
 
                 <dxi-column type="buttons">
@@ -66,8 +64,19 @@
                 </block-ui>
             </div>
         </div>
+        
         <div class="col-6">
-            <div id="tree-list">
+            <div *ngIf="diasDisponibles.length > 0" class="mb-3">
+                <dx-select-box
+                  [dataSource]="diasDisponibles"
+                  displayExpr="nombre"
+                  valueExpr="diaSemana"
+                  placeholder="Seleccione un día"
+                  [(value)]="diaSeleccionado"
+                  (onValueChanged)="onDiaSeleccionado($event)"
+                ></dx-select-box>
+              </div>
+              <div id="tree-list">
                 <dx-tree-list #treeList
                     [dataSource]="descansos"
                     keyExpr="nCodigo"
@@ -76,6 +85,13 @@
                     [showBorders]="true"
                     [columnAutoWidth]="true"
                     [(selectedRowKeys)]="filasSeleccionadasDescanso"
+                    (onRowUpdating)="actualizarDescanso($event)"
+                    (onRowInserted)="insertarDescanso($event)"
+                    (onRowRemoved)="eliminarDescanso($event)"
+                    (onSaved)="guardandoDescanso($event)"
+                    (onEditingStart)="iniciaEdicionDescanso($event)"
+                    (onEditCanceled)="cancelaEdicionDescanso($event)"
+                    (onInitNewRow)="agregarNuevaFilaDescanso($event)"
                     >
                     <dxo-scrolling mode="standard"></dxo-scrolling>
                     <dxo-paging [enabled]="true" [pageSize]="15"> </dxo-paging>
@@ -88,11 +104,34 @@
                     <dxo-search-panel [visible]="true" width="250"></dxo-search-panel>
                     <dxo-selection mode="multiple" [recursive]="false">
                     </dxo-selection>
+                    <dxo-editing
+                        mode="row"
+                        [allowUpdating]="true"
+                        [allowAdding]="true"
+                        [allowDeleting]="true"
+                        [selectTextOnEditStart]="true"
+                        startEditAction="click"
+                    >
+                    </dxo-editing>
                     <dxi-column dataField="nCodigo" caption="Codigo" [width]="70" [allowEditing]="false" alignment='center'></dxi-column>
-                    <dxi-column dataField="cNombre" caption="Nombre"></dxi-column>
+                    <dxi-column 
+                        dataField="diaSemana" 
+                        caption="Nombre"
+                        [editorOptions]="{
+                            dataSource: diasDisponibles,
+                            displayExpr: 'nombre',
+                            valueExpr: 'diaSemana'
+                        }"
+                    ></dxi-column>
                     <dxi-column dataField="cHoraInicial" caption="Hora Inicial" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
                     <dxi-column dataField="cHoraFinal" caption="Hora Final" dataType='datetime' [editorOptions]="{ type: 'time' }" format="HH:mm:ss"></dxi-column>
                     <dxi-column dataField="nDuracion" caption="Duracion" dataType="number" [editorOptions]="{ format: '#'}"></dxi-column>
+                    <dxi-column type="buttons">
+                        <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
+                        <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
+                        <dxi-button name="save" icon="fa-solid fa-floppy-disk" hint="Guardar"></dxi-button>
+                        <dxi-button name="cancel" icon="fa-solid fa-ban" hint="Cancelar"></dxi-button>
+                    </dxi-column>
                 </dx-tree-list>
             </div>
         </div>

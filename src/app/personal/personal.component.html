@@ -223,6 +223,7 @@
       >
       </dx-select-box>
     </div>
+
     <div>
       <label class="block font-medium">Superior</label>
       <dx-select-box
@@ -230,9 +231,12 @@
         [items]="superiores"
         displayExpr="nombreCompleto"
         valueExpr="id"
+        [showClearButton]="true"
+        [searchEnabled]="true"
         placeholder="Seleccione un superior">
       </dx-select-box>
     </div>
+    
 
     <div>
       <label class="block font-medium">Estado</label>

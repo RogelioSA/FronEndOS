@@ -29,26 +29,33 @@ export class ReporteMarcacionComponent {
 
     //this.traerMarcaciones();
 
-    this.estados = [{ID:'A', Name: 'Activo'},{ID: 'I', Name: 'Inactivo'}];
-
   }
 
-  async traerMarcaciones(fechaInicio: string, fechaFin: string){
-    this.blockUI.start('Cargando...'); // Start blocking
-
-    console.log("traer marcaciones");
-
-    try{
-      const obser = this.apiService.getMarcaciones(fechaInicio, fechaFin);
+  async traerMarcaciones(fechaInicio: string, fechaFin: string) {
+    this.blockUI.start('Cargando...');
+  
+    try {
+      console.log("📅 Trayendo marcaciones desde API...");
+      const obser = this.apiService.getRegistroAsistencia(fechaInicio, fechaFin);
       const result = await firstValueFrom(obser);
-
-      this.marcaciones = result.data;
-    }catch(error){
-      console.log('Error traendo las marcaciones.')
-    }finally{
+  
+      // Mapeo de datos según tus reglas
+      this.marcaciones = result.map((r: any) => ({
+        personal: r.personal?.persona?.nombres || "Sin nombre",
+        fecha: r.fecha ? new Date(r.fecha) : null,
+        fechaJornal: r.fechaJornal ? new Date(r.fechaJornal) : null,
+        tipoEvento: r.tipoEvento === 0 ? "Entrada" : "Salida",
+        esTardanza: r.esTardanza ? "Sí" : "No",
+        diferenciaMinutos: r.diferenciaMinutos
+      }));
+  
+    } catch (error) {
+      console.error('❌ Error trayendo las marcaciones:', error);
+    } finally {
       this.blockUI.stop();
     }
   }
+  
 
   guardar(event : any){
     console.log(event);

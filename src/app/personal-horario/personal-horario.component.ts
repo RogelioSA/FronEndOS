@@ -1,5 +1,8 @@
 import { Component } from '@angular/core';
 import { formatDate } from '@angular/common';
+import { BlockUI, NgBlockUI } from 'ng-block-ui';
+import { firstValueFrom } from 'rxjs';
+import { ApiService } from '../services/api.service';
 
 @Component({
   selector: 'app-personal-horario',
@@ -27,11 +30,11 @@ export class PersonalHorarioComponent {
   horarioParaAsignar: number | null = null;
 
   desactivarBotonGuardar = true;
-
-  constructor() {
+  @BlockUI() blockUI!: NgBlockUI;
+  constructor(private apiService: ApiService) {
     this.llenarOrdenesPrueba();
-    this.llenarHorariosPrueba();
-    this.llenarPersonalDisponiblesPrueba(); // lista grande
+    this.llenarHorarios();
+    this.llenarPersonalDisponibles(); // lista grande
   }
 
   /* ================= Datos de prueba ================= */
@@ -43,45 +46,71 @@ export class PersonalHorarioComponent {
     ];
   }
 
-  llenarHorariosPrueba() {
-    this.horarios = [
-      { nCodigo: 1, cNombre: 'TIEMPO COMPLETO' },
-      { nCodigo: 2, cNombre: 'MEDIO DIA' },
-      { nCodigo: 3, cNombre: 'TURNO MAÑANA' },
-      { nCodigo: 4, cNombre: 'TURNO NOCHE' },
-      { nCodigo: 5, cNombre: 'DESCANSO' }
-    ];
-  }
+  async llenarHorarios() {
+    this.blockUI.start('Cargando horarios...');
+  
+    try {
+      const obser = this.apiService.getHorarios();
+      const result = await firstValueFrom(obser);
+  
+      // ✅ El API devuelve directamente objetos con { id, nombre, descripcion, activo }
+      this.horarios = result.map((h: any) => ({
+        nCodigo: h.id,
+        cNombre: h.nombre
+      }));
+  
+      console.log("Horarios cargados:", this.horarios);
+  
+    } catch (error) {
+      console.error('❌ Error cargando horarios:', error);
+    } finally {
+      this.blockUI.stop();
+    }
+  }  
 
   // Lista grande de disponibles (generada)
-  llenarPersonalDisponiblesPrueba() {
-    const nombres = [
-      'Luis Perez','María Gómez','José Huaman','Ana Quispe','Carlos Rojas',
-      'Marco Díaz','Lucía Castillo','Pedro Alvarado','Sofía Peña','Andrés Molina',
-      'Rosa Vargas','Diego Torres','Natalia Flores','Miguel Herrera','Patricia Ramos',
-      'Javier Salinas','Sandra León','Héctor Vásquez','Verónica Paredes','Raúl Mendoza',
-      'Gabriela Cruz','Esteban León','Fiorella Ruiz','Óscar Tapia','Juliana Soto',
-      'Ricardo Bravo','Mónica Estrada','Samuel Poma','Evelyn Callo','Bruno Arias',
-      'Diana Solis','César Izquierdo','Karen Huerta','Fabián Quispe','Olga Medina',
-      'Iván Cárdenas','Luz Miranda','Renzo Chacón','Mariela Ortega','Nestor Chumpitaz'
-    ];
-    this.personalDisponibles = nombres.map((n, idx) => ({ nEmpleado: 300 + idx, cEmpleado: n }));
+  async llenarPersonalDisponibles() {
+    this.blockUI.start('Cargando personal disponible...');
+  
+    try {
+      const obser = this.apiService.getPersonal();
+      const result = await firstValueFrom(obser);
+  
+      // ✅ Filtrar solo los activos (estado = true)
+      // ✅ Mapear al formato esperado por el grid
+      this.personalDisponibles = result
+        .filter((p: any) => p.estado === true)
+        .map((p: any) => ({
+          nEmpleado: p.id,               // clave única
+          cEmpleado: p.nombreCompleto    // texto mostrado
+        }));
+  
+      console.log("Personal disponibles:", this.personalDisponibles);
+  
+    } catch (error) {
+      console.error('❌ Error cargando personal disponible:', error);
+    } finally {
+      this.blockUI.stop();
+    }
   }
+  
 
   /* ================= Construcción de columnas & preload demo ================= */
-  onBuscar() {
+  async onBuscar() {
     if (!this.ordenCombo || !this.fechaDesde || !this.fechaHasta) {
-      // no hacemos nada; las tablas muestran el mensaje
       return;
     }
+  
     if (this.fechaDesde > this.fechaHasta) {
       this.showMessage('Fecha Desde no puede ser mayor que Fecha Hasta');
       return;
     }
+  
     this.buildDateColumns(this.fechaDesde, this.fechaHasta);
-    this.precargarAsignadosDemo(); // precarga demo con horarios
+    await this.precargarAsignadosReal(); // 🔹 Usamos el método real
     this.desactivarBotonGuardar = false;
   }
+  
 
   buildDateColumns(desde: Date, hasta: Date) {
     this.columnasFechas = [];
@@ -100,29 +129,57 @@ export class PersonalHorarioComponent {
   }
 
   // Pre-carga datos de demo: toma varios disponibles y les asigna horarios ya puestos
-  precargarAsignadosDemo() {
-    // número de precargados (puedes cambiar)
-    const cant = Math.min(10, this.personalDisponibles.length);
-    const precargados = this.personalDisponibles.slice(0, cant);
-
-    // generar filas con horarios alternados
-    const assignedRows = precargados.map((p, idx) => {
-      const row: any = { nEmpleado: p.nEmpleado, cEmpleado: p.cEmpleado };
-      // Ciclar horarios para llenar las columnas
-      for (let i = 0; i < this.columnasFechas.length; i++) {
-        // ejemplo: patrón: 1,2,3,1,2,3...
-        const horarioIdx = (idx + i) % this.horarios.length;
-        row[this.columnasFechas[i].field] = this.horarios[horarioIdx].nCodigo;
-      }
-      return row;
-    });
-
-    // Añadir a personalHorarios y remover de personalDisponibles
-    this.personalHorarios = [...assignedRows];
-
-    const idsPrecargados = new Set(precargados.map(p => p.nEmpleado));
-    this.personalDisponibles = this.personalDisponibles.filter(p => !idsPrecargados.has(p.nEmpleado));
+  async precargarAsignadosReal() {
+    try {
+      this.blockUI.start('Cargando asignaciones reales...');
+  
+      // 🔹 1. Traemos todos los horarios para poder buscarlos por ID
+      const horariosResult = await firstValueFrom(this.apiService.getHorarios());
+      const horariosMap = new Map(
+        horariosResult.map((h: any) => [h.id, h.nombre])
+      );
+  
+      // 🔹 2. Limitamos a 10 para prueba (puedes quitar este límite)
+      const cant = Math.min(10, this.personalDisponibles.length);
+      const precargados = this.personalDisponibles.slice(0, cant);
+  
+      // 🔹 3. Crear filas con los nombres de horario reales
+      const assignedRows = precargados.map((p) => {
+        const row: any = {
+          nEmpleado: p.nEmpleado,
+          cEmpleado: p.cEmpleado
+        };
+  
+        // Obtenemos el ID de horario del personal
+        const horarioId = p.horarioCabeceraId;
+  
+        // Buscamos el nombre en el mapa
+        const nombreHorario = horariosMap.get(horarioId) || 'Sin horario';
+  
+        // Rellenamos todas las columnas de fecha con ese horario
+        for (let i = 0; i < this.columnasFechas.length; i++) {
+          const field = this.columnasFechas[i].field;
+          row[field] = nombreHorario;
+        }
+  
+        return row;
+      });
+  
+      // 🔹 4. Actualizamos la tabla
+      this.personalHorarios = [...assignedRows];
+  
+      const idsPrecargados = new Set(precargados.map((p) => p.nEmpleado));
+      this.personalDisponibles = this.personalDisponibles.filter(
+        (p) => !idsPrecargados.has(p.nEmpleado)
+      );
+  
+    } catch (error) {
+      console.error('❌ Error precargando asignaciones reales:', error);
+    } finally {
+      this.blockUI.stop();
+    }
   }
+  
 
   /* ================= Agregar desde disponibles ================= */
   onDisponiblesSelectionChanged(e: any) {

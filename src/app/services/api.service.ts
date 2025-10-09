@@ -253,9 +253,18 @@ export class ApiService{
       );
     }
 
-    asignarPersonal(data: any): Observable<any> {
+    crearPersonal(data: any): Observable<any> {
       return this.https.post(
-        `${this.baseUrl}/personal/asignar`,
+        `${this.baseUrl}/rrhh/Personal`,
+        data,
+        { headers: this.getHttpHeaders() }
+      );
+    }
+    
+    // 🔹 Editar (actualizar) personal existente
+    editarPersonal(id: number, data: any): Observable<any> {
+      return this.https.put(
+        `${this.baseUrl}/rrhh/Personal/${id}`,
         data,
         { headers: this.getHttpHeaders() }
       );
@@ -275,6 +284,34 @@ export class ApiService{
       );
     }
 
+    createHorario(data: any): Observable<any> {
+      return this.https.post(
+        `${this.baseUrl}/rrhh/Horario`,
+        data,
+        { headers: this.getHttpHeaders() }
+      );
+    }
+
+    updateHorario(id: number, data: any): Observable<any> {
+      return this.https.put(
+        `${this.baseUrl}/rrhh/Horario/${id}`,
+        data,
+        { headers: this.getHttpHeaders() }
+      );
+    }
+    
+    getRegistroAsistencia(fechaInicio: string, fechaFin: string): Observable<any> {
+      const params = {
+        fechaInicio,
+        fechaFin
+      };
+    
+      return this.https.get(
+        `${this.baseUrl}/rrhh/RegistroAsistencia`,
+        { headers: this.getHttpHeaders(), params }
+      );
+    }
+    
     //menu
     getMenus(): Observable<any> {
       return this.https.get(`${this.baseUrl}/security/Formulario`, {
