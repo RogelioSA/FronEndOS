@@ -8,15 +8,13 @@ interface Activo{
   nCodigo: number,
   cNombre: string,
   cDetalle: string,
-  cNumeroSerie: string,
-  cColor: string,
-  nAnioFabricacion: number,
-  nTipoActivoServicio: number,
-  nMarca: number,
-  nModelo: number,
   nClientePropietario: number,
   cTipo: string,
-  parametros: any[]
+  parametros: any[],
+  nCentroCosto: number,
+  nProductoLoteId: number,
+  nDepreciacionMeses: number,
+  cImagenUrl: string,
 }
 
 @Component({
@@ -43,9 +41,7 @@ export class EditActivoComponent {
   fondoBoton: string = '';
   tipoBoton: string = '';
 
-  tipos: [] = [];
-  marcas: [] = [];
-  modelos: [] = [];
+  tipos: { nCodigo: number; cNombre: string }[] = [];
   clientes: [] = [];
   parametros: any[] = [];
 
@@ -61,15 +57,13 @@ export class EditActivoComponent {
       nCodigo: 0,
       cNombre: '',
       cDetalle: '',
-      cNumeroSerie: '',
-      cColor: '',
-      nAnioFabricacion: 0,
-      nTipoActivoServicio: 0,
-      nMarca: 0,
-      nModelo: 0,
       nClientePropietario: 0,
       cTipo: '',
-      parametros: []
+      parametros: [],
+      nCentroCosto: 0,
+      nProductoLoteId: 0,
+      nDepreciacionMeses: 0,
+      cImagenUrl: ''
     }
 
     this.codigoActivo = this.activatedRoute.snapshot.paramMap.get('codActivo');
@@ -81,7 +75,6 @@ export class EditActivoComponent {
     this.blockUI.start('Cargando...'); // Start blocking
 
     await this.traerTiposActivo();
-    await this.traerMarcasActivo();
     await this.traerClientes();
 
     if(this.codigoActivo === null){
@@ -109,78 +102,87 @@ export class EditActivoComponent {
 
   }
 
-  async traerActivoEdicion(codigo: number){
-    console.log("traer activo");
-
-    try{
-      const obser = this.apiService.getActivoPorCodigo(codigo);
-      const result = await firstValueFrom(obser);
-
-      if(result.data !== null){
-        this.activoServicioPrincipal = result.data;
-        console.log(this.activoServicioPrincipal)
-      }else{
-
+  async traerActivoEdicion(id: number) {
+    console.log('Traer activo');
+  
+    try {
+      const result = await firstValueFrom(this.apiService.getActivoPorCodigo(id));
+      const data = result?.data ?? result;
+  
+      // Mapeo completo con todas las propiedades requeridas
+      this.activoServicioPrincipal = {
+        nCodigo: data.id ?? 0,
+        cNombre: data.nombre ?? '',
+        cDetalle: data.descripcion ?? '',
+        nClientePropietario: data.terceroId ?? 0,
+        nCentroCosto: data.centroDeCostosId ?? 0,
+        cTipo: 'actualizar',
+        parametros: data.parametros ?? [],
+        nProductoLoteId: data.productoLoteId ?? 0,
+        nDepreciacionMeses: data.depreciacionMeses ?? 0,
+        cImagenUrl: data.imagenUrl ?? ''
+      };
+  
+      // Cargar datos relacionados si existen
+      if (data.tercero) {
+        console.log('Cliente cargado:', data.tercero.razonSocial);
       }
-    }catch(error){
-      console.log('Error traendo el activo.')
-    }finally{
+  
+      console.log('Activo obtenido:', this.activoServicioPrincipal);
+    } catch (error) {
+      console.error('Error trayendo el activo:', error);
     }
   }
+  
 
-  async traerTiposActivo(){
+  async traerTiposActivo() {
     console.log("traer tipos");
-
-    try{
-      const obser = this.apiService.getTiposActivo();
-      const result = await firstValueFrom(obser);
-
-      this.tipos = result.data;
-    }catch(error){
-      console.log('Error traendo los tipos.')
-    }finally{
+  
+    try {
+      // Intentamos obtener desde la API (por si en el futuro existe)
+      const obser = this.apiService.getTiposActivo?.();
+      const result = obser ? await firstValueFrom(obser) : null;
+  
+      // Si no hay API o devuelve vacío, usamos el valor por defecto
+      this.tipos = (result && result.data?.length > 0)
+        ? result.data
+        : [
+            {
+              nCodigo: 1,
+              cNombre: 'Activo'
+            }
+          ];
+  
+    } catch (error) {
+      console.log('Error trayendo los tipos, usando valor por defecto.', error);
+      // En caso de error, también mostramos el valor por defecto
+      this.tipos = [
+        {
+          nCodigo: 1,
+          cNombre: 'Activo'
+        }
+      ];
     }
-  }
+  }  
 
-  async traerMarcasActivo(){
-    console.log("traer marcas");
-
-    try{
-      const obser = this.apiService.getMarcasActivo();
-      const result = await firstValueFrom(obser);
-
-      this.marcas = result.data;
-    }catch(error){
-      console.log('Error traendo las marcas.')
-    }finally{
-    }
-  }
-
-  async traerModelosActivo(tipoActivo: number){
-    console.log("traer modelos");
-
-    try{
-      const obser = this.apiService.getModelosActivo(tipoActivo);
-      const result = await firstValueFrom(obser);
-
-      this.modelos = result.data;
-    }catch(error){
-      console.log('Error traendo los modelos.')
-    }finally{
-    }
-  }
-
-  async traerClientes(){
+  async traerClientes() {
     console.log("traer clientes");
-
-    try{
+  
+    try {
       const obser = this.apiService.getClientes();
       const result = await firstValueFrom(obser);
-
-      this.clientes = result.data;
-    }catch(error){
-      console.log('Error traendo los clientes.')
-    }finally{
+  
+      // Mapeamos los datos al formato que el dx-select-box espera
+      this.clientes = result.map((x: any) => ({
+        nCodigo: x.id, // 👈 valueExpr
+        cRazonSocial: x.razonSocial, // 👈 displayExpr
+        cDocumento: x.documentoIdentidadFinanciero,
+        cNombreCompleto: x.persona?.nombreCompleto,
+        cDireccion: x.direccionFiscal
+      }));
+  
+    } catch (error) {
+      console.log('Error trayendo los clientes.', error);
     }
   }
 
@@ -209,20 +211,43 @@ export class EditActivoComponent {
     }
   }
 
-  async cambioMarca(event: any){
-    await this.traerModelosActivo(event.value);
-  }
-
   async grabar(){
+    this.blockUI.start('Guardando...'); // Start blocking
+    
+    try {
+      const body = {
+        productoLoteId: this.activoServicioPrincipal.nProductoLoteId,
+        nombre: this.activoServicioPrincipal.cNombre,
+        descripcion: this.activoServicioPrincipal.cDetalle,
+        depreciacionMeses: this.activoServicioPrincipal.nDepreciacionMeses,
+        centroDeCostosId: this.activoServicioPrincipal.nCentroCosto,
+        imagenUrl: this.activoServicioPrincipal.cImagenUrl,
+        terceroId: this.activoServicioPrincipal.nClientePropietario
+      };
 
-    await this.apiService.sincronizarActivo(this.activoServicioPrincipal).subscribe(
-      (response: any) => {
-        this.router.navigate(['/mantenimiento/ordenServicio/activo']);
-      },
-      (error: any) => {
-        console.error('Error al insertar registro.', error);
+      if (this.activoServicioPrincipal.cTipo === 'actualizar') {
+        // Modo edición - usar PUT
+        await firstValueFrom(
+          this.apiService.updateActivo(this.activoServicioPrincipal.nCodigo, body)
+        );
+        console.log('Activo actualizado correctamente');
+      } else {
+        // Modo inserción - usar POST
+        await firstValueFrom(
+          this.apiService.createActivo(body)
+        );
+        console.log('Activo creado correctamente');
       }
-    );
+      
+      this.router.navigate(['/mantenimiento/ordenServicio/activo']);
+      
+    } catch (error) {
+      console.error('Error al guardar el registro:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+      // this.toastr.error('No se pudo guardar el activo');
+    } finally {
+      this.blockUI.stop(); // Stop blocking
+    }
   }
 
   onFormSubmit(event: any){
@@ -254,9 +279,7 @@ export class EditActivoComponent {
   }
 
   async cambiandoTipo(event: any){
-
     await this.traerParametrosActivo(this.tipoActivoSeleccionado.nCodigo);
-
     console.log(this.parametros);
   }
 }

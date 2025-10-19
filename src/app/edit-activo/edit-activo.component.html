@@ -7,307 +7,201 @@
     </div>
     <div class="row g-1 mt-2 justify-content-center">
       <div class="col-12 col-md-8">
-        <dx-tab-panel
-          (value)="selectedIndex"
-          [animationEnabled]="true"
-          >
+        <dx-tab-panel (value)="selectedIndex" [animationEnabled]="true">
           <dxi-item [title]="'DATOS'">
             <div *dxTemplate="let data of 'content'">
-
+        
               <div class="row g-1 mt-2 justify-content-center">
                 <div class="col-12 col-md-6">
-
+        
                   <div class="dx-fieldset">
-
+        
                     <div class="dx-field">
                       <div class="dx-field-value">
-                        <dx-number-box
-                          [inputAttr]="{ 'aria-label': 'Codigo' }"
-                          [disabled]="true"
+                        <dx-number-box 
+                          [inputAttr]="{ 'aria-label': 'Codigo' }" 
+                          [disabled]="true" 
                           label="Codigo"
-                          [stylingMode]="'underlined'"
+                          [stylingMode]="'underlined'" 
                           width="150%"
-                          [(value)]="activoServicioPrincipal.nCodigo"
-                        ></dx-number-box>
+                          [(value)]="activoServicioPrincipal.nCodigo">
+                        </dx-number-box>
                       </div>
                     </div>
-
+        
                     <div class="dx-field">
                       <div class="dx-field-value">
-                        <dx-text-box
-                          [inputAttr]="{ 'aria-label': 'Detalle' }"
-                          label="Detalle"
+                        <dx-text-box 
+                          [inputAttr]="{ 'aria-label': 'Nombre' }" 
+                          label="Nombre" 
                           width="150%"
-                          [stylingMode]="'underlined'"
-                          [(value)]="activoServicioPrincipal.cDetalle"
-                          >
+                          [stylingMode]="'underlined'" 
+                          [(value)]="activoServicioPrincipal.cNombre">
                           <dx-validator>
-                            <dxi-validation-rule
+                            <dxi-validation-rule 
                               type="required"
-                              message="Detalle de activo es obligatorio"
-                            ></dxi-validation-rule>
+                              message="Nombre de activo es obligatorio">
+                            </dxi-validation-rule>
                           </dx-validator>
                         </dx-text-box>
                       </div>
                     </div>
-
+        
                     <div class="dx-field">
                       <div class="dx-field-value">
-                        <dx-text-box
-                          [inputAttr]="{ 'aria-label': 'Color' }"
-                          label="Color"
+                        <dx-text-box 
+                          [inputAttr]="{ 'aria-label': 'Descripcion' }" 
+                          label="Descripción" 
                           width="150%"
-                          [stylingMode]="'underlined'"
-                          [(value)]="activoServicioPrincipal.cColor"
-                          >
+                          [stylingMode]="'underlined'" 
+                          [(value)]="activoServicioPrincipal.cDetalle">
                           <dx-validator>
-                            <dxi-validation-rule
+                            <dxi-validation-rule 
                               type="required"
-                              message="Color de activo es obligatorio"
-                            ></dxi-validation-rule>
+                              message="Descripción de activo es obligatoria">
+                            </dxi-validation-rule>
                           </dx-validator>
                         </dx-text-box>
                       </div>
                     </div>
-
+        
                     <div class="dx-field">
                       <div class="dx-field-value">
-                        <dx-select-box
-                          [inputAttr]="{ 'aria-label': 'Tipo de activo' }"
-                          label="Tipo de activo"
+                        <dx-number-box 
+                          [inputAttr]="{ 'aria-label': 'Centro de Costos' }" 
+                          label="Centro de Costos ID"
+                          [stylingMode]="'underlined'" 
                           width="150%"
-                          [stylingMode]="'underlined'"
-                          [(value)]="activoServicioPrincipal.nTipoActivoServicio"
-                          [dataSource]="tipos"
-                          displayExpr="cNombre"
-                          valueExpr="nCodigo"
-                          validationMessagePosition="top"
-                          (onSelectionChanged) = "cambiandoTipo($event)"
-                          [(selectedItem)]="tipoActivoSeleccionado"
-                          >
+                          [(value)]="activoServicioPrincipal.nCentroCosto">
                           <dx-validator>
-                            <dxi-validation-rule
-                              type="range"
-                              [min]="1"
-                              message="Tipo de activo es obligatorio"
-                            ></dxi-validation-rule>
-                          </dx-validator>
-                        </dx-select-box>
-                      </div>
-                    </div>
-
-                    <div class="dx-field">
-                      <div class="dx-field-value">
-                        <dx-select-box
-                          [inputAttr]="{ 'aria-label': 'Modelo' }"
-                          label="Modelo"
-                          width="150%"
-                          [stylingMode]="'underlined'"
-                          [(value)]="activoServicioPrincipal.nModelo"
-                          [dataSource]="modelos"
-                          displayExpr="cDescripcion"
-                          valueExpr="nCodigo"
-                          validationMessagePosition="top"
-                          >
-                          <dx-validator>
-                            <dxi-validation-rule
-                              type="range"
-                              [min]="1"
-                              message="Modelo de activo es obligatorio"
-                            ></dxi-validation-rule>
-                          </dx-validator>
-                        </dx-select-box>
-                      </div>
-                    </div>
-
-                  </div>
-
-                </div>
-
-                <div class="col-12 col-md-6">
-                  <div class="dx-fieldset">
-
-                    <div class="dx-field">
-                      <div class="dx-field-value">
-                        <dx-text-box
-                          [inputAttr]="{ 'aria-label': 'Nombre' }"
-                          label="Nombre"
-                          [stylingMode]="'underlined'"
-                          width="150%"
-                          [(value)]="activoServicioPrincipal.cNombre"
-                          >
-                          <dx-validator>
-                            <dxi-validation-rule
+                            <dxi-validation-rule 
                               type="required"
-                              message="Nombre de activo es obligatorio"
-                            ></dxi-validation-rule>
-                          </dx-validator>
-                        </dx-text-box>
-                      </div>
-                    </div>
-
-                    <div class="dx-field">
-                      <div class="dx-field-value">
-                        <dx-text-box
-                          [inputAttr]="{ 'aria-label': 'Numero de Serie' }"
-                          label="Numero de Serie"
-                          [stylingMode]="'underlined'"
-                          width="150%"
-                          [(value)]="activoServicioPrincipal.cNumeroSerie"
-                          >
-                          <dx-validator>
-                            <dxi-validation-rule
-                              type="required"
-                              message="Numero de serie de activo es obligatorio"
-                            ></dxi-validation-rule>
-                          </dx-validator>
-                        </dx-text-box>
-                      </div>
-                    </div>
-
-                    <div class="dx-field">
-                      <div class="dx-field-value">
-                        <dx-number-box
-                          [inputAttr]="{ 'aria-label': 'Año de Fabricación' }"
-                          label="Año de Fabricación"
-                          [stylingMode]="'underlined'"
-                          format="#"
-                          width="150%"
-                          [(value)]="activoServicioPrincipal.nAnioFabricacion"
-                          >
-                          <dx-validator>
-                            <dxi-validation-rule
-                              type="required"
-                              message="Año de fabricación de activo es obligatorio"
-                            ></dxi-validation-rule>
-                          </dx-validator>
-                          <dx-validator>
-                            <dxi-validation-rule
-                              type="range"
-                              [min]="1900"
-                              [max]="2100"
-                              message="Año de fabricación invalido"
-                            ></dxi-validation-rule>
+                              message="Centro de costos es obligatorio">
+                            </dxi-validation-rule>
                           </dx-validator>
                         </dx-number-box>
                       </div>
                     </div>
-
-                    <div class="dx-field">
-                      <div class="dx-field-value">
-                        <dx-select-box
-                          [inputAttr]="{ 'aria-label': 'Marca' }"
-                          label="Marca"
-                          width="150%"
-                          [stylingMode]="'underlined'"
-                          [(value)]="activoServicioPrincipal.nMarca"
-                          [dataSource]="marcas"
-                          displayExpr="cDescripcion"
-                          valueExpr="nCodigo"
-                          (onValueChanged)="cambioMarca($event)"
-                          validationMessagePosition="top"
-                          >
-                          <dx-validator>
-                            <dxi-validation-rule
-                              type="range"
-                              [min]="1"
-                              message="Marca de activo es obligatoria"
-                            ></dxi-validation-rule>
-                          </dx-validator>
-                        </dx-select-box>
-                      </div>
-                    </div>
-
-                    <div class="dx-field">
-                      <div class="dx-field-value">
-                        <dx-select-box
-                          [inputAttr]="{ 'aria-label': 'Cliente' }"
-                          label="Cliente"
-                          width="150%"
-                          [stylingMode]="'underlined'"
-                          [(value)]="activoServicioPrincipal.nClientePropietario"
-                          [dataSource]="clientes"
-                          displayExpr="cRazonSocial"
-                          valueExpr="nCodigo"
-                          validationMessagePosition="top"
-                          >
-                          <dx-validator>
-                            <dxi-validation-rule
-                              type="range"
-                              [min]="1"
-                              message="Cliente es obligatorio"
-                            ></dxi-validation-rule>
-                          </dx-validator>
-                        </dx-select-box>
-                      </div>
-                    </div>
-
+        
                   </div>
-
+        
+                </div>
+        
+                <div class="col-12 col-md-6">
+                  <div class="dx-fieldset">
+        
+                    <div class="dx-field">
+                      <div class="dx-field-value">
+                        <dx-select-box 
+                          [inputAttr]="{ 'aria-label': 'Cliente' }" 
+                          label="Cliente (Tercero)" 
+                          width="150%"
+                          [stylingMode]="'underlined'" 
+                          [(value)]="activoServicioPrincipal.nClientePropietario"
+                          [dataSource]="clientes" 
+                          displayExpr="cRazonSocial" 
+                          valueExpr="nCodigo"
+                          validationMessagePosition="top">
+                          <dx-validator>
+                            <dxi-validation-rule 
+                              type="range" 
+                              [min]="1"
+                              message="Cliente es obligatorio">
+                            </dxi-validation-rule>
+                          </dx-validator>
+                        </dx-select-box>
+                      </div>
+                    </div>
+        
+                    <div class="dx-field">
+                      <div class="dx-field-value">
+                        <dx-number-box 
+                          [inputAttr]="{ 'aria-label': 'Producto Lote' }" 
+                          label="Producto Lote ID"
+                          [stylingMode]="'underlined'" 
+                          width="150%"
+                          [(value)]="activoServicioPrincipal.nProductoLoteId">
+                        </dx-number-box>
+                      </div>
+                    </div>
+        
+                    <div class="dx-field">
+                      <div class="dx-field-value">
+                        <dx-number-box 
+                          [inputAttr]="{ 'aria-label': 'Depreciación' }" 
+                          label="Depreciación (Meses)"
+                          [stylingMode]="'underlined'" 
+                          format="#"
+                          width="150%"
+                          [(value)]="activoServicioPrincipal.nDepreciacionMeses">
+                        </dx-number-box>
+                      </div>
+                    </div>
+        
+                    <div class="dx-field">
+                      <div class="dx-field-value">
+                        <dx-text-box 
+                          [inputAttr]="{ 'aria-label': 'Imagen URL' }" 
+                          label="URL de Imagen"
+                          [stylingMode]="'underlined'" 
+                          width="150%"
+                          [(value)]="activoServicioPrincipal.cImagenUrl">
+                        </dx-text-box>
+                      </div>
+                    </div>
+        
+                  </div>
+        
                 </div>
               </div>
             </div>
           </dxi-item>
-
+        
           <dxi-item [title]="'PARAMETROS'">
             <div *dxTemplate="let data of 'content'">
               @if (parametros.length === 0) {
-                <p>Aun no se ha seleccionado tipo de activo.</p>
+              <p>Aun no se ha seleccionado tipo de activo.</p>
               }
               <div class="row g-1 mt-2 justify-content-center">
                 @for (item of parametros; track item) {
-                  <div class="col-12 col-md-6 mt-4">
-                    <dx-text-box
-                      [inputAttr]="{ 'aria-label': 'Codigo' }"
-                      label="{{ item.cNombre }}"
-                      [stylingMode]="'underlined'"
-                      width="87%"
-                      [(value)]=" item.cValor "
-                    ></dx-text-box>
-                  </div>
+                <div class="col-12 col-md-6 mt-4">
+                  <dx-text-box 
+                    [inputAttr]="{ 'aria-label': 'Codigo' }" 
+                    label="{{ item.cNombre }}"
+                    [stylingMode]="'underlined'" 
+                    width="87%" 
+                    [(value)]="item.cValor">
+                  </dx-text-box>
+                </div>
                 }
               </div>
             </div>
           </dxi-item>
-          <!-- <dxi-item [title]="'Tab 3'">
-          <div *dxTemplate="let data of 'content'">
-            <p>Contenido de la Pestaña 3</p>
-          </div>
-        </dxi-item> -->
-      </dx-tab-panel>
-    </div>
-  </div>
-
-  <div class="row g-1 mt-2 justify-content-center">
-
-    <div class="col-md-8">
-      <div class="row justify-content-end">
-        <div class="col-3 text-end">
-          <dx-button [(text)]="textoBoton"
-            stylingMode="contained"
-            [(type)]="tipoBoton"
-            [style.backgroundColor]="fondoBoton"
-            [width]="150"
-            [(icon)]="iconoBoton"
-            [useSubmitBehavior]="true">
-          </dx-button>
-        </div>
-
-        <div class="col-4 text-center">
-          <dx-button text="Cancelar"
-            stylingMode="outlined"
-            type="danger"
-            [width]="150"
-            icon="fa-solid fa-ban"
-            (onClick)="cancelar()">
-          </dx-button>
-        </div>
+        </dx-tab-panel>
       </div>
     </div>
 
+    <div class="row g-1 mt-2 justify-content-center">
+
+      <div class="col-md-8">
+        <div class="row justify-content-end">
+          <div class="col-3 text-end">
+            <dx-button [(text)]="textoBoton" stylingMode="contained" [(type)]="tipoBoton"
+              [style.backgroundColor]="fondoBoton" [width]="150" [(icon)]="iconoBoton" [useSubmitBehavior]="true">
+            </dx-button>
+          </div>
+
+          <div class="col-4 text-center">
+            <dx-button text="Cancelar" stylingMode="outlined" type="danger" [width]="150" icon="fa-solid fa-ban"
+              (onClick)="cancelar()">
+            </dx-button>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
 
   </div>
-
-
-</div>
 </form>

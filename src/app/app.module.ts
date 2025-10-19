@@ -37,6 +37,15 @@ import { ParametroActivoServicioComponent } from './parametro-activo-servicio/pa
 import { MarcaComponent } from './marca/marca.component';
 import { EditActivoComponent } from './edit-activo/edit-activo.component';
 import { OrdenesServicioComponent } from './ordenes-servicio/ordenes-servicio.component';
+import { UbicacionTecnicaComponent } from './ubicacion-tecnica/ubicacion-tecnica.component';
+import { LaborComponent } from './labor/labor.component';
+import { OrdenServicioTipoComponent } from './orden-servicio-tipo/orden-servicio-tipo.component';
+import { CuentaContableComponent } from './cuenta-contable/cuenta-contable.component';
+import { CuentaContableTipoComponent } from './cuenta-contable-tipo/cuenta-contable-tipo.component';
+import { TerceroComponent } from './tercero/tercero.component';
+import { ManttoOrdenservicioComponent } from './mantto-ordenservicio/mantto-ordenservicio.component';
+import { GrupotrabajoComponent } from './grupotrabajo/grupotrabajo.component';
+import { OrdentrabajoComponent } from './ordentrabajo/ordentrabajo.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -67,7 +76,16 @@ import { OrdenesServicioComponent } from './ordenes-servicio/ordenes-servicio.co
         ParametroActivoServicioComponent,
         MarcaComponent,
         EditActivoComponent,
-        OrdenesServicioComponent
+        OrdenesServicioComponent,
+        UbicacionTecnicaComponent,
+        LaborComponent,
+        OrdenServicioTipoComponent,
+        CuentaContableComponent,
+        CuentaContableTipoComponent,
+        TerceroComponent,
+        ManttoOrdenservicioComponent,
+        GrupotrabajoComponent,
+        OrdentrabajoComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

@@ -26,6 +26,15 @@ import { TipoActivoServicioComponent } from './tipo-activo-servicio/tipo-activo-
 import { ActivoServicioComponent } from './activo-servicio/activo-servicio.component';
 import { EditActivoComponent } from './edit-activo/edit-activo.component';
 import { OrdenesServicioComponent } from './ordenes-servicio/ordenes-servicio.component';
+import { UbicacionTecnicaComponent } from './ubicacion-tecnica/ubicacion-tecnica.component';
+import { LaborComponent } from './labor/labor.component';
+import { OrdenServicioTipoComponent } from './orden-servicio-tipo/orden-servicio-tipo.component';
+import { CuentaContableComponent } from './cuenta-contable/cuenta-contable.component';
+import { CuentaContableTipoComponent } from './cuenta-contable-tipo/cuenta-contable-tipo.component';
+import { TerceroComponent } from './tercero/tercero.component';
+import { ManttoOrdenservicioComponent } from './mantto-ordenservicio/mantto-ordenservicio.component';
+import { GrupotrabajoComponent } from './grupotrabajo/grupotrabajo.component';
+import { OrdentrabajoComponent } from './ordentrabajo/ordentrabajo.component';
 
 const routes: Routes = [
   //{ path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -60,6 +69,16 @@ const routes: Routes = [
   { path: 'procesos/marcacion', component: MarcacionComponent, canActivate: [AuthGuard]  },
   { path: 'reporte/marcacion', component: ReporteMarcacionComponent, canActivate: [AuthGuard]  },
   { path: 'procesos/Servicio', component: OrdenesServicioComponent, canActivate: [AuthGuard]},
+  { path: 'patrimonial/UbicacionTecnica', component: UbicacionTecnicaComponent, canActivate: [AuthGuard]},
+  { path: 'mantenimiento/labor', component: LaborComponent, canActivate: [AuthGuard]},
+  { path: 'mantenimiento/ordenserviciotipo', component: OrdenServicioTipoComponent, canActivate: [AuthGuard]},
+  { path: 'contabilidad/cuentacontable', component: CuentaContableComponent, canActivate: [AuthGuard]},
+  { path: 'contabilidad/cuentacontabletipo', component: CuentaContableTipoComponent, canActivate: [AuthGuard]},
+  { path: 'finanzas/tercero', component: TerceroComponent, canActivate: [AuthGuard]},
+  { path: 'mantenimiento/ordenservicio', component: ManttoOrdenservicioComponent, canActivate: [AuthGuard]},
+  { path: 'recursoshumanos/grupotrabajo', component: GrupotrabajoComponent, canActivate: [AuthGuard]},
+  { path: 'recursoshumanos/ordentrabajo', component: OrdentrabajoComponent, canActivate: [AuthGuard]},
+
 ];
 
 @NgModule({

@@ -1,0 +1,138 @@
+<div class="container-fluid">
+    <div class="row justify-content-md-center mt-2">
+      <div class="col-12">
+        <h3>Grupo de Trabajo</h3>
+      </div>
+    </div>
+    
+    <div class="row g-3 mt-2 justify-content-md-center mb-4">
+      <!-- Tabla de Cabeceras (Grupos) -->
+      <div class="col-6">
+        <h5>Grupos de Trabajo</h5>
+        <div id="data-grid">
+          <dx-data-grid
+            id="gridContainer"
+            [dataSource]="cabeceras"
+            keyExpr="id"
+            [showBorders]="true"
+            [rowAlternationEnabled]="true"
+            [showColumnLines]="true"
+            [showRowLines]="true"
+            [allowColumnResizing]="true"
+            [(selectedRowKeys)]="filasSeleccionadasCabecera"
+            (onSelectionChanged)="onSelectionChangedCabecera($event)"
+          >
+            <dxo-paging [pageSize]="15"></dxo-paging>
+            <dxo-pager
+              [visible]="true"
+              [showPageSizeSelector]="true"
+              [allowedPageSizes]="[15, 20, 50]"
+            ></dxo-pager>
+            <dxo-selection mode="single"></dxo-selection>
+          
+            <dxi-column 
+              dataField="id" 
+              caption="ID" 
+              [width]="60"
+              alignment="center"
+            ></dxi-column>
+            
+            <dxi-column 
+              dataField="nombre" 
+              caption="Nombre"
+              [width]="200"
+            ></dxi-column>
+            
+            <dxi-column 
+              dataField="nombreCorto" 
+              caption="Nombre Corto"
+              [width]="130"
+            ></dxi-column>
+            
+            <dxi-column 
+              dataField="estado" 
+              caption="Estado"
+              dataType="boolean"
+              [width]="80"
+              alignment="center"
+            ></dxi-column>
+          </dx-data-grid>
+          
+          <block-ui></block-ui>
+        </div>
+      </div>
+  
+      <!-- Tabla de Personas del Grupo -->
+      <div class="col-6">
+        <h5>Personas del Grupo {{ grupoSeleccionado ? '- ' + grupoSeleccionado.nombre : '' }}</h5>
+        <div id="data-grid-personas">
+          <dx-data-grid
+            [dataSource]="personas"
+            keyExpr="id"
+            [showBorders]="true"
+            [rowAlternationEnabled]="true"
+            [showColumnLines]="true"
+            [showRowLines]="true"
+            [allowColumnResizing]="true"
+            [(selectedRowKeys)]="filasSeleccionadasPersonas"
+            (onSelectionChanged)="onSelectionChangedPersonas($event)"
+          >
+            <dxo-scrolling mode="standard"></dxo-scrolling>
+            <dxo-paging [pageSize]="15"></dxo-paging>
+            <dxo-pager
+              [visible]="true"
+              [showPageSizeSelector]="true"
+              [allowedPageSizes]="[15, 20, 50]"
+              [showInfo]="true"
+            ></dxo-pager>
+            <dxo-selection 
+              mode="multiple" 
+              [showCheckBoxesMode]="'always'"
+            ></dxo-selection>
+            
+            <dxi-column 
+              dataField="id" 
+              caption="ID" 
+              [width]="60"
+              alignment="center"
+            ></dxi-column>
+            
+            <dxi-column 
+              dataField="nombreCompleto" 
+              caption="Nombre Completo"
+            ></dxi-column>
+            
+            <dxi-column 
+              dataField="documentoIdentidad" 
+              caption="Documento"
+              [width]="120"
+              alignment="center"
+            ></dxi-column>
+          </dx-data-grid>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Botón Guardar -->
+    <div class="row justify-content-md-center mb-4">
+      <div class="col-12 text-center">
+        <dx-button 
+          text="Guardar Cambios"
+          stylingMode="contained"
+          type="default"
+          [width]="180"
+          icon="save"
+          (onClick)="guardarCambios()"
+          [disabled]="!grupoSeleccionado"
+        >
+        </dx-button>
+      </div>
+    </div>
+  
+    <dx-toast 
+      [(visible)]="visibleToast" 
+      [type]="mensajeToast.includes('exitosamente') ? 'success' : 'error'" 
+      [message]="mensajeToast"
+      [displayTime]="3000"
+    ></dx-toast>
+  </div>

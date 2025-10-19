@@ -1,0 +1,178 @@
+<div class="container-fluid">
+    <div class="row g-1 mt-2 justify-content-md-center mb-4">
+      <div class="col-12">
+        <h3>Tercero</h3>
+        <div id="data-grid">
+          <dx-data-grid
+            id="gridContainer"
+            [dataSource]="terceros"
+            keyExpr="id"
+            [showBorders]="true"
+            (onRowUpdating)="actualizar($event)"
+            (onRowInserting)="insertar($event)"
+            (onRowRemoving)="eliminar($event)"
+            [columnHidingEnabled]="true"
+            [rowAlternationEnabled]="true"
+            [showColumnLines]="true"
+            [showRowLines]="true"
+            [allowColumnResizing]="true"
+          >
+            <dxo-paging [pageSize]="15"></dxo-paging>
+            <dxo-pager
+              [visible]="true"
+              [showPageSizeSelector]="true"
+              [allowedPageSizes]="[15, 25, 50, 100]"
+            ></dxo-pager>
+            
+            <dxo-editing
+              mode="row"
+              [allowUpdating]="true"
+              [allowAdding]="true"
+              [allowDeleting]="true"
+              [selectTextOnEditStart]="true"
+              [useIcons]="true"
+            >
+            </dxo-editing>
+        
+            <dxi-column 
+              dataField="id" 
+              caption="ID" 
+              [width]="70" 
+              [allowEditing]="false" 
+              alignment="center"
+            ></dxi-column>
+  
+            <dxi-column 
+              dataField="empresaId" 
+              caption="Empresa ID"
+              dataType="number"
+              [width]="110"
+              alignment="center"
+            ></dxi-column>
+  
+            <dxi-column 
+              dataField="documentoIdentidadTipoFinancieroId" 
+              caption="Tipo Doc. ID"
+              dataType="number"
+              [width]="120"
+              alignment="center"
+            >
+              <dxi-validation-rule 
+                type="required" 
+                message="El tipo de documento es requerido"
+              ></dxi-validation-rule>
+            </dxi-column>
+  
+            <dxi-column 
+              dataField="documentoIdentidadTipoFinanciero.nombreCorto" 
+              caption="Tipo Doc."
+              [width]="100"
+              [allowEditing]="false"
+            ></dxi-column>
+  
+            <dxi-column 
+              dataField="documentoIdentidadFinanciero" 
+              caption="Documento"
+              [width]="130"
+            >
+              <dxi-validation-rule 
+                type="required" 
+                message="El documento es requerido"
+              ></dxi-validation-rule>
+              <dxi-validation-rule 
+                type="stringLength" 
+                [max]="20"
+                message="El documento no puede exceder 20 caracteres"
+              ></dxi-validation-rule>
+            </dxi-column>
+            
+            <dxi-column 
+              dataField="razonSocial" 
+              caption="Razón Social"
+              [width]="200"
+            >
+              <dxi-validation-rule 
+                type="required" 
+                message="La razón social es requerida"
+              ></dxi-validation-rule>
+              <dxi-validation-rule 
+                type="stringLength" 
+                [max]="200"
+                message="La razón social no puede exceder 200 caracteres"
+              ></dxi-validation-rule>
+            </dxi-column>
+            
+            <dxi-column 
+              dataField="direccionFiscal" 
+              caption="Dirección Fiscal"
+              [width]="200"
+            >
+              <dxi-validation-rule 
+                type="stringLength" 
+                [max]="250"
+                message="La dirección no puede exceder 250 caracteres"
+              ></dxi-validation-rule>
+            </dxi-column>
+  
+            <dxi-column 
+              dataField="cuentaContablePorCobrarId" 
+              caption="Cuenta por Cobrar"
+              [width]="200"
+              [calculateDisplayValue]="calculateNombreCuentaCobrar"
+            >
+              <dxo-lookup
+                [dataSource]="cuentasContables"
+                valueExpr="id"
+                displayExpr="nombre"
+              >
+              </dxo-lookup>
+              <dxi-validation-rule 
+                type="required" 
+                message="La cuenta por cobrar es requerida"
+              ></dxi-validation-rule>
+            </dxi-column>
+  
+            <dxi-column 
+              dataField="cuentaContablePorPagarId" 
+              caption="Cuenta por Pagar"
+              [width]="200"
+              [calculateDisplayValue]="calculateNombreCuentaPagar"
+            >
+              <dxo-lookup
+                [dataSource]="cuentasContables"
+                valueExpr="id"
+                displayExpr="nombre"
+              >
+              </dxo-lookup>
+              <dxi-validation-rule 
+                type="required" 
+                message="La cuenta por pagar es requerida"
+              ></dxi-validation-rule>
+            </dxi-column>
+  
+            <dxi-column 
+              dataField="persona.nombreCompleto" 
+              caption="Persona"
+              [width]="200"
+              [allowEditing]="false"
+            ></dxi-column>
+  
+            <dxi-column type="buttons" [width]="110">
+              <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
+              <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
+              <dxi-button name="save" icon="save" hint="Guardar"></dxi-button>
+              <dxi-button name="cancel" icon="revert" hint="Cancelar"></dxi-button>
+            </dxi-column>
+          </dx-data-grid>
+  
+          <div 
+            id="messageBox" 
+            style="display: none; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;"
+          >
+          </div>
+          
+          <block-ui></block-ui>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -6,6 +6,23 @@
       <img src="../../assets/conveyorIcono.jpg" alt="Logo" class="w-24 h-14 object-contain rounded-md shadow-sm">
     </div>
 
+    <!-- Select de Empresas -->
+    <div class="flex items-center mx-4">
+      <dx-select-box
+        [dataSource]="usuariosEmpresas"
+        displayExpr="empresa.nombre"
+        valueExpr="empresaId"
+        [(value)]="empresaSeleccionada"
+        [searchEnabled]="true"
+        placeholder="Seleccionar Empresa"
+        [stylingMode]="'outlined'"
+        [width]="250"
+        (onValueChanged)="onEmpresaChange($event)"
+        class="empresa-select">
+        <dxo-drop-down-options [height]="300"></dxo-drop-down-options>
+      </dx-select-box>
+    </div>
+
     <!-- Menú -->
     <div 
       id="menuContainer" 
@@ -24,7 +41,6 @@
         class="text-white font-semibold tracking-wide text-lg">
       </dx-menu>
     </div>
-
 
   </div>
 </div>

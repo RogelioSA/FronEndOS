@@ -28,22 +28,32 @@ export class ActivoServicioComponent {
 
   }
 
-  async traerActivos(){
+  async traerActivos() {
     this.blockUI.start('Cargando...'); // Start blocking
-
     console.log("traer activos");
-
-    try{
-      const obser = this.apiService.getActivos();
+  
+    try {
+      const obser = this.apiService.getActivo();
       const result = await firstValueFrom(obser);
-
-      this.activos = result.data;
-    }catch(error){
-      console.log('Error traendo los activos.')
-    }finally{
+  
+      // Adaptar la estructura
+      this.activos = result.map((x: any) => ({
+        nCodigo: x.id,
+        cNombre: x.nombre,
+        cDetalle: x.descripcion,
+        cNumeroSerie: x.productoLoteId || '-',
+        cColor: x.color || '-',
+        nAnioFabricacion: x.depreciacionMeses || 0,
+        imagenUrl: x.imagenUrl
+      }));
+  
+    } catch (error) {
+      console.log('Error trayendo los activos.', error);
+    } finally {
       this.blockUI.stop();
     }
   }
+  
 
   async traerDepartamentos() {
     this.blockUI.start('Cargando...'); // Start blocking
@@ -73,26 +83,31 @@ export class ActivoServicioComponent {
     console.log(event);
   }
 
-  eliminar(event : any){
-    let registro = {
-      nCodigo : event.data.nCodigo,
-      cTipo : "eliminar",
-      parametros: []
-    };
-
-    this.apiService.sincronizarActivo(registro).subscribe(
-      (response: any) => {
-        this.traerActivos();
-      },
-      (error: any) => {
-        console.error('Error al eliminar registro.', error);
-      }
-    );
-
-    // console.log(registro);
-
-    // console.log(event);
+  async eliminar(event : any){
+    // Confirmación antes de eliminar
+    const confirmacion = confirm(`¿Está seguro de eliminar el activo "${event.data.cNombre}"?`);
     
+    if (!confirmacion) {
+      return; // Si el usuario cancela, no hace nada
+    }
+
+    this.blockUI.start('Eliminando...');
+
+    try {
+      // Llamar al API de eliminación
+      await firstValueFrom(this.apiService.deleteActivo(event.data.nCodigo));
+      
+      console.log('Activo eliminado correctamente');
+      
+      // Recargar la lista de activos
+      await this.traerActivos();
+      
+    } catch (error) {
+      console.error('Error al eliminar el activo:', error);
+      alert('No se pudo eliminar el activo. Por favor, intente nuevamente.');
+    } finally {
+      this.blockUI.stop();
+    }
   }
 
   crearNuevo(){

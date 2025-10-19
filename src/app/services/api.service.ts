@@ -489,7 +489,8 @@ export class ApiService{
     }
 
     getClientes(): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Cliente/GetCliente`, {
+        return this.https.get(`${this.baseUrl}/finanzas/Tercero`, {
+          headers: this.getHttpHeaders()
         });
     }
 
@@ -588,14 +589,597 @@ export class ApiService{
       return this.https.post<any>(url, parametros, { headers: headers, params: params });
     }
 
-    getActivoPorCodigo(codigo: number): Observable<any> {
-      const url = `${this.baseUrl}/OrdenServicio/GetActivoPorCodigo`;
-      const params = {
-          nCodigo: codigo
-        };
+    getActivoPorCodigo(id: number): Observable<any> {
+      const url = `${this.baseUrl}/patrimonial/Activo/${id}`;
       const headers = this.getHeaders();
-      
-      return this.https.get<any>(url, { headers: headers, params: params });
+    
+      return this.https.get<any>(url, { headers });
     }
 
+    getActivo(): Observable<any> {
+      return this.https.get(`${this.baseUrl}/patrimonial/Activo`, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
+    updateActivo(id: number, body: any): Observable<any> {
+      const url = `${this.baseUrl}/patrimonial/Activo/${id}`;
+      const headers = this.getHeaders();
+    
+      return this.https.put<any>(url, body, { headers });
+    }
+
+    createActivo(body: any): Observable<any> {
+      const url = `${this.baseUrl}/patrimonial/Activo`;
+      const headers = this.getHeaders();
+    
+      return this.https.post<any>(url, body, { headers });
+    }
+
+    // En tu archivo api.service.ts, asegúrate de tener estos métodos:
+
+  getUsuariosEmpresa(): Observable<any> {
+    const url = `${this.baseUrl}/security/UsuarioEmpresa`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  getUsuarioEmpresaPorCodigo(id: number): Observable<any> {
+    const url = `${this.baseUrl}/security/UsuarioEmpresa/${id}`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  createUsuarioEmpresa(body: any): Observable<any> {
+    const url = `${this.baseUrl}/security/UsuarioEmpresa`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, body, { headers });
+  }
+
+  updateUsuarioEmpresa(id: number, body: any): Observable<any> {
+    const url = `${this.baseUrl}/security/UsuarioEmpresa/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, body, { headers });
+  }
+
+  deleteUsuarioEmpresa(id: number): Observable<any> {
+    const url = `${this.baseUrl}/security/UsuarioEmpresa/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  changeTenant(body: any): Observable<any> {
+    const url = `${this.baseUrl}/security/Auth/changetenant`;
+    const headers = this.getHeaders();
+
+    return this.https.post<any>(url, body, { headers });
+  }
+
+  deleteActivo(id: number): Observable<any> {
+    const url = `${this.baseUrl}/patrimonial/Activo/${id}`;
+    const headers = this.getHeaders();
+
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //Ubicacion tecnica
+  getUbicacionesTecnicasActivas(): Observable<any> {
+    const url = `${this.baseUrl}/patrimonial/UbicacionTecnica/activas`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  registrarUbicacionTecnica(data: {
+    empresaId: number;
+    nombre: string;
+    activo: boolean;
+    terceroId: number;
+    padreId: number;
+  }): Observable<any> {
+    const url = `${this.baseUrl}/patrimonial/UbicacionTecnica`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  getUbicacionTecnicaPorId(id: number): Observable<any> {
+    const url = `${this.baseUrl}/patrimonial/UbicacionTecnica/${id}`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  actualizarUbicacionTecnica(
+    id: number,
+    data: {
+      empresaId: number;
+      nombre: string;
+      activo: boolean;
+      terceroId: number;
+      padreId: number;
+    }
+  ): Observable<any> {
+    const url = `${this.baseUrl}/patrimonial/UbicacionTecnica/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarUbicacionTecnica(id: number): Observable<any> {
+    const url = `${this.baseUrl}/patrimonial/UbicacionTecnica/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //labor
+
+  getLabores(): Observable<any> {
+    const url = `${this.baseUrl}/mantto/Labor/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  registrarLabor(data: {
+    nombre: string;
+    nombreCorto: string;
+    activo: boolean;
+  }): Observable<any> {
+    const url = `${this.baseUrl}/mantto/Labor`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  actualizarLabor(
+    id: number,
+    data: {
+      nombre: string;
+      nombreCorto: string;
+      activo: boolean;
+    }
+  ): Observable<any> {
+    const url = `${this.baseUrl}/mantto/Labor/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarLabor(id: number): Observable<any> {
+    const url = `${this.baseUrl}/mantto/Labor/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //OrdenServicioTipo
+  getOrdenesServicioTipo(): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenServicioTipo/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  registrarOrdenServicioTipo(data: {
+    nombre: string;
+    nombreCorto: string;
+    estado: boolean;
+  }): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenServicioTipo`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  actualizarOrdenServicioTipo(
+    id: number,
+    data: {
+      nombre: string;
+      nombreCorto: string;
+      estado: boolean;
+    }
+  ): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenServicioTipo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarOrdenServicioTipo(id: number): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenServicioTipo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //cuentas contables
+
+  getCuentasContablesActivas(): Observable<any> {
+    const url = `${this.baseUrl}/contabilidad/CuentaContable/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  registrarCuentaContable(data: {
+    empresaId: number;
+    nombre: string;
+    nombreCorto: string;
+    activo: boolean;
+    es: string;
+    cuentaContableTipoId: number;
+    nivel: number;
+    padreId: number;
+    permiteMovimiento: boolean;
+  }): Observable<any> {
+    const url = `${this.baseUrl}/contabilidad/CuentaContable`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  actualizarCuentaContable(
+    id: number,
+    data: {
+      empresaId: number;
+      nombre: string;
+      nombreCorto: string;
+      activo: boolean;
+      es: string;
+      cuentaContableTipoId: number;
+      nivel: number;
+      padreId: number;
+      permiteMovimiento: boolean;
+    }
+  ): Observable<any> {
+    const url = `${this.baseUrl}/contabilidad/CuentaContable/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarCuentaContable(id: number): Observable<any> {
+    const url = `${this.baseUrl}/contabilidad/CuentaContable/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //cuenta contable tipo
+
+  getCuentaContableTiposActivos(): Observable<any> {
+    const url = `${this.baseUrl}/contabilidad/CuentaContableTipo/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  registrarCuentaContableTipo(data: {
+    nombre: string;
+    nombreCorto: string;
+    activo: boolean;
+  }): Observable<any> {
+    const url = `${this.baseUrl}/contabilidad/CuentaContableTipo`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  actualizarCuentaContableTipo(
+    id: number,
+    data: {
+      nombre: string;
+      nombreCorto: string;
+      activo: boolean;
+    }
+  ): Observable<any> {
+    const url = `${this.baseUrl}/contabilidad/CuentaContableTipo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarCuentaContableTipo(id: number): Observable<any> {
+    const url = `${this.baseUrl}/contabilidad/CuentaContableTipo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //terceros
+
+  getTerceros(): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/Tercero`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  registrarTercero(data: {
+    empresaId: number;
+    // Remover 'id' de aquí si no es necesario al crear
+    documentoIdentidadTipoFinancieroId: number;
+    documentoIdentidadFinanciero: string;
+    razonSocial: string;
+    direccionFiscal: string;
+    cuentaContablePorCobrarId: number;
+    cuentaContablePorPagarId: number;
+  }): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/Tercero`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  actualizarTercero(
+    id: number,
+    data: {
+      empresaId: number;
+      id: number;
+      documentoIdentidadTipoFinancieroId: number;
+      documentoIdentidadFinanciero: string;
+      razonSocial: string;
+      direccionFiscal: string;
+      cuentaContablePorCobrarId: number;
+      cuentaContablePorPagarId: number;
+    }
+  ): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/Tercero/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarTercero(id: number): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/Tercero/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //orden servicio
+
+  getOrdenesServicioMantenimientoExterno(): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenServicio/MantenimientoExterno`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+  
+  registrarOrdenServicioMantenimientoExterno(data: {
+    cabecera: {
+      empresaId: number;
+      ordenServicioTipoId: number;
+      codigoOrdenInterna: string;
+      codigoReferencial: string;
+      descripcion: string;
+      activo: boolean;
+      fechaInicial: string;
+      fechaFinal: string;
+      fechaEntrega: string;
+    };
+    externo: {
+      empresaId: number;
+      clienteId: number;
+      clienteSupervisorId: number;
+      contratoCabeceraId: number;
+      clientePlannerId: number;
+      cotizacionId: number;
+      actaConformidadId: number;
+      monedaId: number;
+      licitacionCodigo: string;
+      cpi: string;
+      fechaEntregaCorreo: string;
+      fechaFianzaInicio: string;
+      fechaFianzaFinal: string;
+      montoBruto: number;
+      montoNeto: number;
+      montoFianza: number;
+      reporteMedicion: string;
+      reporteCalidad: string;
+      fechaEntregaInforme: string;
+      fechaRecepcionHES: string;
+      numeroHES: number;
+      mantenimientoTipoId: number;
+      numeroFactura: string;
+      valorFacturadoNeto: number;
+      fechaFactura: string;
+      fechaRecepcionFactura: string;
+      fechaVencimientoFactura: string;
+      fechaPagoFactura: string;
+    };
+  }): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenServicio/MantenimientoExterno`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  actualizarOrdenServicioMantenimientoExterno(
+    id: number,
+    data: {
+      cabecera: {
+        empresaId: number;
+        ordenServicioTipoId: number;
+        codigoOrdenInterna: string;
+        codigoReferencial: string;
+        descripcion: string;
+        activo: boolean;
+        fechaInicial: string;
+        fechaFinal: string;
+        fechaEntrega: string;
+      };
+      externo: {
+        empresaId: number;
+        clienteId: number;
+        clienteSupervisorId: number;
+        contratoCabeceraId: number;
+        clientePlannerId: number;
+        cotizacionId: number;
+        actaConformidadId: number;
+        monedaId: number;
+        licitacionCodigo: string;
+        cpi: string;
+        fechaEntregaCorreo: string;
+        fechaFianzaInicio: string;
+        fechaFianzaFinal: string;
+        montoBruto: number;
+        montoNeto: number;
+        montoFianza: number;
+        reporteMedicion: string;
+        reporteCalidad: string;
+        fechaEntregaInforme: string;
+        fechaRecepcionHES: string;
+        numeroHES: number;
+        mantenimientoTipoId: number;
+        numeroFactura: string;
+        valorFacturadoNeto: number;
+        fechaFactura: string;
+        fechaRecepcionFactura: string;
+        fechaVencimientoFactura: string;
+        fechaPagoFactura: string;
+      };
+    }
+  ): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenServicio/MantenimientoExterno/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarOrdenServicioMantenimientoExterno(id: number): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenServicio/MantenimientoExterno/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+  
+  // grupo trabajo
+
+  getGruposTrabajo(): Observable<any> {
+    const url = `${this.baseUrl}/rrhh/GrupoTrabajo`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearGrupoTrabajo(data: {
+    cabecera: {
+      empresaId: number;
+      nombre: string;
+      nombreCorto: string;
+      estado: boolean;
+    };
+    personas: {
+      empresaId: number;
+      id: number;
+      personaId: number;
+      esLider: boolean;
+    }[];
+  }): Observable<any> {
+    const url = `${this.baseUrl}/rrhh/GrupoTrabajo`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  actualizarGrupoTrabajo(
+    id: number,
+    data: {
+      cabecera: {
+        empresaId: number;
+        nombre: string;
+        nombreCorto: string;
+        estado: boolean;
+      };
+      personas: {
+        empresaId: number;
+        id: number;
+        personaId: number;
+        esLider: boolean;
+      }[];
+    }
+  ): Observable<any> {
+    const url = `${this.baseUrl}/rrhh/GrupoTrabajo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarGrupoTrabajo(id: number): Observable<any> {
+    const url = `${this.baseUrl}/rrhh/GrupoTrabajo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }  
+  
+  //orden trabajo
+  getOrdenesTrabajoMantenimientoExterno(): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenTrabajo/MantenimientoExterno`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearOrdenTrabajoMantenimientoExterno(data: {
+    cabecera: {
+      empresaId: number;
+      ordenServicioCabeceraId: number;
+      nombre: string;
+      descripcion: string;
+      fechaInicio: string;
+      fechaCompromiso: string;
+      fechaFin: string;
+      grupoTrabajoId: number;
+      ordenTrabajoCabeceraPadreId: number | null;
+      estado: number;
+    };
+    detalles: {
+      detalle: {
+        id: number;
+        empresaId: number;
+        ubicacionTecnicaId: number;
+        laborId: number;
+        horasProyectadas: number;
+        horasEjecutadas: number;
+        descripcion: string;
+        estado: number;
+      };
+      activo: {
+        id: number;
+        empresaId: number;
+        activoId: number;
+      };
+    }[];
+    personas: {
+      id: number;
+      empresaId: number;
+      personaId: number;
+      esLider: boolean;
+    }[];
+  }): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenTrabajo/MantenimientoExterno`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  actualizarOrdenTrabajoMantenimientoExterno(
+    id: number,
+    data: {
+      cabecera: {
+        empresaId: number;
+        ordenServicioCabeceraId: number;
+        nombre: string;
+        descripcion: string;
+        fechaInicio: string;
+        fechaCompromiso: string;
+        fechaFin: string;
+        grupoTrabajoId: number;
+        ordenTrabajoCabeceraPadreId: number | null;
+        estado: number;
+      };
+      detalles: {
+        detalle: {
+          id: number;
+          empresaId: number;
+          ubicacionTecnicaId: number;
+          laborId: number;
+          horasProyectadas: number;
+          horasEjecutadas: number;
+          descripcion: string;
+          estado: number;
+        };
+        activo: {
+          id: number;
+          empresaId: number;
+          activoId: number;
+        };
+      }[];
+      personas: {
+        id: number;
+        empresaId: number;
+        personaId: number;
+        esLider: boolean;
+      }[];
+    }
+  ): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenTrabajo/MantenimientoExterno/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarOrdenTrabajoMantenimientoExterno(id: number): Observable<any> {
+    const url = `${this.baseUrl}/mantto/OrdenTrabajo/MantenimientoExterno/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+  
 }

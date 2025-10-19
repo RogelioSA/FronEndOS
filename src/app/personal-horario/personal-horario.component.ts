@@ -32,18 +32,30 @@ export class PersonalHorarioComponent {
   desactivarBotonGuardar = true;
   @BlockUI() blockUI!: NgBlockUI;
   constructor(private apiService: ApiService) {
-    this.llenarOrdenesPrueba();
+    this.cargarOrdenes();
     this.llenarHorarios();
     this.llenarPersonalDisponibles(); // lista grande
   }
 
-  /* ================= Datos de prueba ================= */
-  llenarOrdenesPrueba() {
-    this.ordenes = [
-      { nCodigo: 101, cOrdenInterna: 'ORD-101 - Mantenimiento A' },
-      { nCodigo: 102, cOrdenInterna: 'ORD-102 - Mantenimiento B' },
-      { nCodigo: 103, cOrdenInterna: 'ORD-103 - Mantenimiento C' }
-    ];
+  
+  async cargarOrdenes(): Promise<void> {
+    try {
+      this.blockUI.start('Cargando órdenes...');
+      
+      const response = await firstValueFrom(
+        this.apiService.getOrdenesServicioMantenimientoExterno()
+      );
+      
+      this.ordenes = response.map((os: any) => ({
+        nCodigo: os.cabecera.id,
+        cOrdenInterna: `${os.cabecera.codigoOrdenInterna} - ${os.cabecera.descripcion}`
+      }));
+      
+      this.blockUI.stop();
+    } catch (error) {
+      this.blockUI.stop();
+      console.error('Error al cargar órdenes:', error);
+    }
   }
 
   async llenarHorarios() {
