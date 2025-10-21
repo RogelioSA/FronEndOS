@@ -2,21 +2,95 @@
     <div class="row">
         <div class="col-12 mb-4 text-center">
             <h2 class="text-center">Marcación</h2>
-            <app-analog-clock #reloj></app-analog-clock>
-            <h3>({{ fecha }})</h3>
-            <h3>{{ claims.cApPater | uppercase }} {{ claims.cApMater | uppercase }} </h3>
-            <h3>{{ claims.cNombres | uppercase }}</h3>
+            
+            <!-- Contenedor de video/cámara -->
+            <div class="video-container" *ngIf="!showStatusCard">
+                <video #videoElement autoplay playsinline class="video-feed"></video>
+                <canvas #canvasElement class="d-none"></canvas>
+            </div>
+
+            <!-- Mostrar imagen capturada cuando se procesa -->
+            <div *ngIf="capturedImage && !showStatusCard" class="captured-image-container">
+                <img [src]="capturedImage" alt="Foto capturada" class="captured-image">
+            </div>
+
+            <app-analog-clock #reloj *ngIf="!showStatusCard"></app-analog-clock>
+            <h3 *ngIf="!showStatusCard">({{ fecha }})</h3>
+            <h3 *ngIf="!showStatusCard">{{ claims.cApPater | uppercase }}, {{ claims.cNombres | uppercase }}</h3>
+            <p *ngIf="!showStatusCard" class="coordinates-text">{{ coordinates }}</p>
         </div>
-        <div class="col-12 text-center">
+
+        <!-- Botón de marcar asistencia -->
+        <div class="col-12 text-center" *ngIf="!showStatusCard">
             <dx-button text="Marcar asistencia"
                     stylingMode="contained"
                     type="default"
                     [width]="250"
                     icon="fa-solid fa-check"
+                    [disabled]="isProcessing"
                     (onClick)="marcar()">
             </dx-button>
         </div>
-        
+
+        <!-- Card de estado del proceso -->
+        <div class="col-12" *ngIf="showStatusCard">
+            <div class="status-card">
+                <div class="status-header">
+                    <i class="fa-solid fa-exclamation-triangle warning-icon"></i>
+                    <h4>Está a punto de registrar su marcación.</h4>
+                    <h4>¿Usted está seguro? <i class="fa-solid fa-question-circle"></i></h4>
+                </div>
+
+                <div class="status-info">
+                    <p class="info-text">
+                        Recuerde que la imagen de su rostro debe aparecer en la foto y 
+                        debe de estar bien centrado, no se considerará una marca válida si no 
+                        se ve su rostro.
+                    </p>
+                </div>
+
+                <div class="status-table">
+                    <div class="status-row">
+                        <div class="status-label">Operación</div>
+                        <div class="status-value">Estado</div>
+                    </div>
+                    <div class="status-row" [ngClass]="{'status-error': statusSteps.creatingMarcacion === 'error', 'status-success': statusSteps.creatingMarcacion === 'success'}">
+                        <div class="status-label">Creando marcación</div>
+                        <div class="status-icon">
+                            <i class="fa-solid fa-circle-xmark" *ngIf="statusSteps.creatingMarcacion === 'error'"></i>
+                            <i class="fa-solid fa-circle-check" *ngIf="statusSteps.creatingMarcacion === 'success'"></i>
+                            <i class="fa-regular fa-clock" *ngIf="statusSteps.creatingMarcacion === 'pending'"></i>
+                        </div>
+                    </div>
+                    <div class="status-row" [ngClass]="{'status-success': statusSteps.creatingDirectory === 'success'}">
+                        <div class="status-label">Creando directorio de marcación</div>
+                        <div class="status-icon">
+                            <i class="fa-solid fa-circle-check" *ngIf="statusSteps.creatingDirectory === 'success'"></i>
+                            <i class="fa-regular fa-clock" *ngIf="statusSteps.creatingDirectory === 'pending'"></i>
+                        </div>
+                    </div>
+                    <div class="status-row" [ngClass]="{'status-success': statusSteps.registeringPhoto === 'success'}">
+                        <div class="status-label">Registrando foto</div>
+                        <div class="status-icon">
+                            <i class="fa-solid fa-circle-check" *ngIf="statusSteps.registeringPhoto === 'success'"></i>
+                            <i class="fa-regular fa-clock" *ngIf="statusSteps.registeringPhoto === 'pending'"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="error-message" *ngIf="hasError">
+                    <p>Hubo un error en el registro de la marcación, contacte al administrador del sistema.</p>
+                </div>
+
+                <div class="button-container">
+                    <dx-button text="Cerrar"
+                            stylingMode="contained"
+                            type="danger"
+                            [width]="120"
+                            (onClick)="cerrarStatus()">
+                    </dx-button>
+                </div>
+            </div>
+        </div>
     </div>
-    
 </div>

@@ -55,31 +55,6 @@ export class ApiService{
       });
     }
     
- 
-    //departamento
-    getDepartamentos(): Observable<any> {
-        return this.https.get(`${this.baseUrl}/general/Departamento`, {
-          headers: this.getHttpHeaders()
-        });
-    }
-
-    crearDepartamento(data: any): Observable<any> {
-      return this.https.post(`${this.baseUrl}/general/Departamento`, data, {
-        headers: this.getHttpHeaders()
-      });
-    }
-    actualizarDepartamento(id: number, body: any): Observable<any> {
-      return this.https.put(`${this.baseUrl}/general/Departamento/${id}`, body, {
-        headers: this.getHttpHeaders()
-      });
-    }
-
-    eliminarDepartamento(id: number): Observable<any> {
-      return this.https.delete(`${this.baseUrl}/general/Departamento/${id}`, {
-        headers: this.getHttpHeaders()
-      });
-    }
-    
     sincronizarDepartamento(departamento: any ): Observable<any> {
         return this.https.get(`${this.baseUrl}/Maestro/SincronizarDepartamento`, {
           headers: this.getHeaders(),
@@ -206,29 +181,6 @@ export class ApiService{
           headers: this.getHeaders(),
           params: personal
         });
-    }
-
-    getSexo(): Observable<any> {
-      return this.https.get(`${this.baseUrl}/general/Sexo`, {
-        headers: this.getHttpHeaders()
-      });
-    }
-    getLicenciaConducir(): Observable<any> {
-      return this.https.get(`${this.baseUrl}/general/LicenciaConducir`, {
-        headers: this.getHttpHeaders()
-      });
-    }
-
-    getDocumentoTipo(): Observable<any> {
-      return this.https.get(`${this.baseUrl}/general/DocumentoTipo`, {
-        headers: this.getHttpHeaders()
-      });
-    }
-
-    getDistritos(): Observable<any> {
-      return this.https.get(`${this.baseUrl}/general/Distrito`, {
-        headers: this.getHttpHeaders()
-      });
     }
     
     updatePersonal(id: number, data: any): Observable<any> {
@@ -1182,4 +1134,412 @@ export class ApiService{
     return this.https.delete<any>(url, { headers });
   }
   
+  //marcacion
+  registrarAsistencia(empresaId: number, personalId: number): Observable<any> {
+    const url = `${this.baseUrl}/rrhh/RegistroAsistencia/serverdt`;
+    const headers = this.getHeaders();
+    const body = {
+      empresaId,
+      personalId
+    };
+  
+    return this.https.post<any>(url, body, { headers });
+  }
+
+  //modulo
+  listarModulos(): Observable<any> {
+    const url = `${this.baseUrl}/security/Modulo`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearModulo(data: any): Observable<any> {
+    const url = `${this.baseUrl}/security/Modulo`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarModulo(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/security/Modulo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarModulo(id: number): Observable<any> {
+    const url = `${this.baseUrl}/security/Modulo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //empresa
+  listarEmpresasActivas(): Observable<any> {
+    const url = `${this.baseUrl}/corporativo/Empresa/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearEmpresa(data: any): Observable<any> {
+    const url = `${this.baseUrl}/corporativo/Empresa`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarEmpresa(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/corporativo/Empresa/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarEmpresa(id: number): Observable<any> {
+    const url = `${this.baseUrl}/corporativo/Empresa/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //centro de costos
+  listarCentrosDeCostosActivos(): Observable<any> {
+    const url = `${this.baseUrl}/costos/CentroDeCostos/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearCentroDeCostos(data: any): Observable<any> {
+    const url = `${this.baseUrl}/costos/CentroDeCostos`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarCentroDeCostos(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/costos/CentroDeCostos/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarCentroDeCostos(id: number): Observable<any> {
+    const url = `${this.baseUrl}/costos/CentroDeCostos/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+  
+  //cuenta corriente
+  listarCuentasCorrientesActivas(): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/CuentaCorriente/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearCuentaCorriente(data: any): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/CuentaCorriente`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarCuentaCorriente(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/CuentaCorriente/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarCuentaCorriente(id: number): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/CuentaCorriente/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //entidad financiera
+  listarEntidadesFinancierasActivas(): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/EntidadFinanciera/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearEntidadFinanciera(data: any): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/EntidadFinanciera`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarEntidadFinanciera(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/EntidadFinanciera/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarEntidadFinanciera(id: number): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/EntidadFinanciera/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //financiero
+ 
+  //mantenimiento tipo
+  listarMantenimientosActivos(): Observable<any> {
+    const url = `${this.baseUrl}/mantto/MantenimientoTipo/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearMantenimientoTipo(data: any): Observable<any> {
+    const url = `${this.baseUrl}/mantto/MantenimientoTipo`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarMantenimientoTipo(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/mantto/MantenimientoTipo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarMantenimientoTipo(id: number): Observable<any> {
+    const url = `${this.baseUrl}/mantto/MantenimientoTipo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+  
+  //almacen
+  listarAlmacenesActivos(): Observable<any> {
+    const url = `${this.baseUrl}/logistica/Almacen/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearAlmacen(data: {
+    empresaId: number;
+    nombre: string;
+    nombreCorto: string;
+    distritoId: number;
+    direccion: string;
+    latitud: number;
+    longitud: number;
+    activo: boolean;
+  }): Observable<any> {
+    const url = `${this.baseUrl}/logistica/Almacen`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarAlmacen(
+    id: number,
+    data: {
+      empresaId: number;
+      nombre: string;
+      nombreCorto: string;
+      distritoId: number;
+      direccion: string;
+      latitud: number;
+      longitud: number;
+      activo: boolean;
+    }
+  ): Observable<any> {
+    const url = `${this.baseUrl}/logistica/Almacen/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarAlmacen(id: number): Observable<any> {
+    const url = `${this.baseUrl}/logistica/Almacen/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //distrito
+  getDistritos(): Observable<any> {
+    return this.https.get(`${this.baseUrl}/general/Distrito`, {
+      headers: this.getHttpHeaders()
+    });
+  }
+
+  crearDistrito(distrito: { nombre: string; provinciaId: number }): Observable<any> {
+    const url = `${this.baseUrl}/general/Distrito`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, distrito, { headers });
+  }
+
+  editarDistrito(id: number, distrito: { nombre: string; provinciaId: number }): Observable<any> {
+    const url = `${this.baseUrl}/general/Distrito/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, distrito, { headers });
+  }
+
+  eliminarDistrito(id: number): Observable<any> {
+    const url = `${this.baseUrl}/general/Distrito/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //provincia
+  listarProvincias(): Observable<any> {
+    const url = `${this.baseUrl}/general/Provincia`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearProvincia(payload: { nombre: string; departamentoId: number }): Observable<any> {
+    const url = `${this.baseUrl}/general/Provincia`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, payload, { headers });
+  }
+
+  editarProvincia(id: number, payload: { nombre: string; departamentoId: number }): Observable<any> {
+    const url = `${this.baseUrl}/general/Provincia/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, payload, { headers });
+  }
+
+  eliminarProvincia(id: number): Observable<any> {
+    const url = `${this.baseUrl}/general/Provincia/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //departamento
+  getDepartamentos(): Observable<any> {
+      return this.https.get(`${this.baseUrl}/general/Departamento`, {
+        headers: this.getHttpHeaders()
+      });
+  }
+
+  crearDepartamento(data: any): Observable<any> {
+    return this.https.post(`${this.baseUrl}/general/Departamento`, data, {
+      headers: this.getHttpHeaders()
+    });
+  }
+  actualizarDepartamento(id: number, body: any): Observable<any> {
+    return this.https.put(`${this.baseUrl}/general/Departamento/${id}`, body, {
+      headers: this.getHttpHeaders()
+    });
+  }
+
+  eliminarDepartamento(id: number): Observable<any> {
+    return this.https.delete(`${this.baseUrl}/general/Departamento/${id}`, {
+      headers: this.getHttpHeaders()
+    });
+  }
+
+  //pais
+  listarPaises(): Observable<any> {
+    const url = `${this.baseUrl}/general/Pais`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearPais(data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/Pais`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarPais(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/Pais/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarPais(id: number): Observable<any> {
+    const url = `${this.baseUrl}/general/Pais/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //sexo
+  getSexo(): Observable<any> {
+    return this.https.get(`${this.baseUrl}/general/Sexo`, {
+      headers: this.getHttpHeaders()
+    });
+  }
+
+  crearSexo(data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/Sexo`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarSexo(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/Sexo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarSexo(id: number): Observable<any> {
+    const url = `${this.baseUrl}/general/Sexo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //licenciaconducir
+  getLicenciaConducir(): Observable<any> {
+    return this.https.get(`${this.baseUrl}/general/LicenciaConducir`, {
+      headers: this.getHttpHeaders()
+    });
+  }
+
+  crearLicenciaConducir(data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/LicenciaConducir`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarLicenciaConducir(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/LicenciaConducir/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarLicenciaConducir(id: number): Observable<any> {
+    const url = `${this.baseUrl}/general/LicenciaConducir/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //documento tipo
+  getDocumentoTipo(): Observable<any> {
+    return this.https.get(`${this.baseUrl}/general/DocumentoTipo`, {
+      headers: this.getHttpHeaders()
+    });
+  }
+
+  crearDocumentoTipo(data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/DocumentoTipo`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarDocumentoTipo(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/DocumentoTipo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarDocumentoTipo(id: number): Observable<any> {
+    const url = `${this.baseUrl}/general/DocumentoTipo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //documento identidad tipo
+  listarDocumentoIdentidadTipo(): Observable<any> {
+    const url = `${this.baseUrl}/general/DocumentoIdentidadTipo`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearDocumentoIdentidadTipo(data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/DocumentoIdentidadTipo`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarDocumentoIdentidadTipo(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/DocumentoIdentidadTipo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarDocumentoIdentidadTipo(id: number): Observable<any> {
+    const url = `${this.baseUrl}/general/DocumentoIdentidadTipo/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
 }

@@ -35,6 +35,16 @@ import { TerceroComponent } from './tercero/tercero.component';
 import { ManttoOrdenservicioComponent } from './mantto-ordenservicio/mantto-ordenservicio.component';
 import { GrupotrabajoComponent } from './grupotrabajo/grupotrabajo.component';
 import { OrdentrabajoComponent } from './ordentrabajo/ordentrabajo.component';
+import { ModuloComponent } from './modulo/modulo.component';
+import { EmpresaComponent } from './empresa/empresa.component';
+import { CentrocostosComponent } from './centrocostos/centrocostos.component';
+import { EntidadfinancieraComponent } from './entidadfinanciera/entidadfinanciera.component';
+import { MantenimientotipoComponent } from './mantenimientotipo/mantenimientotipo.component';
+import { SexoComponent } from './sexo/sexo.component';
+import { LicenciaconducirComponent } from './licenciaconducir/licenciaconducir.component';
+import { DocumentotipoComponent } from './documentotipo/documentotipo.component';
+import { DocumentoidentidadtipoComponent } from './documentoidentidadtipo/documentoidentidadtipo.component';
+import { PaisComponent } from './pais/pais.component';
 
 const routes: Routes = [
   //{ path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -58,7 +68,7 @@ const routes: Routes = [
   { path: 'mantenimiento/personal/personalHorario', component: PersonalHorarioComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/menu', component: MenuComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/ordenServicio/tipoServicio', component: TipoServicioComponent, canActivate: [AuthGuard]  },
-  { path: 'mantenimiento/ordenServicio/clientes', component: ClienteComponent, canActivate: [AuthGuard]  },
+  { path: 'mantenimiento/ordenServicio/clientes', component: TerceroComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/ordenServicio/tipoActivoServicio', component: TipoActivoServicioComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/ordenServicio/marcaActivoServicio', component: MarcaComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/ordenServicio/activo', component: ActivoServicioComponent, canActivate: [AuthGuard]  },
@@ -74,10 +84,21 @@ const routes: Routes = [
   { path: 'mantenimiento/ordenserviciotipo', component: OrdenServicioTipoComponent, canActivate: [AuthGuard]},
   { path: 'contabilidad/cuentacontable', component: CuentaContableComponent, canActivate: [AuthGuard]},
   { path: 'contabilidad/cuentacontabletipo', component: CuentaContableTipoComponent, canActivate: [AuthGuard]},
-  { path: 'finanzas/tercero', component: TerceroComponent, canActivate: [AuthGuard]},
+  //{ path: 'finanzas/tercero', component: TerceroComponent, canActivate: [AuthGuard]},
   { path: 'mantenimiento/ordenservicio', component: ManttoOrdenservicioComponent, canActivate: [AuthGuard]},
   { path: 'recursoshumanos/grupotrabajo', component: GrupotrabajoComponent, canActivate: [AuthGuard]},
-  { path: 'recursoshumanos/ordentrabajo', component: OrdentrabajoComponent, canActivate: [AuthGuard]},
+  { path: 'procesos/ordentrabajo', component: OrdentrabajoComponent, canActivate: [AuthGuard]},
+  { path: 'seguridad/modulo', component: ModuloComponent, canActivate: [AuthGuard]},
+  { path: 'corporativo/empresa', component: EmpresaComponent, canActivate: [AuthGuard]},
+  { path: 'costos/centrocostos', component: CentrocostosComponent, canActivate: [AuthGuard]},
+  { path: 'finanzas/entidadfinanciera', component: EntidadfinancieraComponent, canActivate: [AuthGuard]},
+  { path: 'mantenimiento/mantenimientotipo', component: MantenimientotipoComponent, canActivate: [AuthGuard]},
+  { path: 'general/sexo', component: SexoComponent, canActivate: [AuthGuard]},
+  { path: 'general/licenciaconducir', component: LicenciaconducirComponent, canActivate: [AuthGuard]},
+  { path: 'general/documentotipo', component: DocumentotipoComponent, canActivate: [AuthGuard]},
+  { path: 'general/documentoidentidadtipo', component: DocumentoidentidadtipoComponent, canActivate: [AuthGuard]},
+  { path: 'general/pais', component: PaisComponent, canActivate: [AuthGuard]},
+
 
 ];
 

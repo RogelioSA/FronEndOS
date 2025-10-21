@@ -46,6 +46,17 @@ import { TerceroComponent } from './tercero/tercero.component';
 import { ManttoOrdenservicioComponent } from './mantto-ordenservicio/mantto-ordenservicio.component';
 import { GrupotrabajoComponent } from './grupotrabajo/grupotrabajo.component';
 import { OrdentrabajoComponent } from './ordentrabajo/ordentrabajo.component';
+import { ModuloComponent } from './modulo/modulo.component';
+import { EmpresaComponent } from './empresa/empresa.component';
+import { CentrocostosComponent } from './centrocostos/centrocostos.component';
+import { EntidadfinancieraComponent } from './entidadfinanciera/entidadfinanciera.component';
+import { MantenimientotipoComponent } from './mantenimientotipo/mantenimientotipo.component';
+import { AlmacenComponent } from './almacen/almacen.component';
+import { SexoComponent } from './sexo/sexo.component';
+import { LicenciaconducirComponent } from './licenciaconducir/licenciaconducir.component';
+import { DocumentotipoComponent } from './documentotipo/documentotipo.component';
+import { DocumentoidentidadtipoComponent } from './documentoidentidadtipo/documentoidentidadtipo.component';
+import { PaisComponent } from './pais/pais.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -85,7 +96,18 @@ import { OrdentrabajoComponent } from './ordentrabajo/ordentrabajo.component';
         TerceroComponent,
         ManttoOrdenservicioComponent,
         GrupotrabajoComponent,
-        OrdentrabajoComponent
+        OrdentrabajoComponent,
+        ModuloComponent,
+        EmpresaComponent,
+        CentrocostosComponent,
+        EntidadfinancieraComponent,
+        MantenimientotipoComponent,
+        AlmacenComponent,
+        SexoComponent,
+        LicenciaconducirComponent,
+        DocumentotipoComponent,
+        DocumentoidentidadtipoComponent,
+        PaisComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,
