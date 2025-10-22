@@ -2,37 +2,30 @@ import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
-
-interface Almacen {
-  id: number;
-  empresaId: number;
-  nombre: string;
-  nombreCorto: string;
-  distritoId: number;
-  direccion: string;
-  latitud: number;
-  longitud: number;
-  activo: boolean;
-  distrito?: any;
-}
-
 interface Distrito {
   id: number;
   nombre: string;
   provinciaId: number;
+  provincia?: any;
+}
+
+interface Provincia {
+  id: number;
+  nombre: string;
+  departamentoId: number;
 }
 
 @Component({
-  selector: 'app-almacen',
+  selector: 'app-distrito',
   standalone: false,
-  templateUrl: './almacen.component.html',
-  styleUrl: './almacen.component.css'
+  templateUrl: './distrito.component.html',
+  styleUrl: './distrito.component.css'
 })
-export class AlmacenComponent implements OnInit {
+export class DistritoComponent implements OnInit {
   @BlockUI() blockUI!: NgBlockUI;
   
-  almacenes: Almacen[] = [];
   distritos: Distrito[] = [];
+  provincias: Provincia[] = [];
 
   constructor(private apiService: ApiService) {}
 
@@ -44,17 +37,17 @@ export class AlmacenComponent implements OnInit {
     try {
       this.blockUI.start('Cargando datos...');
       
-      // Cargar distritos para el lookup
+      // Cargar provincias para el lookup
+      const provinciasResponse = await firstValueFrom(
+        this.apiService.listarProvincias()
+      );
+      this.provincias = provinciasResponse;
+      
+      // Cargar distritos
       const distritosResponse = await firstValueFrom(
         this.apiService.getDistritos()
       );
       this.distritos = distritosResponse;
-      
-      // Cargar almacenes
-      const almacenesResponse = await firstValueFrom(
-        this.apiService.listarAlmacenesActivos()
-      );
-      this.almacenes = almacenesResponse;
       
       this.blockUI.stop();
     } catch (error) {
@@ -69,26 +62,20 @@ export class AlmacenComponent implements OnInit {
       this.blockUI.start('Guardando...');
       
       const nuevoRegistro = {
-        empresaId: event.data.empresaId || 1,
         nombre: event.data.nombre,
-        nombreCorto: event.data.nombreCorto,
-        distritoId: event.data.distritoId,
-        direccion: event.data.direccion || '',
-        latitud: event.data.latitud || 0,
-        longitud: event.data.longitud || 0,
-        activo: event.data.activo !== undefined ? event.data.activo : true
+        provinciaId: event.data.provinciaId
       };
 
       await firstValueFrom(
-        this.apiService.crearAlmacen(nuevoRegistro)
+        this.apiService.crearDistrito(nuevoRegistro)
       );
       
       await this.cargarDatos();
       this.blockUI.stop();
-      this.mostrarMensaje('Almacén creado exitosamente', 'success');
+      this.mostrarMensaje('Distrito creado exitosamente', 'success');
     } catch (error) {
       this.blockUI.stop();
-      this.mostrarMensaje('Error al crear el almacén', 'error');
+      this.mostrarMensaje('Error al crear el distrito', 'error');
       console.error('Error:', error);
     }
   }
@@ -98,26 +85,20 @@ export class AlmacenComponent implements OnInit {
       this.blockUI.start('Actualizando...');
       
       const datosActualizados = {
-        empresaId: event.newData.empresaId ?? event.oldData.empresaId,
         nombre: event.newData.nombre ?? event.oldData.nombre,
-        nombreCorto: event.newData.nombreCorto ?? event.oldData.nombreCorto,
-        distritoId: event.newData.distritoId ?? event.oldData.distritoId,
-        direccion: event.newData.direccion ?? event.oldData.direccion,
-        latitud: event.newData.latitud ?? event.oldData.latitud,
-        longitud: event.newData.longitud ?? event.oldData.longitud,
-        activo: event.newData.activo ?? event.oldData.activo
+        provinciaId: event.newData.provinciaId ?? event.oldData.provinciaId
       };
 
       await firstValueFrom(
-        this.apiService.editarAlmacen(event.key, datosActualizados)
+        this.apiService.editarDistrito(event.key, datosActualizados)
       );
       
       await this.cargarDatos();
       this.blockUI.stop();
-      this.mostrarMensaje('Almacén actualizado exitosamente', 'success');
+      this.mostrarMensaje('Distrito actualizado exitosamente', 'success');
     } catch (error) {
       this.blockUI.stop();
-      this.mostrarMensaje('Error al actualizar el almacén', 'error');
+      this.mostrarMensaje('Error al actualizar el distrito', 'error');
       console.error('Error:', error);
     }
   }
@@ -127,22 +108,22 @@ export class AlmacenComponent implements OnInit {
       this.blockUI.start('Eliminando...');
       
       await firstValueFrom(
-        this.apiService.eliminarAlmacen(event.key)
+        this.apiService.eliminarDistrito(event.key)
       );
       
       await this.cargarDatos();
       this.blockUI.stop();
-      this.mostrarMensaje('Almacén eliminado exitosamente', 'success');
+      this.mostrarMensaje('Distrito eliminado exitosamente', 'success');
     } catch (error) {
       this.blockUI.stop();
-      this.mostrarMensaje('Error al eliminar el almacén', 'error');
+      this.mostrarMensaje('Error al eliminar el distrito', 'error');
       console.error('Error:', error);
     }
   }
 
-  calculateNombreDistrito = (rowData: any) => {
-    const distrito = this.distritos.find(d => d.id === rowData.distritoId);
-    return distrito ? distrito.nombre : '';
+  calculateNombreProvincia = (rowData: any) => {
+    const provincia = this.provincias.find(p => p.id === rowData.provinciaId);
+    return provincia ? provincia.nombre : '';
   }
 
   mostrarMensaje(mensaje: string, tipo: 'success' | 'error'): void {

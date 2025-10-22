@@ -3,36 +3,25 @@ import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
-interface Almacen {
+interface Moneda {
   id: number;
-  empresaId: number;
   nombre: string;
   nombreCorto: string;
-  distritoId: number;
-  direccion: string;
-  latitud: number;
-  longitud: number;
-  activo: boolean;
-  distrito?: any;
-}
-
-interface Distrito {
-  id: number;
-  nombre: string;
-  provinciaId: number;
+  prefix: string;
+  sufix: string;
+  simbolo: string;
 }
 
 @Component({
-  selector: 'app-almacen',
+  selector: 'app-moneda',
   standalone: false,
-  templateUrl: './almacen.component.html',
-  styleUrl: './almacen.component.css'
+  templateUrl: './moneda.component.html',
+  styleUrl: './moneda.component.css'
 })
-export class AlmacenComponent implements OnInit {
+export class MonedaComponent implements OnInit {
   @BlockUI() blockUI!: NgBlockUI;
   
-  almacenes: Almacen[] = [];
-  distritos: Distrito[] = [];
+  monedas: Moneda[] = [];
 
   constructor(private apiService: ApiService) {}
 
@@ -43,19 +32,10 @@ export class AlmacenComponent implements OnInit {
   async cargarDatos(): Promise<void> {
     try {
       this.blockUI.start('Cargando datos...');
-      
-      // Cargar distritos para el lookup
-      const distritosResponse = await firstValueFrom(
-        this.apiService.getDistritos()
+      const response = await firstValueFrom(
+        this.apiService.listarMonedas()
       );
-      this.distritos = distritosResponse;
-      
-      // Cargar almacenes
-      const almacenesResponse = await firstValueFrom(
-        this.apiService.listarAlmacenesActivos()
-      );
-      this.almacenes = almacenesResponse;
-      
+      this.monedas = response;
       this.blockUI.stop();
     } catch (error) {
       this.blockUI.stop();
@@ -69,26 +49,23 @@ export class AlmacenComponent implements OnInit {
       this.blockUI.start('Guardando...');
       
       const nuevoRegistro = {
-        empresaId: event.data.empresaId || 1,
         nombre: event.data.nombre,
         nombreCorto: event.data.nombreCorto,
-        distritoId: event.data.distritoId,
-        direccion: event.data.direccion || '',
-        latitud: event.data.latitud || 0,
-        longitud: event.data.longitud || 0,
-        activo: event.data.activo !== undefined ? event.data.activo : true
+        prefix: event.data.prefix || '',
+        sufix: event.data.sufix || '',
+        simbolo: event.data.simbolo || ''
       };
 
       await firstValueFrom(
-        this.apiService.crearAlmacen(nuevoRegistro)
+        this.apiService.crearMoneda(nuevoRegistro)
       );
       
       await this.cargarDatos();
       this.blockUI.stop();
-      this.mostrarMensaje('Almacén creado exitosamente', 'success');
+      this.mostrarMensaje('Moneda creada exitosamente', 'success');
     } catch (error) {
       this.blockUI.stop();
-      this.mostrarMensaje('Error al crear el almacén', 'error');
+      this.mostrarMensaje('Error al crear la moneda', 'error');
       console.error('Error:', error);
     }
   }
@@ -98,26 +75,23 @@ export class AlmacenComponent implements OnInit {
       this.blockUI.start('Actualizando...');
       
       const datosActualizados = {
-        empresaId: event.newData.empresaId ?? event.oldData.empresaId,
         nombre: event.newData.nombre ?? event.oldData.nombre,
         nombreCorto: event.newData.nombreCorto ?? event.oldData.nombreCorto,
-        distritoId: event.newData.distritoId ?? event.oldData.distritoId,
-        direccion: event.newData.direccion ?? event.oldData.direccion,
-        latitud: event.newData.latitud ?? event.oldData.latitud,
-        longitud: event.newData.longitud ?? event.oldData.longitud,
-        activo: event.newData.activo ?? event.oldData.activo
+        prefix: event.newData.prefix ?? event.oldData.prefix,
+        sufix: event.newData.sufix ?? event.oldData.sufix,
+        simbolo: event.newData.simbolo ?? event.oldData.simbolo
       };
 
       await firstValueFrom(
-        this.apiService.editarAlmacen(event.key, datosActualizados)
+        this.apiService.editarMoneda(event.key, datosActualizados)
       );
       
       await this.cargarDatos();
       this.blockUI.stop();
-      this.mostrarMensaje('Almacén actualizado exitosamente', 'success');
+      this.mostrarMensaje('Moneda actualizada exitosamente', 'success');
     } catch (error) {
       this.blockUI.stop();
-      this.mostrarMensaje('Error al actualizar el almacén', 'error');
+      this.mostrarMensaje('Error al actualizar la moneda', 'error');
       console.error('Error:', error);
     }
   }
@@ -127,22 +101,17 @@ export class AlmacenComponent implements OnInit {
       this.blockUI.start('Eliminando...');
       
       await firstValueFrom(
-        this.apiService.eliminarAlmacen(event.key)
+        this.apiService.eliminarMoneda(event.key)
       );
       
       await this.cargarDatos();
       this.blockUI.stop();
-      this.mostrarMensaje('Almacén eliminado exitosamente', 'success');
+      this.mostrarMensaje('Moneda eliminada exitosamente', 'success');
     } catch (error) {
       this.blockUI.stop();
-      this.mostrarMensaje('Error al eliminar el almacén', 'error');
+      this.mostrarMensaje('Error al eliminar la moneda', 'error');
       console.error('Error:', error);
     }
-  }
-
-  calculateNombreDistrito = (rowData: any) => {
-    const distrito = this.distritos.find(d => d.id === rowData.distritoId);
-    return distrito ? distrito.nombre : '';
   }
 
   mostrarMensaje(mensaje: string, tipo: 'success' | 'error'): void {

@@ -1542,4 +1542,118 @@ export class ApiService{
     const headers = this.getHeaders();
     return this.https.delete<any>(url, { headers });
   }
+
+  //moneda
+  listarMonedas(): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/Moneda`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearMoneda(data: any): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/Moneda`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarMoneda(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/Moneda/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarMoneda(id: number): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/Moneda/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //PuntoFinanciero
+  listarPuntosFinancierosActivos(): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/PuntoFinanciero/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearPuntoFinanciero(data: any): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/PuntoFinanciero`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarPuntoFinanciero(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/PuntoFinanciero/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarPuntoFinanciero(id: number): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/PuntoFinanciero/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //origenfinanciero
+  listarOrigenFinancieroActivos(): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/OrigenFinanciero/activos`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearOrigenFinanciero(data: any): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/OrigenFinanciero`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarOrigenFinanciero(id: number, data: any): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/OrigenFinanciero/${id}`;
+    const headers = this.getHeaders();
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarOrigenFinanciero(id: number): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/OrigenFinanciero/${id}`;
+    const headers = this.getHeaders();
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //financiero
+  listarFinancieros(): Observable<any> {
+    const url = `${this.baseUrl}/finanzas/Financiero`;
+    const headers = this.getHeaders();
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearFinanciero(data: any): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.post(`${this.baseUrl}/finanzas/Financiero`, data, { headers });
+  }
+
+  agregarDetalleFinanciero(idCabecera: number, detalle: any): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.post(`${this.baseUrl}/finanzas/Financiero/detalle/${idCabecera}`, detalle, { headers });
+  }
+
+  //personal estado
+
+  listarPersonalEstadoActivos(): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.get(`${this.baseUrl}/rrhh/PersonalEstado/activos`, { headers });
+  }
+
+  crearPersonalEstado(data: any): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.post(`${this.baseUrl}/rrhh/PersonalEstado`, data, { headers });
+  }
+
+  editarPersonalEstado(id: number, data: any): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.put(`${this.baseUrl}/rrhh/PersonalEstado/${id}`, data, { headers });
+  }
+
+  eliminarPersonalEstado(id: number): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.delete(`${this.baseUrl}/rrhh/PersonalEstado/${id}`, { headers });
+  }
 }

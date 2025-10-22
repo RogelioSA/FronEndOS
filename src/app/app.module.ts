@@ -57,6 +57,12 @@ import { LicenciaconducirComponent } from './licenciaconducir/licenciaconducir.c
 import { DocumentotipoComponent } from './documentotipo/documentotipo.component';
 import { DocumentoidentidadtipoComponent } from './documentoidentidadtipo/documentoidentidadtipo.component';
 import { PaisComponent } from './pais/pais.component';
+import { MonedaComponent } from './moneda/moneda.component';
+import { ProvinciaComponent } from './provincia/provincia.component';
+import { DistritoComponent } from './distrito/distrito.component';
+import { PuntofinancieroComponent } from './puntofinanciero/puntofinanciero.component';
+import { OrigenfinancieroComponent } from './origenfinanciero/origenfinanciero.component';
+import { CuentaCorrienteComponent } from './cuenta-corriente/cuenta-corriente.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -107,7 +113,13 @@ import { PaisComponent } from './pais/pais.component';
         LicenciaconducirComponent,
         DocumentotipoComponent,
         DocumentoidentidadtipoComponent,
-        PaisComponent
+        PaisComponent,
+        MonedaComponent,
+        ProvinciaComponent,
+        DistritoComponent,
+        PuntofinancieroComponent,
+        OrigenfinancieroComponent,
+        CuentaCorrienteComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

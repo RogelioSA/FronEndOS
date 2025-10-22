@@ -174,7 +174,7 @@ export class PersonalComponent {
   /*async traerSituaciones(){
     console.log("traer situaciones");
 
-    try{
+    try
       const obser = this.apiService.getPersonalSituaciones();
       const result = await firstValueFrom(obser);
 

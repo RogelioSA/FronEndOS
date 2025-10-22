@@ -1,11 +1,11 @@
 <div class="container-fluid">
     <div class="row g-1 mt-2 justify-content-md-center mb-4">
       <div class="col-12">
-        <h3>Almacén</h3>
+        <h3>Origen Financiero</h3>
         <div id="data-grid">
           <dx-data-grid
             id="gridContainer"
-            [dataSource]="almacenes"
+            [dataSource]="origenesFinancieros"
             keyExpr="id"
             [showBorders]="true"
             (onRowUpdating)="actualizar($event)"
@@ -41,19 +41,10 @@
               [allowEditing]="false" 
               alignment="center"
             ></dxi-column>
-  
-            <dxi-column 
-              dataField="empresaId" 
-              caption="Empresa ID"
-              dataType="number"
-              [width]="110"
-              alignment="center"
-            ></dxi-column>
             
             <dxi-column 
               dataField="nombre" 
               caption="Nombre"
-              [width]="200"
             >
               <dxi-validation-rule 
                 type="required" 
@@ -81,60 +72,29 @@
                 message="El nombre corto no puede exceder 50 caracteres"
               ></dxi-validation-rule>
             </dxi-column>
-            
+  
             <dxi-column 
-              dataField="distritoId" 
-              caption="Distrito"
-              [width]="200"
-              [calculateDisplayValue]="calculateNombreDistrito"
+              dataField="naturaleza" 
+              caption="Naturaleza"
+              [width]="120"
             >
               <dxo-lookup
-                [dataSource]="distritos"
-                valueExpr="id"
-                displayExpr="nombre"
+                [dataSource]="opcionesNaturaleza"
+                valueExpr="valor"
+                displayExpr="texto"
               >
               </dxo-lookup>
               <dxi-validation-rule 
                 type="required" 
-                message="Debe seleccionar un distrito"
+                message="Debe seleccionar una naturaleza"
               ></dxi-validation-rule>
             </dxi-column>
-  
-            <dxi-column 
-              dataField="direccion" 
-              caption="Dirección"
-              [width]="250"
-            >
-              <dxi-validation-rule 
-                type="stringLength" 
-                [max]="300"
-                message="La dirección no puede exceder 300 caracteres"
-              ></dxi-validation-rule>
-            </dxi-column>
-  
-            <dxi-column 
-              dataField="latitud" 
-              caption="Latitud"
-              dataType="number"
-              [width]="120"
-              alignment="right"
-              format="#,##0.000000"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="longitud" 
-              caption="Longitud"
-              dataType="number"
-              [width]="120"
-              alignment="right"
-              format="#,##0.000000"
-            ></dxi-column>
             
             <dxi-column 
               dataField="activo" 
               caption="Activo" 
               dataType="boolean"
-              [width]="80"
+              [width]="100"
               alignment="center"
             ></dxi-column>
   

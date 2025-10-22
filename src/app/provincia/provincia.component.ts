@@ -3,35 +3,54 @@ import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
-interface PersonalEstado {
+interface Provincia {
   id: number;
   nombre: string;
+  departamentoId: number;
+  departamento?: any;
+  distritos?: any;
+}
+
+interface Departamento {
+  id: number;
+  nombre: string;
+  paisId: number;
 }
 
 @Component({
-  selector: 'app-personal-situacion',
-  templateUrl: './personal-situacion.component.html',
-  styleUrl: './personal-situacion.component.css',
-  standalone: false
+  selector: 'app-provincia',
+  standalone: false,
+  templateUrl: './provincia.component.html',
+  styleUrl: './provincia.component.css'
 })
-export class PersonalSituacionComponent implements OnInit {
+export class ProvinciaComponent implements OnInit {
   @BlockUI() blockUI!: NgBlockUI;
   
-  situaciones: PersonalEstado[] = [];
+  provincias: Provincia[] = [];
+  departamentos: Departamento[] = [];
 
   constructor(private apiService: ApiService) {}
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     this.cargarDatos();
   }
 
   async cargarDatos(): Promise<void> {
     try {
       this.blockUI.start('Cargando datos...');
-      const response = await firstValueFrom(
-        this.apiService.listarPersonalEstadoActivos()
+      
+      // Cargar departamentos para el lookup
+      const departamentosResponse = await firstValueFrom(
+        this.apiService.getDepartamentos()
       );
-      this.situaciones = response;
+      this.departamentos = departamentosResponse;
+      
+      // Cargar provincias
+      const provinciasResponse = await firstValueFrom(
+        this.apiService.listarProvincias()
+      );
+      this.provincias = provinciasResponse;
+      
       this.blockUI.stop();
     } catch (error) {
       this.blockUI.stop();
@@ -45,19 +64,20 @@ export class PersonalSituacionComponent implements OnInit {
       this.blockUI.start('Guardando...');
       
       const nuevoRegistro = {
-        nombre: event.data.nombre
+        nombre: event.data.nombre,
+        departamentoId: event.data.departamentoId
       };
 
       await firstValueFrom(
-        this.apiService.crearPersonalEstado(nuevoRegistro)
+        this.apiService.crearProvincia(nuevoRegistro)
       );
       
       await this.cargarDatos();
       this.blockUI.stop();
-      this.mostrarMensaje('Estado de personal creado exitosamente', 'success');
+      this.mostrarMensaje('Provincia creada exitosamente', 'success');
     } catch (error) {
       this.blockUI.stop();
-      this.mostrarMensaje('Error al crear el estado de personal', 'error');
+      this.mostrarMensaje('Error al crear la provincia', 'error');
       console.error('Error:', error);
     }
   }
@@ -67,19 +87,20 @@ export class PersonalSituacionComponent implements OnInit {
       this.blockUI.start('Actualizando...');
       
       const datosActualizados = {
-        nombre: event.newData.nombre ?? event.oldData.nombre
+        nombre: event.newData.nombre ?? event.oldData.nombre,
+        departamentoId: event.newData.departamentoId ?? event.oldData.departamentoId
       };
 
       await firstValueFrom(
-        this.apiService.editarPersonalEstado(event.key, datosActualizados)
+        this.apiService.editarProvincia(event.key, datosActualizados)
       );
       
       await this.cargarDatos();
       this.blockUI.stop();
-      this.mostrarMensaje('Estado de personal actualizado exitosamente', 'success');
+      this.mostrarMensaje('Provincia actualizada exitosamente', 'success');
     } catch (error) {
       this.blockUI.stop();
-      this.mostrarMensaje('Error al actualizar el estado de personal', 'error');
+      this.mostrarMensaje('Error al actualizar la provincia', 'error');
       console.error('Error:', error);
     }
   }
@@ -89,17 +110,22 @@ export class PersonalSituacionComponent implements OnInit {
       this.blockUI.start('Eliminando...');
       
       await firstValueFrom(
-        this.apiService.eliminarPersonalEstado(event.key)
+        this.apiService.eliminarProvincia(event.key)
       );
       
       await this.cargarDatos();
       this.blockUI.stop();
-      this.mostrarMensaje('Estado de personal eliminado exitosamente', 'success');
+      this.mostrarMensaje('Provincia eliminada exitosamente', 'success');
     } catch (error) {
       this.blockUI.stop();
-      this.mostrarMensaje('Error al eliminar el estado de personal', 'error');
+      this.mostrarMensaje('Error al eliminar la provincia', 'error');
       console.error('Error:', error);
     }
+  }
+
+  calculateNombreDepartamento = (rowData: any) => {
+    const departamento = this.departamentos.find(d => d.id === rowData.departamentoId);
+    return departamento ? departamento.nombre : '';
   }
 
   mostrarMensaje(mensaje: string, tipo: 'success' | 'error'): void {

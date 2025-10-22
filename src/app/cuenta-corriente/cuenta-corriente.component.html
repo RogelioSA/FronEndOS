@@ -1,11 +1,11 @@
 <div class="container-fluid">
     <div class="row g-1 mt-2 justify-content-md-center mb-4">
       <div class="col-12">
-        <h3>Almacén</h3>
+        <h3>Cuenta Corriente</h3>
         <div id="data-grid">
           <dx-data-grid
             id="gridContainer"
-            [dataSource]="almacenes"
+            [dataSource]="cuentasCorrientes"
             keyExpr="id"
             [showBorders]="true"
             (onRowUpdating)="actualizar($event)"
@@ -81,54 +81,54 @@
                 message="El nombre corto no puede exceder 50 caracteres"
               ></dxi-validation-rule>
             </dxi-column>
-            
+  
             <dxi-column 
-              dataField="distritoId" 
-              caption="Distrito"
+              dataField="cuentaNumero" 
+              caption="Número de Cuenta"
+              [width]="180"
+            >
+              <dxi-validation-rule 
+                type="stringLength" 
+                [max]="50"
+                message="El número de cuenta no puede exceder 50 caracteres"
+              ></dxi-validation-rule>
+            </dxi-column>
+  
+            <dxi-column 
+              dataField="entidadFinancieraId" 
+              caption="Entidad Financiera"
               [width]="200"
-              [calculateDisplayValue]="calculateNombreDistrito"
+              [calculateDisplayValue]="calculateNombreEntidad"
             >
               <dxo-lookup
-                [dataSource]="distritos"
+                [dataSource]="entidadesFinancieras"
                 valueExpr="id"
                 displayExpr="nombre"
               >
               </dxo-lookup>
               <dxi-validation-rule 
                 type="required" 
-                message="Debe seleccionar un distrito"
+                message="Debe seleccionar una entidad financiera"
               ></dxi-validation-rule>
             </dxi-column>
   
             <dxi-column 
-              dataField="direccion" 
-              caption="Dirección"
+              dataField="cuentaContableId" 
+              caption="Cuenta Contable"
               [width]="250"
+              [calculateDisplayValue]="calculateNombreCuentaContable"
             >
+              <dxo-lookup
+                [dataSource]="cuentasContables"
+                valueExpr="id"
+                displayExpr="nombre"
+              >
+              </dxo-lookup>
               <dxi-validation-rule 
-                type="stringLength" 
-                [max]="300"
-                message="La dirección no puede exceder 300 caracteres"
+                type="required" 
+                message="Debe seleccionar una cuenta contable"
               ></dxi-validation-rule>
             </dxi-column>
-  
-            <dxi-column 
-              dataField="latitud" 
-              caption="Latitud"
-              dataType="number"
-              [width]="120"
-              alignment="right"
-              format="#,##0.000000"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="longitud" 
-              caption="Longitud"
-              dataType="number"
-              [width]="120"
-              alignment="right"
-              format="#,##0.000000"
-            ></dxi-column>
             
             <dxi-column 
               dataField="activo" 

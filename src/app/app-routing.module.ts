@@ -45,6 +45,14 @@ import { LicenciaconducirComponent } from './licenciaconducir/licenciaconducir.c
 import { DocumentotipoComponent } from './documentotipo/documentotipo.component';
 import { DocumentoidentidadtipoComponent } from './documentoidentidadtipo/documentoidentidadtipo.component';
 import { PaisComponent } from './pais/pais.component';
+import { MonedaComponent } from './moneda/moneda.component';
+import { ProvinciaComponent } from './provincia/provincia.component';
+import { DistritoComponent } from './distrito/distrito.component';
+import { AlmacenComponent } from './almacen/almacen.component';
+import { PuntofinancieroComponent } from './puntofinanciero/puntofinanciero.component';
+import { OrigenfinancieroComponent } from './origenfinanciero/origenfinanciero.component';
+import { CuentaCorrienteComponent } from './cuenta-corriente/cuenta-corriente.component';
+
 
 const routes: Routes = [
   //{ path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -63,10 +71,10 @@ const routes: Routes = [
   { path: 'mantenimiento/condicionContract', component: CondicionContractualComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/contratoTipo', component: ContratoTipoComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/cargo', component: CargoComponent, canActivate: [AuthGuard]  },
-  { path: 'mantenimiento/personalSituacion', component: PersonalSituacionComponent, canActivate: [AuthGuard]  },
+  { path: 'mantenimiento/personalEstado', component: PersonalSituacionComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/personal', component: PersonalComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/personal/personalHorario', component: PersonalHorarioComponent, canActivate: [AuthGuard]  },
-  { path: 'mantenimiento/menu', component: MenuComponent, canActivate: [AuthGuard]  },
+  { path: 'seguridad/menu', component: MenuComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/ordenServicio/tipoServicio', component: TipoServicioComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/ordenServicio/clientes', component: TerceroComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/ordenServicio/tipoActivoServicio', component: TipoActivoServicioComponent, canActivate: [AuthGuard]  },
@@ -81,7 +89,7 @@ const routes: Routes = [
   { path: 'procesos/Servicio', component: OrdenesServicioComponent, canActivate: [AuthGuard]},
   { path: 'patrimonial/UbicacionTecnica', component: UbicacionTecnicaComponent, canActivate: [AuthGuard]},
   { path: 'mantenimiento/labor', component: LaborComponent, canActivate: [AuthGuard]},
-  { path: 'mantenimiento/ordenserviciotipo', component: OrdenServicioTipoComponent, canActivate: [AuthGuard]},
+  { path: 'procesos/ordenserviciotipo', component: OrdenServicioTipoComponent, canActivate: [AuthGuard]},
   { path: 'contabilidad/cuentacontable', component: CuentaContableComponent, canActivate: [AuthGuard]},
   { path: 'contabilidad/cuentacontabletipo', component: CuentaContableTipoComponent, canActivate: [AuthGuard]},
   //{ path: 'finanzas/tercero', component: TerceroComponent, canActivate: [AuthGuard]},
@@ -98,7 +106,13 @@ const routes: Routes = [
   { path: 'general/documentotipo', component: DocumentotipoComponent, canActivate: [AuthGuard]},
   { path: 'general/documentoidentidadtipo', component: DocumentoidentidadtipoComponent, canActivate: [AuthGuard]},
   { path: 'general/pais', component: PaisComponent, canActivate: [AuthGuard]},
-
+  { path: 'finanzas/moneda', component: MonedaComponent, canActivate: [AuthGuard]},
+  { path: 'general/provincia', component: ProvinciaComponent, canActivate: [AuthGuard]},
+  { path: 'general/distrito', component: DistritoComponent, canActivate: [AuthGuard]},
+  { path: 'logistica/almacen', component: AlmacenComponent, canActivate: [AuthGuard]},
+  { path: 'finanzas/puntofinanciero', component: PuntofinancieroComponent, canActivate: [AuthGuard]},
+  { path: 'finanzas/origenfinanciero', component: OrigenfinancieroComponent, canActivate: [AuthGuard]},
+  { path: 'finanzas/cuentacorriente', component: CuentaCorrienteComponent, canActivate: [AuthGuard]},
 
 ];
 
