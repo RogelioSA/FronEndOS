@@ -27,28 +27,32 @@
             <h3>Reporte de marcaciones</h3>
             <div id="data-grid">
                 <dx-data-grid id="gridContainer" [dataSource]="marcaciones" [showBorders]="true"
-                    [showColumnLines]="true" [showRowLines]="true" [allowColumnResizing]="true">
+                    [showColumnLines]="true" [showRowLines]="true" [allowColumnResizing]="true"
+                    [columnAutoWidth]="true">
                     <dxo-paging [pageSize]="15"></dxo-paging>
                     <dxo-pager [visible]="true" [showPageSizeSelector]="true"
                         [allowedPageSizes]="[15, 25, 50, 100]"></dxo-pager>
+                    <dxo-search-panel [visible]="true"></dxo-search-panel>
 
-                    <dxi-column dataField="personal" caption="Personal" alignment="left"></dxi-column>
-                    <dxi-column dataField="fecha" caption="Fecha" dataType="date" [width]="180"></dxi-column>
+                    <dxi-column dataField="personal" caption="Personal" alignment="left" [width]="250"></dxi-column>
+                    <dxi-column dataField="fecha" caption="Fecha y Hora" dataType="datetime" 
+                        format="dd/MM/yyyy HH:mm:ss" [width]="180"></dxi-column>
                     <dxi-column dataField="fechaJornal" caption="Fecha Jornal" dataType="date"
-                        [width]="180"></dxi-column>
-                    <dxi-column dataField="tipoEvento" caption="Tipo de Evento" [width]="160"></dxi-column>
-                    <dxi-column dataField="esTardanza" caption="Es Tardanza" [width]="150"></dxi-column>
-                    <dxi-column dataField="diferenciaMinutos" caption="Diferencia (minutos)" [width]="200"></dxi-column>
+                        format="dd/MM/yyyy" [width]="130"></dxi-column>
+                    <dxi-column dataField="tipoEvento" caption="Tipo de Evento" [width]="140" alignment="center"></dxi-column>
+                    <dxi-column dataField="esTardanza" caption="¿Tardanza?" [width]="120" alignment="center"></dxi-column>
+                    <dxi-column dataField="diferenciaMinutos" caption="Diferencia (min)" [width]="140" alignment="center"></dxi-column>
+                    <dxi-column dataField="latitud" caption="Latitud" [width]="110" alignment="center"></dxi-column>
+                    <dxi-column dataField="longitud" caption="Longitud" [width]="110" alignment="center"></dxi-column>
+                    <dxi-column dataField="politica" caption="Política" [width]="130"></dxi-column>
+                    <dxi-column dataField="horaEvento" caption="Hora Programada" [width]="150" alignment="center"></dxi-column>
                 </dx-data-grid>
 
                 <div id="messageBox"
                     style="display: none; background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;">
-                    <!-- El mensaje se inyecta aquí -->
                 </div>
 
-                <block-ui>
-                    <!-- Markup here -->
-                </block-ui>
+                <block-ui></block-ui>
             </div>
         </div>
     </div>

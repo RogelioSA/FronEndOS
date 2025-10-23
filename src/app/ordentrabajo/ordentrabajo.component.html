@@ -5,12 +5,12 @@
       <div id="data-grid">
         <dx-data-grid
           id="gridContainer"
-          [dataSource]="ordenes"
+          [dataSource]="ordenesTrabajo"
           keyExpr="id"
           [showBorders]="true"
-          (onRowUpdating)="actualizarTipo($event)"
-          (onRowInserting)="insertarTipo($event)"
-          (onRowRemoving)="eliminarTipo($event)"
+          (onRowUpdating)="actualizarOrdenTrabajo($event)"
+          (onRowInserting)="insertarOrdenTrabajo($event)"
+          (onRowRemoving)="eliminarOrdenTrabajo($event)"
           [columnHidingEnabled]="true"
           [rowAlternationEnabled]="true"
           [showColumnLines]="true"
@@ -43,17 +43,6 @@
           ></dxi-column>
           
           <dxi-column 
-            dataField="nombre" 
-            caption="Nombre"
-            [width]="200"
-          >
-            <dxi-validation-rule 
-              type="required" 
-              message="El nombre es requerido"
-            ></dxi-validation-rule>
-          </dxi-column>
-          
-          <dxi-column 
             dataField="ordenServicioCabeceraId" 
             caption="Orden Servicio"
             [width]="180"
@@ -61,7 +50,7 @@
             <dxo-lookup
               [dataSource]="ordenesServicio"
               valueExpr="id"
-              displayExpr="nombre"
+              displayExpr="codigoOrdenInterna"
             ></dxo-lookup>
             <dxi-validation-rule 
               type="required" 
@@ -70,18 +59,13 @@
           </dxi-column>
           
           <dxi-column 
-            dataField="grupoTrabajoId" 
-            caption="Grupo Trabajo"
-            [width]="150"
+            dataField="nombre" 
+            caption="Nombre"
+            [width]="200"
           >
-            <dxo-lookup
-              [dataSource]="gruposTrabajo"
-              valueExpr="id"
-              displayExpr="nombre"
-            ></dxo-lookup>
             <dxi-validation-rule 
               type="required" 
-              message="El grupo de trabajo es requerido"
+              message="El nombre es requerido"
             ></dxi-validation-rule>
           </dxi-column>
           
@@ -121,6 +105,22 @@
             dataType="datetime"
             [width]="150"
           ></dxi-column>
+
+          <dxi-column 
+            dataField="grupoTrabajoId" 
+            caption="Grupo Trabajo"
+            [width]="150"
+          >
+            <dxo-lookup
+              [dataSource]="gruposTrabajo"
+              valueExpr="id"
+              displayExpr="nombre"
+            ></dxo-lookup>
+            <dxi-validation-rule 
+              type="required" 
+              message="El grupo de trabajo es requerido"
+            ></dxi-validation-rule>
+          </dxi-column>
 
           <dxi-column 
             dataField="estado" 

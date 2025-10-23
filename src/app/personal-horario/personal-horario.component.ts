@@ -12,10 +12,11 @@ import { ApiService } from '../services/api.service';
 })
 export class PersonalHorarioComponent {
   // Datos
-  personalHorarios: any[] = [];         // tabla principal (asignados)
-  personalDisponibles: any[] = [];      // lista lateral (disponibles)
-  horarios: any[] = [];                 // opciones de horario
-  ordenes: any[] = [];                  // órdenes de servicio
+  personalHorarios: any[] = [];
+  personalDisponibles: any[] = [];
+  horarios: any[] = [];
+  ordenes: any[] = [];
+  ordenSeleccionadaCompleta: any = null;
 
   // controles
   ordenCombo: any = null;
@@ -27,89 +28,129 @@ export class PersonalHorarioComponent {
   seleccionadosMain: any[] = [];
   seleccionDisponibles: any[] = [];
   hayDisponiblesSeleccionados = false;
-  horarioParaAsignar: number | null = null;
 
   desactivarBotonGuardar = true;
+  
+  // Map para guardar los IDs de OrdenTrabajoPersonal
+  ordenTrabajoPersonalIds: Map<number, number> = new Map();
+  
   @BlockUI() blockUI!: NgBlockUI;
+  
   constructor(private apiService: ApiService) {
-    this.cargarOrdenes();
-    this.llenarHorarios();
-    this.llenarPersonalDisponibles(); // lista grande
+    this.inicializar();
   }
 
-  
-  async cargarOrdenes(): Promise<void> {
+  async inicializar() {
+    await this.llenarHorarios();
+    await this.cargarOrdenesTrabajo();
+  }
+
+  async cargarOrdenesTrabajo(): Promise<void> {
     try {
-      this.blockUI.start('Cargando órdenes...');
+      this.blockUI.start('Cargando órdenes de trabajo...');
       
       const response = await firstValueFrom(
-        this.apiService.getOrdenesServicioMantenimientoExterno()
+        this.apiService.listarOrdenTrabajoCabecera()
       );
       
-      this.ordenes = response.map((os: any) => ({
-        nCodigo: os.cabecera.id,
-        cOrdenInterna: `${os.cabecera.codigoOrdenInterna} - ${os.cabecera.descripcion}`
+      this.ordenes = response.map((ot: any) => ({
+        nCodigo: ot.id,
+        cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`,
+        fechaInicio: ot.fechaInicio,
+        fechaFin: ot.fechaFin || ot.fechaCompromiso,
+        datosCompletos: ot
       }));
+      
+      console.log('Órdenes de trabajo cargadas:', this.ordenes);
       
       this.blockUI.stop();
     } catch (error) {
       this.blockUI.stop();
-      console.error('Error al cargar órdenes:', error);
+      console.error('Error al cargar órdenes de trabajo:', error);
     }
+  }
+
+  onOrdenChange(e: any) {
+    const ordenSeleccionada = e.value;
+    
+    if (!ordenSeleccionada) {
+      this.fechaDesde = null;
+      this.fechaHasta = null;
+      this.ordenSeleccionadaCompleta = null;
+      this.limpiarGrillas();
+      return;
+    }
+
+    const orden = this.ordenes.find(o => o.nCodigo === ordenSeleccionada);
+    
+    if (orden) {
+      this.ordenSeleccionadaCompleta = orden.datosCompletos;
+      this.fechaDesde = orden.fechaInicio ? new Date(orden.fechaInicio) : null;
+      this.fechaHasta = orden.fechaFin ? new Date(orden.fechaFin) : null;
+      
+      console.log('Orden seleccionada completa:', this.ordenSeleccionadaCompleta);
+      console.log('Fechas asignadas:', {
+        desde: this.fechaDesde,
+        hasta: this.fechaHasta
+      });
+      
+      this.limpiarGrillas();
+    }
+  }
+
+  limpiarGrillas() {
+    this.personalHorarios = [];
+    this.personalDisponibles = [];
+    this.columnasFechas = [];
+    this.desactivarBotonGuardar = true;
+    this.ordenTrabajoPersonalIds.clear();
   }
 
   async llenarHorarios() {
     this.blockUI.start('Cargando horarios...');
   
     try {
-      const obser = this.apiService.getHorarios();
-      const result = await firstValueFrom(obser);
+      const result = await firstValueFrom(this.apiService.getHorarios());
   
-      // ✅ El API devuelve directamente objetos con { id, nombre, descripcion, activo }
+      // Mapear correctamente: id del horario -> nombre del horario
       this.horarios = result.map((h: any) => ({
         nCodigo: h.id,
         cNombre: h.nombre
       }));
   
-      console.log("Horarios cargados:", this.horarios);
+      console.log("✅ Horarios cargados:", this.horarios);
   
     } catch (error) {
       console.error('❌ Error cargando horarios:', error);
     } finally {
       this.blockUI.stop();
     }
-  }  
+  }
 
-  // Lista grande de disponibles (generada)
-  async llenarPersonalDisponibles() {
-    this.blockUI.start('Cargando personal disponible...');
-  
-    try {
-      const obser = this.apiService.getPersonal();
-      const result = await firstValueFrom(obser);
-  
-      // ✅ Filtrar solo los activos (estado = true)
-      // ✅ Mapear al formato esperado por el grid
-      this.personalDisponibles = result
-        .filter((p: any) => p.estado === true)
-        .map((p: any) => ({
-          nEmpleado: p.id,               // clave única
-          cEmpleado: p.nombreCompleto    // texto mostrado
-        }));
-  
-      console.log("Personal disponibles:", this.personalDisponibles);
-  
-    } catch (error) {
-      console.error('❌ Error cargando personal disponible:', error);
-    } finally {
-      this.blockUI.stop();
+  /* ================= MÉTODO AUXILIAR PARA OBTENER NOMBRE DE HORARIO ================= */
+  obtenerNombreHorario(horarioCabeceraId: number | null | undefined): string {
+    if (!horarioCabeceraId) {
+      console.log(`⚠️ obtenerNombreHorario: ID es null/undefined`);
+      return 'Sin horario';
+    }
+    
+    console.log(`🔍 Buscando horario con ID: ${horarioCabeceraId} en:`, this.horarios);
+    
+    const horario = this.horarios.find(h => h.nCodigo === horarioCabeceraId);
+    
+    if (horario) {
+      console.log(`✅ Horario encontrado:`, horario);
+      return horario.cNombre;
+    } else {
+      console.log(`❌ No se encontró horario con ID: ${horarioCabeceraId}`);
+      return 'Sin horario';
     }
   }
-  
 
-  /* ================= Construcción de columnas & preload demo ================= */
+  /* ================= Construcción de columnas & carga de personal ================= */
   async onBuscar() {
     if (!this.ordenCombo || !this.fechaDesde || !this.fechaHasta) {
+      this.showMessage('Selecciona una orden de trabajo y verifica las fechas');
       return;
     }
   
@@ -118,11 +159,29 @@ export class PersonalHorarioComponent {
       return;
     }
   
-    this.buildDateColumns(this.fechaDesde, this.fechaHasta);
-    await this.precargarAsignadosReal(); // 🔹 Usamos el método real
-    this.desactivarBotonGuardar = false;
+    this.blockUI.start('Cargando personal...');
+    
+    try {
+      // IMPORTANTE: Asegurar que los horarios estén cargados
+      if (!this.horarios || this.horarios.length === 0) {
+        console.log('⚠️ Horarios no cargados, recargando...');
+        await this.llenarHorarios();
+      }
+      
+      console.log('📋 Horarios disponibles:', this.horarios);
+      
+      this.buildDateColumns(this.fechaDesde, this.fechaHasta);
+      await this.cargarPersonalAsignado();
+      await this.cargarPersonalDisponible();
+      this.desactivarBotonGuardar = false;
+      
+    } catch (error) {
+      console.error('Error en onBuscar:', error);
+      this.showMessage('Error al cargar el personal');
+    } finally {
+      this.blockUI.stop();
+    }
   }
-  
 
   buildDateColumns(desde: Date, hasta: Date) {
     this.columnasFechas = [];
@@ -140,58 +199,89 @@ export class PersonalHorarioComponent {
     return dias[d.getDay()];
   }
 
-  // Pre-carga datos de demo: toma varios disponibles y les asigna horarios ya puestos
-  async precargarAsignadosReal() {
-    try {
-      this.blockUI.start('Cargando asignaciones reales...');
-  
-      // 🔹 1. Traemos todos los horarios para poder buscarlos por ID
-      const horariosResult = await firstValueFrom(this.apiService.getHorarios());
-      const horariosMap = new Map(
-        horariosResult.map((h: any) => [h.id, h.nombre])
-      );
-  
-      // 🔹 2. Limitamos a 10 para prueba (puedes quitar este límite)
-      const cant = Math.min(10, this.personalDisponibles.length);
-      const precargados = this.personalDisponibles.slice(0, cant);
-  
-      // 🔹 3. Crear filas con los nombres de horario reales
-      const assignedRows = precargados.map((p) => {
-        const row: any = {
-          nEmpleado: p.nEmpleado,
-          cEmpleado: p.cEmpleado
-        };
-  
-        // Obtenemos el ID de horario del personal
-        const horarioId = p.horarioCabeceraId;
-  
-        // Buscamos el nombre en el mapa
-        const nombreHorario = horariosMap.get(horarioId) || 'Sin horario';
-  
-        // Rellenamos todas las columnas de fecha con ese horario
-        for (let i = 0; i < this.columnasFechas.length; i++) {
-          const field = this.columnasFechas[i].field;
-          row[field] = nombreHorario;
-        }
-  
-        return row;
-      });
-  
-      // 🔹 4. Actualizamos la tabla
-      this.personalHorarios = [...assignedRows];
-  
-      const idsPrecargados = new Set(precargados.map((p) => p.nEmpleado));
-      this.personalDisponibles = this.personalDisponibles.filter(
-        (p) => !idsPrecargados.has(p.nEmpleado)
-      );
-  
-    } catch (error) {
-      console.error('❌ Error precargando asignaciones reales:', error);
-    } finally {
-      this.blockUI.stop();
+  async cargarPersonalAsignado() {
+    if (!this.ordenSeleccionadaCompleta || !this.ordenSeleccionadaCompleta.personales) {
+      this.personalHorarios = [];
+      this.ordenTrabajoPersonalIds.clear();
+      return;
     }
+  
+    const personalesOT = this.ordenSeleccionadaCompleta.personales;
+    const todosPersonal: any[] = await firstValueFrom(this.apiService.getPersonal());
+    
+    console.log('🔍 Total personal cargado:', todosPersonal.length);
+    console.log('🔍 Horarios disponibles para mapeo:', this.horarios);
+  
+    // Limpiar el Map antes de llenarlo
+    this.ordenTrabajoPersonalIds.clear();
+  
+    this.personalHorarios = personalesOT.map((pOT: any) => {
+      const personaData = todosPersonal.find((p: any) => p.id === pOT.personaId);
+      
+      // Guardar el ID de OrdenTrabajoPersonal en el Map
+      if (pOT.id) {
+        this.ordenTrabajoPersonalIds.set(pOT.personaId, pOT.id);
+      }
+      
+      const row: any = {
+        nEmpleado: pOT.personaId,
+        cEmpleado: pOT.persona?.nombreCompleto || 'Desconocido',
+        esLider: pOT.esLider
+      };
+  
+      // Obtener el horarioCabeceraId desde personal.horarioCabeceraId
+      let horarioCabeceraId = null;
+      if (personaData?.personal?.horarioCabeceraId) {
+        horarioCabeceraId = personaData.personal.horarioCabeceraId;
+        console.log(`🔍 Persona: ${row.cEmpleado} tiene horarioCabeceraId: ${horarioCabeceraId}`);
+      } else {
+        console.log(`⚠️ Persona: ${row.cEmpleado} NO tiene horarioCabeceraId`);
+      }
+      
+      // Guardar el ID del horario en todas las columnas de fecha
+      // DevExtreme lookup lo convertirá automáticamente al nombre
+      for (const col of this.columnasFechas) {
+        row[col.field] = horarioCabeceraId;
+      }
+  
+      console.log(`✅ ${row.cEmpleado} -> horarioCabeceraId: ${horarioCabeceraId}`);
+  
+      return row;
+    });
+  
+    console.log('✅ Personal asignado cargado:', this.personalHorarios);
+    console.log('✅ Map de IDs:', this.ordenTrabajoPersonalIds);
   }
   
+  async cargarPersonalDisponible() {
+    try {
+      const result: any[] = await firstValueFrom(this.apiService.getPersonal());
+  
+      const idsAsignados = new Set(
+        this.personalHorarios.map(p => p.nEmpleado)
+      );
+  
+      this.personalDisponibles = result
+        .filter((p: any) => p.estado === true && !idsAsignados.has(p.id))
+        .map((p: any) => {
+          // Extraer horarioCabeceraId desde personal.horarioCabeceraId
+          const horarioCabeceraId = p.personal?.horarioCabeceraId || null;
+          
+          console.log(`🔍 Personal disponible: ${p.nombreCompleto} - horarioId: ${horarioCabeceraId}`);
+          
+          return {
+            nEmpleado: p.id,
+            cEmpleado: p.nombreCompleto,
+            horarioCabeceraId: horarioCabeceraId
+          };
+        });
+  
+      console.log("✅ Personal disponible completo:", this.personalDisponibles);
+  
+    } catch (error) {
+      console.error('❌ Error cargando personal disponible:', error);
+    }
+  }
 
   /* ================= Agregar desde disponibles ================= */
   onDisponiblesSelectionChanged(e: any) {
@@ -199,147 +289,180 @@ export class PersonalHorarioComponent {
     this.hayDisponiblesSeleccionados = this.seleccionDisponibles.length > 0;
   }
 
-  agregarSeleccionados() {
+  async agregarSeleccionados() {
     if (!this.ordenCombo || !this.fechaDesde || !this.fechaHasta) {
-      this.showMessage('Selecciona una orden de servicio y rango de fechas');
+      this.showMessage('Selecciona una orden de trabajo y rango de fechas');
       return;
     }
     if (!this.seleccionDisponibles || this.seleccionDisponibles.length === 0) return;
-
-    for (const p of this.seleccionDisponibles) {
-      this.addPersonToMain(p);
-    }
-    // limpiar selección
-    this.seleccionDisponibles = [];
-    this.hayDisponiblesSeleccionados = false;
-  }
-
-  // botón "Asignar" por fila
-  agregarUno(person: any) {
-    if (!this.ordenCombo || !this.fechaDesde || !this.fechaHasta) {
-      this.showMessage('Selecciona una orden de servicio y rango de fechas');
+  
+    // Obtener empresaId del localStorage (es solo el ID, no un objeto)
+    const empresaSeleccionada = localStorage.getItem('empresaSeleccionada');
+    console.log('🔍 DEBUG - empresaSeleccionada (raw):', empresaSeleccionada);
+  
+    if (!empresaSeleccionada) {
+      console.error('❌ No existe "empresaSeleccionada" en localStorage');
+      this.showMessage('No se encontró la empresa seleccionada en localStorage');
       return;
     }
-    if (!person) return;
-    this.addPersonToMain(person);
+  
+    // Convertir directamente a número, ya que es solo el ID
+    const empresaId = parseInt(empresaSeleccionada, 10);
+    console.log('🔍 DEBUG - empresaId extraído:', empresaId);
+  
+    if (!empresaId || isNaN(empresaId)) {
+      console.error('❌ empresaId no es un número válido');
+      this.showMessage('No se pudo obtener el ID de la empresa');
+      return;
+    }
+  
+    this.blockUI.start('Asignando personal...');
+  
+    try {
+      for (const p of this.seleccionDisponibles) {
+        // Preparar el payload para la API
+        const payload = {
+          empresaId: empresaId,
+          ordenTrabajoCabeceraId: this.ordenCombo,
+          personaId: p.nEmpleado,
+          esLider: false
+        };
+  
+        console.log('📤 Payload a enviar:', payload);
+  
+        // Llamar a la API
+        const response = await firstValueFrom(
+          this.apiService.crearOrdenTrabajoPersonal(payload)
+        );
+  
+        console.log('✅ Personal asignado en API:', response);
+  
+        // Guardar el ID retornado para poder eliminarlo después
+        if (response && response.id) {
+          this.ordenTrabajoPersonalIds.set(p.nEmpleado, response.id);
+        }
+  
+        // Agregar a la tabla visual
+        this.addPersonToMain(p);
+      }
+  
+      this.showMessage('Personal asignado correctamente');
+      this.seleccionDisponibles = [];
+      this.hayDisponiblesSeleccionados = false;
+  
+    } catch (error) {
+      console.error('❌ Error al asignar personal:', error);
+      this.showMessage('Error al asignar el personal');
+    } finally {
+      this.blockUI.stop();
+    }
   }
 
   addPersonToMain(person: any) {
-    // evitar duplicados
     if (this.personalHorarios.some(x => x.nEmpleado === person.nEmpleado)) return;
-
-    const row: any = { nEmpleado: person.nEmpleado, cEmpleado: person.cEmpleado };
-    for (const c of this.columnasFechas) row[c.field] = null;
-    this.personalHorarios = [...this.personalHorarios, row];
-
-    // remover de disponibles
-    this.personalDisponibles = this.personalDisponibles.filter(x => x.nEmpleado !== person.nEmpleado);
-  }
-
-  /* ================= Edición: autollenado hacia adelante (solo celdas vacías) ================= */
-  onRowUpdating(e: any) {
-    const rowKey = e.key;
-    const newData = e.newData || {};
-    const rowIndex = this.personalHorarios.findIndex(r => r.nEmpleado === rowKey);
-    if (rowIndex === -1) return;
-
-    const originalRow = { ...this.personalHorarios[rowIndex] };
-    const updatedRow = { ...originalRow, ...newData };
-
-    // Para cada campo cambiado, propagar hacia adelante (solo en celdas vacías)
-    const changedFields = Object.keys(newData);
-    for (const field of changedFields) {
-      const colIndex = this.columnasFechas.findIndex(c => c.field === field);
-      if (colIndex === -1) continue;
-      const nuevoValor = newData[field];
-
-      if (nuevoValor !== null && nuevoValor !== undefined) {
-        // Propagar hacia adelante para celdas vacías
-        for (let i = colIndex + 1; i < this.columnasFechas.length; i++) {
-          const f = this.columnasFechas[i].field;
-          if (updatedRow[f] === null || updatedRow[f] === undefined) {
-            updatedRow[f] = nuevoValor;
-          } else {
-            // si ya hay valor, no sobreescribimos, pero seguimos buscando (según tu regla)
-            // si prefieres detener propagation al encontrar un valor, descomenta el siguiente break:
-            // break;
-          }
-        }
-      }
+  
+    const row: any = { 
+      nEmpleado: person.nEmpleado, 
+      cEmpleado: person.cEmpleado,
+      esLider: false
+    };
+  
+    // Usar el método auxiliar para obtener el nombre del horario
+    const nombreHorario = this.obtenerNombreHorario(person.horarioCabeceraId);
+    
+    console.log(`✅ Agregando: ${person.cEmpleado} -> Horario: ${nombreHorario}`);
+  
+    for (const c of this.columnasFechas) {
+      row[c.field] = person.horarioCabeceraId;
     }
-
-    // reemplazar fila en el array
-    const copy = [...this.personalHorarios];
-    copy[rowIndex] = updatedRow;
-    this.personalHorarios = copy;
+  
+    this.personalHorarios = [...this.personalHorarios, row];
+    this.personalDisponibles = this.personalDisponibles.filter(
+      x => x.nEmpleado !== person.nEmpleado
+    );
   }
 
-  /* ================= Selección principal y asignación masiva ================= */
+  /* ================= Selección principal ================= */
   onMainGridSelectionChanged(e: any) {
     this.seleccionadosMain = e.selectedRowsData || [];
   }
 
-  asignarHorarioASeleccionados() {
-    if (!this.horarioParaAsignar) return;
-    if (!this.seleccionadosMain || this.seleccionadosMain.length === 0) return;
-
-    const updated = this.personalHorarios.map(row => {
-      if (this.seleccionadosMain.some((s: any) => s.nEmpleado === row.nEmpleado)) {
-        const copyRow = { ...row };
-        for (const c of this.columnasFechas) {
-          // asigna solo si está vacío (si quieres sobrescribir, quita la condición)
-          copyRow[c.field] = this.horarioParaAsignar;
-        }
-        return copyRow;
-      }
-      return row;
-    });
-
-    this.personalHorarios = updated;
-  }
-
   /* ================= Desasignar ================= */
-  desasignarSeleccionados() {
+  async desasignarSeleccionados() {
     if (!this.seleccionadosMain || this.seleccionadosMain.length === 0) return;
 
-    const desasignados = this.seleccionadosMain.map((p: any) => ({ nEmpleado: p.nEmpleado, cEmpleado: p.cEmpleado }));
-    // Añadir de vuelta a disponibles si no existen
-    desasignados.forEach(p => {
-      if (!this.personalDisponibles.some(d => d.nEmpleado === p.nEmpleado)) {
-        this.personalDisponibles = [...this.personalDisponibles, p];
-      }
-    });
+    this.blockUI.start('Desasignando personal...');
 
-    // Quitar de la tabla principal
-    const ids = new Set(desasignados.map(p => p.nEmpleado));
-    this.personalHorarios = this.personalHorarios.filter(p => !ids.has(p.nEmpleado));
-    this.seleccionadosMain = [];
+    try {
+      // Eliminar de la API primero
+      for (const p of this.seleccionadosMain) {
+        const ordenTrabajoPersonalId = this.ordenTrabajoPersonalIds.get(p.nEmpleado);
+        
+        if (ordenTrabajoPersonalId) {
+          await firstValueFrom(
+            this.apiService.eliminarOrdenTrabajoPersonal(ordenTrabajoPersonalId)
+          );
+          
+          console.log(`✅ Personal ${p.cEmpleado} desasignado de la API`);
+          
+          // Eliminar del Map
+          this.ordenTrabajoPersonalIds.delete(p.nEmpleado);
+        } else {
+          console.warn(`⚠️ No se encontró ID de OrdenTrabajoPersonal para ${p.cEmpleado}`);
+        }
+      }
+
+      // Mover a disponibles (lógica visual)
+      const desasignados = this.seleccionadosMain.map((p: any) => ({
+        nEmpleado: p.nEmpleado,
+        cEmpleado: p.cEmpleado,
+        horarioCabeceraId: null
+      }));
+
+      desasignados.forEach(p => {
+        if (!this.personalDisponibles.some(d => d.nEmpleado === p.nEmpleado)) {
+          this.personalDisponibles = [...this.personalDisponibles, p];
+        }
+      });
+
+      const ids = new Set(desasignados.map(p => p.nEmpleado));
+      this.personalHorarios = this.personalHorarios.filter(p => !ids.has(p.nEmpleado));
+      this.seleccionadosMain = [];
+
+      this.showMessage('Personal desasignado correctamente');
+
+    } catch (error) {
+      console.error('❌ Error al desasignar personal:', error);
+      this.showMessage('Error al desasignar el personal');
+    } finally {
+      this.blockUI.stop();
+    }
   }
 
   /* ================= Guardar ================= */
   enviarPersonalHorario() {
     if (!this.ordenCombo || !this.fechaDesde || !this.fechaHasta) {
-      this.showMessage('Selecciona una orden de servicio y rango de fechas');
+      this.showMessage('Selecciona una orden de trabajo y rango de fechas');
       return;
     }
 
-    const lista = this.personalHorarios.filter((p) =>
-      this.columnasFechas.some(c => p[c.field] !== null && p[c.field] !== undefined)
-    );
-
-    console.log('Guardando payload demo ->', {
-      orden: this.ordenCombo,
+    const payload = {
+      ordenTrabajoCabeceraId: this.ordenCombo,
       fechaDesde: this.fechaDesde,
       fechaHasta: this.fechaHasta,
-      lista
-    });
+      personal: this.personalHorarios.map(p => ({
+        personaId: p.nEmpleado,
+        nombreCompleto: p.cEmpleado,
+        esLider: p.esLider || false
+      }))
+    };
 
-    this.showMessage('Personal asignado correctamente');
+    console.log('Guardando payload ->', payload);
+    this.showMessage('Personal asignado correctamente a la Orden de Trabajo');
   }
 
   /* ================= Utilidades ================= */
   showMessage(message: string) {
-    // simple mensaje visual (small box); también puedes reemplazar por toast
     const box = document.getElementById('messageBox');
     if (!box) {
       alert(message);

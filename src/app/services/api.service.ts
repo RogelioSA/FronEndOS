@@ -251,16 +251,11 @@ export class ApiService{
         { headers: this.getHttpHeaders() }
       );
     }
-    
-    getRegistroAsistencia(fechaInicio: string, fechaFin: string): Observable<any> {
-      const params = {
-        fechaInicio,
-        fechaFin
-      };
-    
+
+    getRegistroAsistencia(): Observable<any> {
       return this.https.get(
         `${this.baseUrl}/rrhh/RegistroAsistencia`,
-        { headers: this.getHttpHeaders(), params }
+        { headers: this.getHttpHeaders() }
       );
     }
     
@@ -1110,18 +1105,6 @@ export class ApiService{
     const headers = this.getHeaders();
     return this.https.delete<any>(url, { headers });
   }
-  
-  //marcacion
-  registrarAsistencia(empresaId: number, personalId: number): Observable<any> {
-    const url = `${this.baseUrl}/rrhh/RegistroAsistencia/serverdt`;
-    const headers = this.getHeaders();
-    const body = {
-      empresaId,
-      personalId
-    };
-  
-    return this.https.post<any>(url, body, { headers });
-  }
 
   //modulo
   listarModulos(): Observable<any> {
@@ -1712,4 +1695,91 @@ export class ApiService{
     return this.https.get<any>(url, { headers });
   }
   
+  //orden servicio cabecera
+  listarOrdenServicioCabecera(): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenServicioCabecera`;
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearOrdenServicioCabecera(data: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenServicioCabecera`;
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarOrdenServicioCabecera(id: number, data: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenServicioCabecera/${id}`;
+    return this.https.put<any>(url, data, { headers });
+  }
+
+  eliminarOrdenServicioCabecera(id: number): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenServicioCabecera/${id}`;
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //ordentrabajo cabecera
+  listarOrdenTrabajoCabecera(): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenTrabajoCabecera`;
+    return this.https.get<any>(url, { headers });
+  }
+
+  crearOrdenTrabajoCabecera(data: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenTrabajoCabecera`;
+    return this.https.post<any>(url, data, { headers });
+  }
+
+  editarOrdenTrabajoCabecera(id: number, data: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenTrabajoCabecera/${id}`;
+    return this.https.put<any>(url, data, { headers });
+  }
+  
+  eliminarOrdenTrabajoCabecera(id: number): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenTrabajoCabecera/${id}`;
+    return this.https.delete<any>(url, { headers });
+  }
+
+  //ordentrabajo personal
+  crearOrdenTrabajoPersonal(data: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenTrabajoPersonal`;
+    return this.https.post<any>(url, data, { headers });
+  }
+  eliminarOrdenTrabajoPersonal(id: number): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenTrabajoPersonal/${id}`;
+    return this.https.delete<any>(url, { headers }); 
+  }
+
+  //registroasistencia
+  registrarAsistencia(body: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/rrhh/RegistroAsistencia/serverdt`;
+    return this.https.post<any>(url, body, { headers });
+  }
+
+  //subir foto
+
+  subirAdjunto(modulo: number, archivo: File): Observable<any> {
+    const headers = this.getHeaders(); // Debe permitir multipart/form-data
+    const url = `${this.baseUrl}/general/Adjunto/${modulo}`;
+  
+    const formData = new FormData();
+    formData.append('modulo', modulo.toString());
+    formData.append('Archivo', archivo);
+  
+    return this.https.post<any>(url, formData, { headers });
+  }
+
+  crearPersonaAdjuntosUseCase(data: any): Observable<any> {
+    const url = `${this.baseUrl}/general/PersonaAdjuntosUseCase`;
+    const headers = this.getHeaders();
+    return this.https.post<any>(url, data, { headers });
+  }
 }

@@ -13,59 +13,100 @@ import { DatePipe } from '@angular/common';
 })
 export class ReporteMarcacionComponent {
 
-  marcaciones : [] = [];
-  estados : any[] = [];
+  marcaciones: any[] = [];
   @BlockUI() blockUI!: NgBlockUI;
 
   now: Date = new Date();
   fechaInicial: any = this.now;
   fechaFinal: any = this.now;
 
-  constructor(private apiService: ApiService
-              , private datePipe: DatePipe
+  constructor(
+    private apiService: ApiService,
+    private datePipe: DatePipe
   ){}
 
-  async ngOnInit():Promise<void> {
-
-    //this.traerMarcaciones();
-
+  async ngOnInit(): Promise<void> {
+    // Cargar marcaciones al iniciar con la fecha actual
+    await this.buscar();
   }
 
-  async traerMarcaciones(fechaInicio: string, fechaFin: string) {
-    this.blockUI.start('Cargando...');
+  async traerMarcaciones() {
+    this.blockUI.start('Cargando marcaciones...');
   
     try {
       console.log("📅 Trayendo marcaciones desde API...");
-      const obser = this.apiService.getRegistroAsistencia(fechaInicio, fechaFin);
-      const result = await firstValueFrom(obser);
+      const result = await firstValueFrom(
+        this.apiService.getRegistroAsistencia()
+      );
   
-      // Mapeo de datos según tus reglas
+      console.log("✅ Marcaciones recibidas:", result);
+
+      // Mapeo de datos según la estructura de la API
       this.marcaciones = result.map((r: any) => ({
-        personal: r.personal?.persona?.nombres || "Sin nombre",
+        id: r.id,
+        empresaId: r.empresaId,
+        personalId: r.personalId,
+        personal: this.obtenerNombreCompleto(r.personal),
         fecha: r.fecha ? new Date(r.fecha) : null,
         fechaJornal: r.fechaJornal ? new Date(r.fechaJornal) : null,
-        tipoEvento: r.tipoEvento === 0 ? "Entrada" : "Salida",
+        tipoEvento: this.obtenerTipoEvento(r.tipoEvento),
         esTardanza: r.esTardanza ? "Sí" : "No",
-        diferenciaMinutos: r.diferenciaMinutos
+        diferenciaMinutos: r.diferenciaMinutos,
+        latitud: r.latitud,
+        longitud: r.longitud,
+        horarioDetalleEventoId: r.horarioDetalleEventoId,
+        registroAsistenciaPoliticaId: r.registroAsistenciaPoliticaId,
+        // Datos adicionales
+        politica: r.registroAsistenciaPolitica?.nombreCorto || "N/A",
+        horaEvento: r.horarioDetalleEvento?.hora || "N/A"
       }));
+
+      console.log("✅ Marcaciones procesadas:", this.marcaciones);
   
     } catch (error) {
       console.error('❌ Error trayendo las marcaciones:', error);
+      this.showMessage('Error al cargar las marcaciones');
     } finally {
       this.blockUI.stop();
     }
   }
-  
 
-  guardar(event : any){
-    console.log(event);
+  obtenerNombreCompleto(personal: any): string {
+    if (!personal || !personal.persona) {
+      return "Sin información";
+    }
+    
+    // Si tienes nombres y apellidos separados
+    const nombres = personal.persona.nombres || "";
+    const apellidoPaterno = personal.persona.apellidoPaterno || "";
+    const apellidoMaterno = personal.persona.apellidoMaterno || "";
+    
+    return `${nombres} ${apellidoPaterno} ${apellidoMaterno}`.trim() || "Sin nombre";
   }
 
-  buscar(){
-    let fInicio = this.datePipe.transform(this.fechaInicial, 'yyyy/MM/dd');
-    let fFin = this.datePipe.transform(this.fechaFinal, 'yyyy/MM/dd');
+  obtenerTipoEvento(tipoEvento: number): string {
+    switch(tipoEvento) {
+      case 0: return "Entrada";
+      case 1: return "Salida";
+      case 2: return "Inicio Refrigerio";
+      case 3: return "Fin Refrigerio";
+      default: return `Tipo ${tipoEvento}`;
+    }
+  }
 
-    this.traerMarcaciones(fInicio!,fFin!);
+  async buscar() {
+    // Validar fechas
+    if (!this.fechaInicial || !this.fechaFinal) {
+      this.showMessage('Selecciona ambas fechas');
+      return;
+    }
+
+    if (this.fechaInicial > this.fechaFinal) {
+      this.showMessage('La fecha inicial no puede ser mayor que la fecha final');
+      return;
+    }
+
+    await this.traerMarcaciones();
   }
 
   showMessage(message: string) {
@@ -75,8 +116,7 @@ export class ReporteMarcacionComponent {
       messageBox.style.display = 'block';
       setTimeout(() => {
         messageBox.style.display = 'none';
-      }, 3000); // Ocultar el mensaje después de 3 segundos
+      }, 3000);
     }
   }
-
 }
