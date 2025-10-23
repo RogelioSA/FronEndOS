@@ -265,29 +265,6 @@ export class ApiService{
     }
     
     //menu
-    getMenus(): Observable<any> {
-      return this.https.get(`${this.baseUrl}/security/Formulario`, {
-        headers: this.getHttpHeaders()
-      });
-    }
-
-    crearMenu(data: any): Observable<any> {
-      return this.https.post(`${this.baseUrl}/security/Formulario`, data, {
-        headers: this.getHttpHeaders()
-      });
-    }
-    
-    actualizarMenu(id: number, data: any): Observable<any> {
-      return this.https.put(`${this.baseUrl}/security/Formulario/${id}`, data, {
-        headers: this.getHttpHeaders()
-      });
-    }
-    
-    eliminarMenu(id: number): Observable<any> {
-      return this.https.delete(`${this.baseUrl}/security/Formulario/${id}`, {
-        headers: this.getHttpHeaders()
-      });
-    }
 
     sincronizarMenu(menu: any ): Observable<any> {
         return this.https.get(`${this.baseUrl}/Seguridad/SincronizarMenu`, {
@@ -1656,4 +1633,83 @@ export class ApiService{
     const headers = this.getHeaders();
     return this.https.delete(`${this.baseUrl}/rrhh/PersonalEstado/${id}`, { headers });
   }
+
+  //formulario
+  getMenus(): Observable<any> {
+    return this.https.get(`${this.baseUrl}/security/Formulario`, {
+      headers: this.getHttpHeaders()
+    });
+  }
+
+  crearMenu(data: any): Observable<any> {
+    return this.https.post(`${this.baseUrl}/security/Formulario`, data, {
+      headers: this.getHttpHeaders()
+    });
+  }
+  
+  actualizarMenu(id: number, data: any): Observable<any> {
+    return this.https.put(`${this.baseUrl}/security/Formulario/${id}`, data, {
+      headers: this.getHttpHeaders()
+    });
+  }
+  
+  eliminarMenu(id: number): Observable<any> {
+    return this.https.delete(`${this.baseUrl}/security/Formulario/${id}`, {
+      headers: this.getHttpHeaders()
+    });
+  }
+
+  obtenerFormulariosPorRol(roleId: string): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.get(`${this.baseUrl}/security/Formulario/rol/${roleId}`, { headers });
+  }
+
+  //estructura opganizacional tipo
+  obtenerEstructurasOrganizacionalesActivas(): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.get(`${this.baseUrl}/corporativo/EstructuraOrganizacionalTipo/activos`, { headers });
+  }
+
+  crearEstructuraOrganizacionalTipo(data: any): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.post(`${this.baseUrl}/corporativo/EstructuraOrganizacionalTipo`, data, { headers });
+  }
+
+  editarEstructuraOrganizacionalTipo(id: number, data: any): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.put(`${this.baseUrl}/corporativo/EstructuraOrganizacionalTipo/${id}`, data, { headers });
+  }
+
+  eliminarEstructuraOrganizacionalTipo(id: number): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.delete(`${this.baseUrl}/corporativo/EstructuraOrganizacionalTipo/${id}`, { headers });
+  }
+  
+  //contrato personal
+  listarContratoPersonal(): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.get(`${this.baseUrl}/legal/ContratoPersonal`, { headers });
+  }
+
+
+  //ordens ervicio cabecera
+  ordenServicioCabecera(): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.get(`${this.baseUrl}/mantto/OrdenServicioCabecera`, { headers });
+  }
+
+  //usuario
+  listarUsuarios(): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.get(`${this.baseUrl}/security/Usuario`, { headers });
+  }
+  
+
+  //usuarioempresa
+  listarUsuarioEmpresaPorUsuario(usuarioId: number): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/security/UsuarioEmpresa/usuario/${usuarioId}`;
+    return this.https.get<any>(url, { headers });
+  }
+  
 }

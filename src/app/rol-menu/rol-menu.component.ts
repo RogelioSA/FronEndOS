@@ -15,26 +15,23 @@ export class RolMenuComponent {
   roles : [] = [];
   menus : [] = [];
   rolMenus : [] = [];
-  filasSeleccionadasMenu : any;
+  filasSeleccionadasMenu : any[] = [];
   filasSeleccionadasRol : any;
 
   visibleToast : boolean = false;
   mensajeToast : string = "";
+  tipoToast : string = "error";
 
   @BlockUI() blockUI!: NgBlockUI;
   @ViewChild('treeList', { static: false }) treeList!: DxTreeListComponent;
 
-  constructor(private apiService: ApiService,){}
+  constructor(private apiService: ApiService){}
 
   async ngOnInit():Promise<void> {
-
-    this.blockUI.start('Cargando...'); // Start blocking
-
-    this.traerRoles();
-    this.traerMenu();
-
+    this.blockUI.start('Cargando...'); 
+    await this.traerRoles();
+    await this.traerMenu();
     this.blockUI.stop();
-
   }
 
   async traerRoles() {
@@ -44,9 +41,9 @@ export class RolMenuComponent {
       const result = await firstValueFrom(obser);
   
       this.roles = result.map((r: any) => ({
-        nCodigo: r.id,          // id → nCodigo
-        cNombre: r.name,        // name → cNombre
-        cDetalle: r.normalizedName // normalizedName → cDetalle
+        nCodigo: r.id,
+        cNombre: r.name,
+        cDetalle: r.normalizedName
       }));
   
       console.log("Roles mapeados:", this.roles);
@@ -54,7 +51,6 @@ export class RolMenuComponent {
       console.log("Error trayendo los roles.", error);
     }
   }
-  
 
   async traerMenu() {
     console.log("traer menus");
@@ -63,10 +59,11 @@ export class RolMenuComponent {
       const result = await firstValueFrom(obser);
   
       this.menus = result.map((m: any) => ({
-        nCodigo: m.id,               // id → nCodigo
-        nPadre: m.parentId,          // parentId → nPadre
-        cNombre: m.nombre,           // nombre → cNombre
-        cNombreMostrar: m.nombreCorto // nombreCorto → cNombreMostrar
+        nCodigo: m.id,
+        nPadre: m.parentId,
+        cNombre: m.nombre,
+        cNombreMostrar: m.nombreCorto,
+        datosCompletos: m
       }));
   
       console.log("Menus mapeados:", this.menus);
@@ -74,54 +71,102 @@ export class RolMenuComponent {
       console.log("Error trayendo los menus.", error);
     }
   }
-  
 
-  async traerRolMenu(rol : number){
-    console.log("traer rolMenus");
-
-    try{
-      const obser = this.apiService.getRolById(rol);
+  async traerRolMenu(rolId: string) {
+    console.log("traer rolMenus para rol:", rolId);
+    
+    try {
+      const obser = this.apiService.obtenerFormulariosPorRol(rolId);
       const result = await firstValueFrom(obser);
 
-      this.filasSeleccionadasMenu = result.data;
-    }catch(error){
-      console.log('Error traendo los rolMenus.')
-    }finally{
+      this.filasSeleccionadasMenu = result.map((formulario: any) => formulario.id);
+      
+      console.log("Formularios seleccionados:", this.filasSeleccionadasMenu);
+    } catch (error) {
+      console.log('Error trayendo los rolMenus.', error);
+      this.filasSeleccionadasMenu = [];
     }
   }
 
-  async guardarCambios(){
-
+  async guardarCambios() {
     this.blockUI.start('Guardando...');
 
     let seleccionMenu = this.treeList.instance.getSelectedRowKeys('all');
     let seleccionRol = this.filasSeleccionadasRol;
 
-    if (seleccionMenu.length === 0 || seleccionRol === undefined){
+    if (seleccionMenu.length === 0 || seleccionRol === undefined) {
       this.mensajeToast = 'Se debe seleccionar opciones para configurar';
+      this.tipoToast = 'error';
       this.visibleToast = true;
       this.blockUI.stop();
       return;
     }
 
-    try{
-      const obser = this.apiService.sincronizarRolMenu(seleccionRol[0],seleccionMenu);
-      const result = await firstValueFrom(obser);
-      await this.traerRolMenu(seleccionRol[0]);
+    try {
+      // Obtener los IDs que están seleccionados actualmente
+      const idsSeleccionados = seleccionMenu;
+      
+      console.log('Guardando menús seleccionados:', idsSeleccionados);
 
-    }catch(error){
-      console.log('Error traendo los roles.')
-    }finally{ 
+      // Actualizar cada menú seleccionado usando actualizarMenu
+      const promises = idsSeleccionados.map(async (menuId: number) => {
+        // Buscar el menú completo en la lista
+        const menuCompleto: any = this.menus.find((m: any) => m.nCodigo === menuId);
+        
+        if (menuCompleto && menuCompleto.datosCompletos) {
+          const datos = menuCompleto.datosCompletos;
+          
+          // Preparar el objeto con el formato requerido por la API
+          const data = {
+            parentId: datos.parentId || 0,
+            moduloId: datos.moduloId || 0,
+            nombre: datos.nombre || '',
+            nombreCorto: datos.nombreCorto || '',
+            descripcion: datos.descripcion || '',
+            controlador: datos.controlador || '',
+            action: datos.action || '',
+            icono: datos.icono || '',
+            claimType: datos.claimType || '',
+            orden: datos.orden || 0,
+            estado: datos.estado ?? true
+          };
+
+          // Llamar a actualizarMenu para cada menú
+          const obser = this.apiService.actualizarMenu(menuId, data);
+          return firstValueFrom(obser);
+        }
+      });
+
+      // Esperar a que todas las actualizaciones terminen
+      await Promise.all(promises);
+      
+      this.mensajeToast = 'Cambios guardados exitosamente';
+      this.tipoToast = 'success';
+      this.visibleToast = true;
+      
+      // Recargar los datos
+      await this.traerRolMenu(seleccionRol[0].toString());
+
+    } catch (error) {
+      console.log('Error guardando cambios.', error);
+      this.mensajeToast = 'Error al guardar los cambios';
+      this.tipoToast = 'error';
+      this.visibleToast = true;
+    } finally { 
       this.blockUI.stop();
     }
   }
 
   async onSelectionChangedGrid(event: any) {
-    await this.traerRolMenu(event.selectedRowsData[0].nCodigo);
+    if (event.selectedRowsData && event.selectedRowsData.length > 0) {
+      const rolId = event.selectedRowsData[0].nCodigo.toString();
+      await this.traerRolMenu(rolId);
+    } else {
+      this.filasSeleccionadasMenu = [];
+    }
   }
   
   onSelectionChangedTree(event: any) {
-    //console.log(this.filasSeleccionadasMenu);
+    console.log("Selección actual del árbol:", this.filasSeleccionadasMenu);
   }
-
 }

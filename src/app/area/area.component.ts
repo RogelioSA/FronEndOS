@@ -1,135 +1,127 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
+interface EstructuraOrganizacionalTipo {
+  id: number;
+  nombre: string;
+  nombreCorto: string;
+  descripcion: string;
+  estado: boolean;
+}
 @Component({
     selector: 'app-area',
     templateUrl: './area.component.html',
     styleUrl: './area.component.css',
     standalone: false
 })
-export class AreaComponent {
+export class AreaComponent implements OnInit{
 
-  areas : [] = [];
-  departamentos : [] = [];
   @BlockUI() blockUI!: NgBlockUI;
-
-  constructor(private apiService: ApiService,){}
-
-  async ngOnInit():Promise<void> {
-
-    await this.traerAreas();
-    await this.traerDepartamentos();
-
-    console.log(this.areas);
-
-  }
-
-  async traerAreas(){
-    this.blockUI.start('Cargando...'); // Start blocking
-
-    console.log("traer areas");
-
-    try{
-      const obser = this.apiService.getAreas();
-      const result = await firstValueFrom(obser);
-
-      this.areas = result.data;
-    }catch(error){
-      console.log('Error traendo las areas.')
-    }finally{
-      this.blockUI.stop();
-    }
-  }
-
-  async traerDepartamentos() {
-    this.blockUI.start('Cargando...');
   
+  estructuras: EstructuraOrganizacionalTipo[] = [];
+
+  constructor(private apiService: ApiService) {}
+
+  async ngOnInit(): Promise<void> {
+    this.cargarDatos();
+  }
+
+  async cargarDatos(): Promise<void> {
     try {
-      const obser = this.apiService.getDepartamentos();
-      const result = await firstValueFrom(obser);
-  
-      // Mapear la data de la API al formato esperado por el grid
-      this.departamentos = result.map((d: any) => ({
-        nCodigo: d.id,
-        cNombre: d.nombre
-      }));
-  
-      console.log("Departamentos cargados:", this.departamentos);
-    } catch (error) {
-      console.log('Error trayendo los departamentos.', error);
-    } finally {
+      this.blockUI.start('Cargando datos...');
+      const response = await firstValueFrom(
+        this.apiService.obtenerEstructurasOrganizacionalesActivas()
+      );
+      this.estructuras = response;
       this.blockUI.stop();
+    } catch (error) {
+      this.blockUI.stop();
+      this.mostrarMensaje('Error al cargar los datos', 'error');
+      console.error('Error:', error);
     }
   }
-  
 
-  guardar(event : any){
-    console.log(event);
-  }
+  async insertar(event: any): Promise<void> {
+    try {
+      this.blockUI.start('Guardando...');
+      
+      const nuevoRegistro = {
+        nombre: event.data.nombre,
+        nombreCorto: event.data.nombreCorto,
+        descripcion: event.data.descripcion || '',
+        estado: event.data.estado !== undefined ? event.data.estado : true
+      };
 
-  actualizar(event : any){
-
-    let registro = event.newData;
-    registro.nCodigo = event.oldData.nCodigo;
-    registro.cTipo = "actualizar";
-
-    this.apiService.sincronizarArea(registro).subscribe(
-      (response: any) => {
-        this.traerAreas();
-      },
-      (error: any) => {
-        console.error('Error al actualizar registro.', error);
-      }
-    );
-
-    console.log(registro);
-
-    console.log(event);
-  }
-
-  insertar(event : any){
-
-    let registro = {
-      cNombre: event.data.cNombre,
-      cDetalle: event.data.cDetalle,
-      nDepartamento: event.data.nDepartamento,
-      cTipo: "insertar"
+      await firstValueFrom(
+        this.apiService.crearEstructuraOrganizacionalTipo(nuevoRegistro)
+      );
+      
+      await this.cargarDatos();
+      this.blockUI.stop();
+      this.mostrarMensaje('Estructura organizacional creada exitosamente', 'success');
+    } catch (error) {
+      this.blockUI.stop();
+      this.mostrarMensaje('Error al crear la estructura organizacional', 'error');
+      console.error('Error:', error);
     }
-
-    this.apiService.sincronizarArea(registro).subscribe(
-      (response: any) => {
-        this.traerAreas();
-      },
-      (error: any) => {
-        console.error('Error al insertar registro.', error);
-      }
-    );
-
-    console.log(registro);
-
-    console.log(event);
   }
 
-  eliminar(event : any){
-    let registro = {
-      nCodigo : event.data.nCodigo,
-      cTipo : "eliminar"
-    };
+  async actualizar(event: any): Promise<void> {
+    try {
+      this.blockUI.start('Actualizando...');
+      
+      const datosActualizados = {
+        nombre: event.newData.nombre ?? event.oldData.nombre,
+        nombreCorto: event.newData.nombreCorto ?? event.oldData.nombreCorto,
+        descripcion: event.newData.descripcion ?? event.oldData.descripcion,
+        estado: event.newData.estado ?? event.oldData.estado
+      };
 
-    this.apiService.sincronizarArea(registro).subscribe(
-      (response: any) => {
-        this.traerAreas();
-      },
-      (error: any) => {
-        console.error('Error al eliminar registro.', error);
-      }
-    );
+      await firstValueFrom(
+        this.apiService.editarEstructuraOrganizacionalTipo(event.key, datosActualizados)
+      );
+      
+      await this.cargarDatos();
+      this.blockUI.stop();
+      this.mostrarMensaje('Estructura organizacional actualizada exitosamente', 'success');
+    } catch (error) {
+      this.blockUI.stop();
+      this.mostrarMensaje('Error al actualizar la estructura organizacional', 'error');
+      console.error('Error:', error);
+    }
+  }
 
-    console.log(registro);
+  async eliminar(event: any): Promise<void> {
+    try {
+      this.blockUI.start('Eliminando...');
+      
+      await firstValueFrom(
+        this.apiService.eliminarEstructuraOrganizacionalTipo(event.key)
+      );
+      
+      await this.cargarDatos();
+      this.blockUI.stop();
+      this.mostrarMensaje('Estructura organizacional eliminada exitosamente', 'success');
+    } catch (error) {
+      this.blockUI.stop();
+      this.mostrarMensaje('Error al eliminar la estructura organizacional', 'error');
+      console.error('Error:', error);
+    }
+  }
 
-    console.log(event);
-    
+  mostrarMensaje(mensaje: string, tipo: 'success' | 'error'): void {
+    const messageBox = document.getElementById('messageBox');
+    if (messageBox) {
+      messageBox.textContent = mensaje;
+      messageBox.style.display = 'block';
+      messageBox.style.backgroundColor = tipo === 'success' ? '#d4edda' : '#f8d7da';
+      messageBox.style.color = tipo === 'success' ? '#155724' : '#721c24';
+      
+      setTimeout(() => {
+        messageBox.style.display = 'none';
+      }, 3000);
+    }
   }
 }

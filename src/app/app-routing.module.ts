@@ -93,7 +93,7 @@ const routes: Routes = [
   { path: 'contabilidad/cuentacontable', component: CuentaContableComponent, canActivate: [AuthGuard]},
   { path: 'contabilidad/cuentacontabletipo', component: CuentaContableTipoComponent, canActivate: [AuthGuard]},
   //{ path: 'finanzas/tercero', component: TerceroComponent, canActivate: [AuthGuard]},
-  { path: 'mantenimiento/ordenservicio', component: ManttoOrdenservicioComponent, canActivate: [AuthGuard]},
+  { path: 'procesos/ordenservicio', component: ManttoOrdenservicioComponent, canActivate: [AuthGuard]},
   { path: 'recursoshumanos/grupotrabajo', component: GrupotrabajoComponent, canActivate: [AuthGuard]},
   { path: 'procesos/ordentrabajo', component: OrdentrabajoComponent, canActivate: [AuthGuard]},
   { path: 'seguridad/modulo', component: ModuloComponent, canActivate: [AuthGuard]},

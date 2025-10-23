@@ -39,423 +39,209 @@ interface OrdenTrabajoDetalle {
 })
 export class OrdentrabajoComponent implements OnInit {
   @BlockUI() blockUI!: NgBlockUI;
-  
-  ordenes: OrdenTrabajoCabecera[] = [];
-  detalles: OrdenTrabajoDetalle[] = [];
-  ordenSeleccionada: OrdenTrabajoCabecera | null = null;
-  filasSeleccionadasOrden: number[] = [];
-  activarAgregarDetalles: boolean = false;
-  
-  // Catálogos para lookups
+
+  ordenes: any[] = [];
   ordenesServicio: any[] = [];
   gruposTrabajo: any[] = [];
-  ubicacionesTecnicas: any[] = [];
-  labores: any[] = [];
-  activos: any[] = [];
+
+  // Valores por defecto configurables
+  private readonly DEFAULT_UBICACION_TECNICA_ID = 1;
+  private readonly DEFAULT_LABOR_ID = 1;
+  private readonly DEFAULT_ACTIVO_ID = 1;
+  private readonly DEFAULT_PERSONA_ID = 1;
 
   constructor(private apiService: ApiService) {}
 
-  ngOnInit(): void {
-    this.cargarDatos();
+  async ngOnInit() {
+    await this.cargarDatos();
   }
 
-  async cargarDatos(): Promise<void> {
+  async cargarDatos() {
     try {
       this.blockUI.start('Cargando datos...');
-      
-      // Cargar catálogos
-      await this.cargarCatalogos();
-      
+
       // Cargar órdenes de trabajo
       const ordenesResponse = await firstValueFrom(
         this.apiService.getOrdenesTrabajoMantenimientoExterno()
       );
-      
-      this.ordenes = ordenesResponse.map((orden: any) => ({
-        id: orden.cabecera.id,
-        empresaId: orden.cabecera.empresaId,
-        ordenServicioCabeceraId: orden.cabecera.ordenServicioCabeceraId,
-        nombre: orden.cabecera.nombre,
-        descripcion: orden.cabecera.descripcion,
-        fechaInicio: orden.cabecera.fechaInicio,
-        fechaCompromiso: orden.cabecera.fechaCompromiso,
-        fechaFin: orden.cabecera.fechaFin,
-        grupoTrabajoId: orden.cabecera.grupoTrabajoId,
-        ordenTrabajoCabeceraPadreId: orden.cabecera.ordenTrabajoCabeceraPadreId,
-        estado: orden.cabecera.estado,
-        detalles: orden.detalles || [],
-        personas: orden.personas || []
-      }));
-      
-      this.blockUI.stop();
-    } catch (error) {
-      this.blockUI.stop();
-      this.mostrarMensaje('Error al cargar los datos', 'error');
-      console.error('Error:', error);
-    }
-  }
 
-  async cargarCatalogos(): Promise<void> {
-    try {
-      // Cargar órdenes de servicio usando la API correcta
+      // Cargar órdenes de servicio para el lookup
       const ordenesServicioResponse = await firstValueFrom(
         this.apiService.getOrdenesServicioMantenimientoExterno()
       );
       this.ordenesServicio = ordenesServicioResponse.map((os: any) => ({
-        id: os.cabecera.id,
-        nombre: os.cabecera.codigoOrdenInterna + ' - ' + os.cabecera.descripcion
+        id: os.id,
+        nombre: os.codigoOrdenInterna || os.descripcion || `Orden ${os.id}`
       }));
-      
-      // Cargar grupos de trabajo usando la API correcta
+
+      // Cargar grupos de trabajo
       const gruposResponse = await firstValueFrom(
         this.apiService.getGruposTrabajo()
       );
-      this.gruposTrabajo = gruposResponse.map((gt: any) => ({
-        id: gt.cabecera.id,
-        nombre: gt.cabecera.nombre
-      }));
-      
-      // Cargar ubicaciones técnicas
-      const ubicacionesResponse = await firstValueFrom(
-        this.apiService.getUbicacionesTecnicasActivas()
-      );
-      this.ubicacionesTecnicas = ubicacionesResponse;
-      
-      // Cargar labores
-      const laboresResponse = await firstValueFrom(
-        this.apiService.getLabores()
-      );
-      this.labores = laboresResponse;
-      
+      this.gruposTrabajo = gruposResponse;
+
+      // Transformar las órdenes
+      this.ordenes = this.transformarOrdenes(ordenesResponse);
+
+      this.blockUI.stop();
     } catch (error) {
-      console.error('Error al cargar catálogos:', error);
+      console.error('Error al cargar datos:', error);
+      this.blockUI.stop();
+      this.mostrarMensaje('Error al cargar los datos', 'error');
     }
   }
 
-  onSelectionChangedGrid(event: any): void {
-    if (event.selectedRowsData && event.selectedRowsData.length > 0) {
-      this.ordenSeleccionada = event.selectedRowsData[0];
-      this.cargarDetallesDeOrden();
-      this.activarAgregarDetalles = true;
-    } else {
-      this.ordenSeleccionada = null;
-      this.detalles = [];
-      this.activarAgregarDetalles = false;
-    }
-  }
-
-  cargarDetallesDeOrden(): void {
-    if (!this.ordenSeleccionada || !this.ordenSeleccionada.detalles) {
-      this.detalles = [];
-      return;
-    }
-
-    this.detalles = this.ordenSeleccionada.detalles.map((det: any) => ({
-      id: det.detalle.id,
-      empresaId: det.detalle.empresaId,
-      ubicacionTecnicaId: det.detalle.ubicacionTecnicaId,
-      laborId: det.detalle.laborId,
-      horasProyectadas: det.detalle.horasProyectadas,
-      horasEjecutadas: det.detalle.horasEjecutadas,
-      descripcion: det.detalle.descripcion,
-      estado: det.detalle.estado,
-      activoId: det.activo?.activoId || 1
+  transformarOrdenes(ordenes: any[]): any[] {
+    return ordenes.map(orden => ({
+      id: orden.id,
+      empresaId: orden.empresaId,
+      ordenServicioCabeceraId: orden.ordenServicioCabeceraId,
+      nombre: orden.nombre,
+      descripcion: orden.descripcion,
+      fechaInicio: orden.fechaInicio,
+      fechaCompromiso: orden.fechaCompromiso,
+      fechaFin: orden.fechaFin,
+      grupoTrabajoId: orden.grupoTrabajoId,
+      ordenTrabajoCabeceraPadreId: orden.ordenTrabajoCabeceraPadreId,
+      estado: orden.estado,
+      // Guardar detalles y personas originales para la actualización
+      _detalles: orden.detalles || [],
+      _personas: orden.personas || []
     }));
   }
 
-  async insertarTipo(event: any): Promise<void> {
-    try {
-      this.blockUI.start('Guardando...');
-      
-      const nuevaOrden = {
-        cabecera: {
-          empresaId: event.data.empresaId || 1,
-          ordenServicioCabeceraId: event.data.ordenServicioCabeceraId,
-          nombre: event.data.nombre,
-          descripcion: event.data.descripcion || '',
-          fechaInicio: event.data.fechaInicio,
-          fechaCompromiso: event.data.fechaCompromiso,
-          fechaFin: event.data.fechaFin || event.data.fechaCompromiso,
-          grupoTrabajoId: event.data.grupoTrabajoId,
-          ordenTrabajoCabeceraPadreId: event.data.ordenTrabajoCabeceraPadreId || null,
-          estado: event.data.estado || 1
-        },
-        detalles: [],
-        personas: []
-      };
-
-      await firstValueFrom(
-        this.apiService.crearOrdenTrabajoMantenimientoExterno(nuevaOrden)
-      );
-      
-      await this.cargarDatos();
-      this.blockUI.stop();
-      this.mostrarMensaje('Orden de trabajo creada exitosamente', 'success');
-    } catch (error) {
-      this.blockUI.stop();
-      this.mostrarMensaje('Error al crear la orden de trabajo', 'error');
-      console.error('Error:', error);
-    }
-  }
-
-  async actualizarTipo(event: any): Promise<void> {
-    try {
-      this.blockUI.start('Actualizando...');
-      
-      const ordenActualizada = {
-        cabecera: {
-          empresaId: event.newData.empresaId ?? event.oldData.empresaId,
-          ordenServicioCabeceraId: event.newData.ordenServicioCabeceraId ?? event.oldData.ordenServicioCabeceraId,
-          nombre: event.newData.nombre ?? event.oldData.nombre,
-          descripcion: event.newData.descripcion ?? event.oldData.descripcion,
-          fechaInicio: event.newData.fechaInicio ?? event.oldData.fechaInicio,
-          fechaCompromiso: event.newData.fechaCompromiso ?? event.oldData.fechaCompromiso,
-          fechaFin: event.newData.fechaFin ?? event.oldData.fechaFin,
-          grupoTrabajoId: event.newData.grupoTrabajoId ?? event.oldData.grupoTrabajoId,
-          ordenTrabajoCabeceraPadreId: event.newData.ordenTrabajoCabeceraPadreId ?? event.oldData.ordenTrabajoCabeceraPadreId,
-          estado: event.newData.estado ?? event.oldData.estado
-        },
-        detalles: event.oldData.detalles || [],
-        personas: event.oldData.personas || []
-      };
-
-      await firstValueFrom(
-        this.apiService.actualizarOrdenTrabajoMantenimientoExterno(event.key, ordenActualizada)
-      );
-      
-      await this.cargarDatos();
-      this.blockUI.stop();
-      this.mostrarMensaje('Orden de trabajo actualizada exitosamente', 'success');
-    } catch (error) {
-      this.blockUI.stop();
-      this.mostrarMensaje('Error al actualizar la orden de trabajo', 'error');
-      console.error('Error:', error);
-    }
-  }
-
-  async eliminarTipo(event: any): Promise<void> {
-    try {
-      this.blockUI.start('Eliminando...');
-      
-      await firstValueFrom(
-        this.apiService.eliminarOrdenTrabajoMantenimientoExterno(event.key)
-      );
-      
-      this.ordenSeleccionada = null;
-      this.detalles = [];
-      this.activarAgregarDetalles = false;
-      
-      await this.cargarDatos();
-      this.blockUI.stop();
-      this.mostrarMensaje('Orden de trabajo eliminada exitosamente', 'success');
-    } catch (error) {
-      this.blockUI.stop();
-      this.mostrarMensaje('Error al eliminar la orden de trabajo', 'error');
-      console.error('Error:', error);
-    }
-  }
-
-  async insertarParametro(event: any): Promise<void> {
-    if (!this.ordenSeleccionada) {
-      this.mostrarMensaje('Debe seleccionar una orden de trabajo', 'error');
-      return;
-    }
-
-    try {
-      this.blockUI.start('Guardando detalle...');
-      
-      const nuevoDetalle = {
-        detalle: {
-          id: 0,
-          empresaId: event.data.empresaId || 1,
-          ubicacionTecnicaId: event.data.ubicacionTecnicaId,
-          laborId: event.data.laborId,
-          horasProyectadas: event.data.horasProyectadas || 0,
-          horasEjecutadas: event.data.horasEjecutadas || 0,
-          descripcion: event.data.descripcion || '',
-          estado: event.data.estado || 1
-        },
-        activo: {
-          id: 0,
-          empresaId: event.data.empresaId || 1,
-          activoId: event.data.activoId || 1
-        }
-      };
-
-      const detallesActualizados = [...(this.ordenSeleccionada.detalles || []), nuevoDetalle];
-
-      const datosActualizados = {
-        cabecera: {
-          empresaId: this.ordenSeleccionada.empresaId,
-          ordenServicioCabeceraId: this.ordenSeleccionada.ordenServicioCabeceraId,
-          nombre: this.ordenSeleccionada.nombre,
-          descripcion: this.ordenSeleccionada.descripcion,
-          fechaInicio: this.ordenSeleccionada.fechaInicio,
-          fechaCompromiso: this.ordenSeleccionada.fechaCompromiso,
-          fechaFin: this.ordenSeleccionada.fechaFin,
-          grupoTrabajoId: this.ordenSeleccionada.grupoTrabajoId,
-          ordenTrabajoCabeceraPadreId: this.ordenSeleccionada.ordenTrabajoCabeceraPadreId,
-          estado: this.ordenSeleccionada.estado
-        },
-        detalles: detallesActualizados,
-        personas: this.ordenSeleccionada.personas || []
-      };
-
-      await firstValueFrom(
-        this.apiService.actualizarOrdenTrabajoMantenimientoExterno(this.ordenSeleccionada.id!, datosActualizados)
-      );
-      
-      await this.cargarDatos();
-      
-      // Reseleccionar la orden
-      this.filasSeleccionadasOrden = [this.ordenSeleccionada.id!];
-      const ordenActualizada = this.ordenes.find(o => o.id === this.ordenSeleccionada!.id);
-      if (ordenActualizada) {
-        this.ordenSeleccionada = ordenActualizada;
-        this.cargarDetallesDeOrden();
-      }
-      
-      this.blockUI.stop();
-      this.mostrarMensaje('Detalle agregado exitosamente', 'success');
-    } catch (error) {
-      this.blockUI.stop();
-      this.mostrarMensaje('Error al agregar el detalle', 'error');
-      console.error('Error:', error);
-    }
-  }
-
-  async actualizarParametro(event: any): Promise<void> {
-    if (!this.ordenSeleccionada) return;
-
-    try {
-      this.blockUI.start('Actualizando detalle...');
-      
-      const detallesActualizados = this.ordenSeleccionada.detalles!.map((det: any) => {
-        if (det.detalle.id === event.key) {
-          return {
+  construirPayload(rowData: any): any {
+    // Si no hay detalles, crear uno por defecto
+    const detalles = rowData._detalles && rowData._detalles.length > 0 
+      ? rowData._detalles 
+      : [
+          {
             detalle: {
-              id: det.detalle.id,
-              empresaId: det.detalle.empresaId,
-              ubicacionTecnicaId: event.newData.ubicacionTecnicaId ?? det.detalle.ubicacionTecnicaId,
-              laborId: event.newData.laborId ?? det.detalle.laborId,
-              horasProyectadas: event.newData.horasProyectadas ?? det.detalle.horasProyectadas,
-              horasEjecutadas: event.newData.horasEjecutadas ?? det.detalle.horasEjecutadas,
-              descripcion: event.newData.descripcion ?? det.detalle.descripcion,
-              estado: event.newData.estado ?? det.detalle.estado
+              id: 0,
+              empresaId: rowData.empresaId || 0,
+              ubicacionTecnicaId: this.DEFAULT_UBICACION_TECNICA_ID,
+              laborId: this.DEFAULT_LABOR_ID,
+              horasProyectadas: 0,
+              horasEjecutadas: 0,
+              descripcion: rowData.descripcion || 'Sin descripción',
+              estado: 0
             },
             activo: {
-              id: det.activo?.id || 0,
-              empresaId: det.activo?.empresaId || 1,
-              activoId: event.newData.activoId ?? det.activo?.activoId ?? 1
+              id: 0,
+              empresaId: rowData.empresaId || 0,
+              activoId: this.DEFAULT_ACTIVO_ID
             }
-          };
-        }
-        return det;
-      });
+          }
+        ];
 
-      const datosActualizados = {
-        cabecera: {
-          empresaId: this.ordenSeleccionada.empresaId,
-          ordenServicioCabeceraId: this.ordenSeleccionada.ordenServicioCabeceraId,
-          nombre: this.ordenSeleccionada.nombre,
-          descripcion: this.ordenSeleccionada.descripcion,
-          fechaInicio: this.ordenSeleccionada.fechaInicio,
-          fechaCompromiso: this.ordenSeleccionada.fechaCompromiso,
-          fechaFin: this.ordenSeleccionada.fechaFin,
-          grupoTrabajoId: this.ordenSeleccionada.grupoTrabajoId,
-          ordenTrabajoCabeceraPadreId: this.ordenSeleccionada.ordenTrabajoCabeceraPadreId,
-          estado: this.ordenSeleccionada.estado
-        },
-        detalles: detallesActualizados,
-        personas: this.ordenSeleccionada.personas || []
-      };
+    // Si no hay personas, crear una por defecto
+    const personas = rowData._personas && rowData._personas.length > 0
+      ? rowData._personas
+      : [
+          {
+            id: 0,
+            empresaId: rowData.empresaId || 0,
+            personaId: this.DEFAULT_PERSONA_ID,
+            esLider: true
+          }
+        ];
 
-      await firstValueFrom(
-        this.apiService.actualizarOrdenTrabajoMantenimientoExterno(this.ordenSeleccionada.id!, datosActualizados)
-      );
-      
-      await this.cargarDatos();
-      
-      // Reseleccionar la orden
-      this.filasSeleccionadasOrden = [this.ordenSeleccionada.id!];
-      const ordenActualizada = this.ordenes.find(o => o.id === this.ordenSeleccionada!.id);
-      if (ordenActualizada) {
-        this.ordenSeleccionada = ordenActualizada;
-        this.cargarDetallesDeOrden();
-      }
-      
-      this.blockUI.stop();
-      this.mostrarMensaje('Detalle actualizado exitosamente', 'success');
-    } catch (error) {
-      this.blockUI.stop();
-      this.mostrarMensaje('Error al actualizar el detalle', 'error');
-      console.error('Error:', error);
-    }
+    return {
+      cabecera: {
+        empresaId: rowData.empresaId || 0,
+        ordenServicioCabeceraId: rowData.ordenServicioCabeceraId || 0,
+        nombre: rowData.nombre || '',
+        descripcion: rowData.descripcion || '',
+        fechaInicio: rowData.fechaInicio || new Date().toISOString(),
+        fechaCompromiso: rowData.fechaCompromiso || new Date().toISOString(),
+        fechaFin: rowData.fechaFin || null,
+        grupoTrabajoId: rowData.grupoTrabajoId || 0,
+        ordenTrabajoCabeceraPadreId: rowData.ordenTrabajoCabeceraPadreId || null,
+        estado: rowData.estado !== undefined ? rowData.estado : 0
+      },
+      detalles: detalles,
+      personas: personas
+    };
   }
 
-  async eliminarParametro(event: any): Promise<void> {
-    if (!this.ordenSeleccionada) return;
-
+  async insertarTipo(e: any) {
     try {
-      this.blockUI.start('Eliminando detalle...');
-      
-      const detallesActualizados = this.ordenSeleccionada.detalles!.filter(
-        (det: any) => det.detalle.id !== event.key
-      );
+      this.blockUI.start('Guardando...');
 
-      const datosActualizados = {
-        cabecera: {
-          empresaId: this.ordenSeleccionada.empresaId,
-          ordenServicioCabeceraId: this.ordenSeleccionada.ordenServicioCabeceraId,
-          nombre: this.ordenSeleccionada.nombre,
-          descripcion: this.ordenSeleccionada.descripcion,
-          fechaInicio: this.ordenSeleccionada.fechaInicio,
-          fechaCompromiso: this.ordenSeleccionada.fechaCompromiso,
-          fechaFin: this.ordenSeleccionada.fechaFin,
-          grupoTrabajoId: this.ordenSeleccionada.grupoTrabajoId,
-          ordenTrabajoCabeceraPadreId: this.ordenSeleccionada.ordenTrabajoCabeceraPadreId,
-          estado: this.ordenSeleccionada.estado
-        },
-        detalles: detallesActualizados,
-        personas: this.ordenSeleccionada.personas || []
-      };
+      const payload = this.construirPayload(e.data);
 
       await firstValueFrom(
-        this.apiService.actualizarOrdenTrabajoMantenimientoExterno(this.ordenSeleccionada.id!, datosActualizados)
+        this.apiService.crearOrdenTrabajoMantenimientoExterno(payload)
       );
-      
+
+      this.mostrarMensaje('Orden de trabajo creada exitosamente', 'success');
       await this.cargarDatos();
-      
-      // Reseleccionar la orden
-      this.filasSeleccionadasOrden = [this.ordenSeleccionada.id!];
-      const ordenActualizada = this.ordenes.find(o => o.id === this.ordenSeleccionada!.id);
-      if (ordenActualizada) {
-        this.ordenSeleccionada = ordenActualizada;
-        this.cargarDetallesDeOrden();
-      }
-      
+
       this.blockUI.stop();
-      this.mostrarMensaje('Detalle eliminado exitosamente', 'success');
     } catch (error) {
+      console.error('Error al insertar:', error);
       this.blockUI.stop();
-      this.mostrarMensaje('Error al eliminar el detalle', 'error');
-      console.error('Error:', error);
+      this.mostrarMensaje('Error al guardar la orden de trabajo', 'error');
+      e.cancel = true;
     }
   }
 
-  mostrarMensaje(mensaje: string, tipo: 'success' | 'error'): void {
+  async actualizarTipo(e: any) {
+    try {
+      this.blockUI.start('Actualizando...');
+
+      const rowData = { ...e.oldData, ...e.newData };
+      const payload = this.construirPayload(rowData);
+
+      await firstValueFrom(
+        this.apiService.actualizarOrdenTrabajoMantenimientoExterno(e.key, payload)
+      );
+
+      this.mostrarMensaje('Orden de trabajo actualizada exitosamente', 'success');
+      await this.cargarDatos();
+
+      this.blockUI.stop();
+    } catch (error) {
+      console.error('Error al actualizar:', error);
+      this.blockUI.stop();
+      this.mostrarMensaje('Error al actualizar la orden de trabajo', 'error');
+      e.cancel = true;
+    }
+  }
+
+  async eliminarTipo(e: any) {
+    try {
+      this.blockUI.start('Eliminando...');
+
+      await firstValueFrom(
+        this.apiService.eliminarOrdenTrabajoMantenimientoExterno(e.key)
+      );
+
+      this.mostrarMensaje('Orden de trabajo eliminada exitosamente', 'success');
+
+      this.blockUI.stop();
+    } catch (error) {
+      console.error('Error al eliminar:', error);
+      this.blockUI.stop();
+      this.mostrarMensaje('Error al eliminar la orden de trabajo', 'error');
+      e.cancel = true;
+    }
+  }
+
+  mostrarMensaje(mensaje: string, tipo: 'success' | 'error') {
     const messageBox = document.getElementById('messageBox');
     if (messageBox) {
       messageBox.textContent = mensaje;
       messageBox.style.display = 'block';
       messageBox.style.backgroundColor = tipo === 'success' ? '#d4edda' : '#f8d7da';
       messageBox.style.color = tipo === 'success' ? '#155724' : '#721c24';
-      
+      messageBox.style.border = `1px solid ${tipo === 'success' ? '#c3e6cb' : '#f5c6cb'}`;
+
       setTimeout(() => {
-        messageBox.style.display = 'none';
+        if (messageBox) {
+          messageBox.style.display = 'none';
+        }
       }, 3000);
     }
   }
-
-  
 }

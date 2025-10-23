@@ -18,12 +18,13 @@ export class MenuBarComponent {
   hijos: any[] = [];
   menu2: any[] = [];
   usuariosEmpresas: any[] = [];
-  empresaSeleccionada: number = 0;
+  empresaSeleccionada: number | null = null; // ✅ Cambiado a null
   @BlockUI() blockUI!: NgBlockUI;
 
   menuOpen = false;
   isMobile = false;
   claims: any;
+  private isInitialLoad = true; // ✅ Bandera para controlar la carga inicial
 
   constructor(
     private router: Router,
@@ -34,18 +35,14 @@ export class MenuBarComponent {
   }
 
   async ngOnInit(): Promise<void> {
-
     this.claims = this.authService.getClaims();
-
     await this.traerUsuariosEmpresas();
     await this.traerMenus();
-
     this.armarArregloMenuBar();
-
   }
 
   async traerMenus() {
-    this.blockUI.start('Cargando...'); // Start blocking
+    this.blockUI.start('Cargando...'); 
 
     console.log("traer menus");
 
@@ -94,31 +91,51 @@ export class MenuBarComponent {
     console.log("traer usuarios empresas");
 
     try {
-      const obser = this.apiService.getUsuariosEmpresa();
+      // Obtener el user_id del localStorage
+      const userId = localStorage.getItem('user_id');
+
+      if (!userId) {
+        console.error('No se encontró user_id en localStorage');
+        return;
+      }
+
+      console.log('Cargando empresas para el usuario:', userId);
+
+      // Llamar a la nueva API con el userId
+      const obser = this.apiService.listarUsuarioEmpresaPorUsuario(Number(userId));
       const result = await firstValueFrom(obser);
 
       this.usuariosEmpresas = result;
 
-      // Buscar la empresa marcada como "actual"
-      const empresaActual = this.usuariosEmpresas.find(ue => ue.actual === true);
-      
-      if (empresaActual) {
-        this.empresaSeleccionada = empresaActual.empresaId;
-      } else if (this.usuariosEmpresas.length > 0) {
-        // Si no hay ninguna marcada como actual, seleccionar la primera
-        this.empresaSeleccionada = this.usuariosEmpresas[0].empresaId;
-      }
-
+      // ✅ NO asignar valor por defecto aquí
+      // Solo cargar los datos, el usuario debe seleccionar manualmente
       console.log('Usuarios Empresas cargados:', this.usuariosEmpresas);
-      console.log('Empresa seleccionada:', this.empresaSeleccionada);
+      console.log('Total de empresas disponibles:', this.usuariosEmpresas.length);
+
+      // ✅ Marcar que la carga inicial ha terminado
+      setTimeout(() => {
+        this.isInitialLoad = false;
+      }, 100);
 
     } catch (error) {
-      console.log('Error trayendo los usuarios empresas.', error);
+      console.error('Error trayendo los usuarios empresas:', error);
     }
   }
 
   async onEmpresaChange(event: any) {
-    console.log('Empresa cambiada:', event.value);
+    // ✅ Ignorar el primer cambio que ocurre al cargar
+    if (this.isInitialLoad) {
+      console.log('Ignorando cambio inicial de empresa');
+      return;
+    }
+
+    // ✅ Validar que haya un valor seleccionado
+    if (!event.value) {
+      console.log('No hay valor seleccionado');
+      return;
+    }
+
+    console.log('Empresa cambiada - Nuevo valor:', event.value);
     
     this.blockUI.start('Cambiando empresa...');
     
@@ -128,64 +145,94 @@ export class MenuBarComponent {
       
       if (!empresaSeleccionadaObj) {
         console.error('No se encontró la empresa seleccionada');
+        this.mostrarError('No se encontró la empresa seleccionada');
+        this.blockUI.stop();
         return;
       }
-
+  
+      console.log('Cambiando a empresa:', empresaSeleccionadaObj.empresa.nombre);
+  
       // Obtener el email del usuario
-      const email = empresaSeleccionadaObj.usuario?.email || this.claims.email;
-
+      const email = empresaSeleccionadaObj.usuario?.email || 
+                    localStorage.getItem('user_email') || 
+                    this.claims.email || 
+                    this.claims.cEmail;
+  
       if (!email) {
         console.error('No se pudo obtener el email del usuario');
+        this.mostrarError('No se pudo obtener el email del usuario');
+        this.blockUI.stop();
         return;
       }
-
+  
       // Preparar el body para el API
       const body = {
         email: email,
         empresaId: event.value
       };
-
-      console.log('Enviando body:', body);
-
+  
+      console.log('Enviando body al API changeTenant:', body);
+  
       // Llamar al API changeTenant
       const result = await firstValueFrom(this.apiService.changeTenant(body));
-
-      console.log('Respuesta del API:', result);
-
+  
+      console.log('Respuesta del API changeTenant:', result);
+  
       // Verificar si el resultado tiene el token
-      if (result && result.token) {
+      if (result && result.accessToken) {
         // Reemplazar el token en localStorage
-        localStorage.setItem('auth_token', result.token);
+        localStorage.setItem('auth_token', result.accessToken);
         
         console.log('Token actualizado correctamente');
-
+        console.log('Nueva empresa:', empresaSeleccionadaObj.empresa.nombre);
+  
         // Actualizar la empresa seleccionada
         this.empresaSeleccionada = event.value;
-
-        // Recargar la página para aplicar los cambios con el nuevo token
-        window.location.reload();
-
+  
+        // Mostrar mensaje de éxito con el nombre de la empresa
+        this.mostrarMensaje(
+          `Cambiando a empresa: ${empresaSeleccionadaObj.empresa.nombre}`, 
+          'success'
+        );
+  
+        // Recargar la página después de un breve delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+  
       } else {
         console.error('No se recibió un token válido del API');
+        this.mostrarError('No se recibió un token válido del servidor');
+        this.empresaSeleccionada = null; // Resetear selección
       }
-
-    } catch (error) {
+  
+    } catch (error: any) {
       console.error('Error al cambiar de empresa:', error);
-      // Revertir la selección en caso de error
-      const empresaActual = this.usuariosEmpresas.find(ue => ue.actual === true);
-      if (empresaActual) {
-        this.empresaSeleccionada = empresaActual.empresaId;
-      }
+      
+      const mensajeError = error?.error?.message || 
+                          error?.message || 
+                          'Error desconocido al cambiar de empresa';
+      this.mostrarError(mensajeError);
+      
+      this.empresaSeleccionada = null; // Resetear selección en caso de error
     } finally {
       this.blockUI.stop();
     }
+  }
+
+  private mostrarMensaje(mensaje: string, tipo: 'success' | 'error') {
+    console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
+    alert(mensaje);
+  }
+
+  private mostrarError(mensaje: string) {
+    this.mostrarMensaje(mensaje, 'error');
   }
 
   onLogout() {
     this.authService.logout();
   }
 
-  // Detectar si el tamaño de la pantalla es móvil
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
     this.checkIfMobile();
@@ -205,43 +252,33 @@ export class MenuBarComponent {
       const path = event.itemData.path;
       if (path !== '#')
         this.router.navigate([path]);
-      else {
-
-      }
     }
   }
 
   armarArregloMenuBar() {
-
     for (var a = 0; a < this.menus.length; a++) {
-
       this.menus[a].items = [];
       this.menus[a].migrado = false;
       this.menus[a].path = this.menus[a].cPath;
 
       if (this.menus[a].nPadre === 0) {
-        //this.menuBar.push(this.menus[a]);
         this.menuBar[this.menus[a].nOrden] = this.menus[a];
         this.menus[a].migrado = true;
-
         this.menu2[this.menus[a].nOrden] = this.menus[a];
       } else {
         this.hijos.push(this.menus[a]);
       }
     }
 
-    //filtro para limpiar todos los elementos que quedan vacios por el nOrden
     this.menuBar = this.menuBar.filter((m) => m !== undefined);
 
     for (var b = 0; b < this.hijos.length; b++) {
       for (var c = 0; c < this.hijos.length; c++) {
-
         if (b !== c) {
           if (this.hijos[b].nPadre === this.hijos[c].nCodigo) {
             this.hijos[c].items.push(this.hijos[b]);
           }
         }
-
       }
     }
 
@@ -253,5 +290,4 @@ export class MenuBarComponent {
       }
     }
   }
-
 }

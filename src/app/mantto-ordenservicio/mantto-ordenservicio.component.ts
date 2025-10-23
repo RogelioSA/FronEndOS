@@ -3,48 +3,6 @@ import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
-interface OrdenServicio {
-  id?: number;
-  empresaId: number;
-  ordenServicioTipoId: number;
-  codigoOrdenInterna: string;
-  codigoReferencial: string;
-  descripcion: string;
-  activo: boolean;
-  fechaInicial: string;
-  fechaFinal: string;
-  fechaEntrega: string;
-  clienteId: number;
-  clienteSupervisorId: number;
-  contratoCabeceraId: number;
-  clientePlannerId: number;
-  cotizacionId: number;
-  actaConformidadId: number;
-  monedaId: number;
-  licitacionCodigo: string;
-  cpi: string;
-  fechaEntregaCorreo: string;
-  fechaFianzaInicio: string;
-  fechaFianzaFinal: string;
-  montoBruto: number;
-  montoNeto: number;
-  montoFianza: number;
-  reporteMedicion: string;
-  reporteCalidad: string;
-  fechaEntregaInforme: string;
-  fechaRecepcionHES: string;
-  numeroHES: number;
-  mantenimientoTipoId: number;
-  numeroFactura: string;
-  valorFacturadoNeto: number;
-  fechaFactura: string;
-  fechaRecepcionFactura: string;
-  fechaVencimientoFactura: string;
-  fechaPagoFactura: string;
-  ordenServicioTipo?: any;
-  cliente?: any;
-}
-
 @Component({
   selector: 'app-mantto-ordenservicio',
   standalone: false,
@@ -53,228 +11,202 @@ interface OrdenServicio {
 })
 export class ManttoOrdenservicioComponent implements OnInit {
   @BlockUI() blockUI!: NgBlockUI;
-  
-  ordenes: OrdenServicio[] = [];
+
+  ordenes: any[] = [];
   ordenesServicioTipo: any[] = [];
   terceros: any[] = [];
 
   constructor(private apiService: ApiService) {}
 
-  ngOnInit(): void {
-    this.cargarDatos();
+  async ngOnInit() {
+    await this.cargarDatos();
   }
 
-  async cargarDatos(): Promise<void> {
+  async cargarDatos() {
     try {
       this.blockUI.start('Cargando datos...');
-      
-      // Cargar tipos de orden de servicio
-      const tiposResponse = await firstValueFrom(
-        this.apiService.getOrdenesServicioTipo()
-      );
-      this.ordenesServicioTipo = tiposResponse;
-      
-      // Cargar terceros (clientes)
-      const tercerosResponse = await firstValueFrom(
-        this.apiService.getTerceros()
-      );
-      this.terceros = tercerosResponse;
-      
+
       // Cargar órdenes de servicio
       const ordenesResponse = await firstValueFrom(
         this.apiService.getOrdenesServicioMantenimientoExterno()
       );
       
-      // Aplanar la estructura para el grid
-      this.ordenes = ordenesResponse.map((item: any) => ({
-        id: item.cabecera.id,
-        empresaId: item.cabecera.empresaId,
-        ordenServicioTipoId: item.cabecera.ordenServicioTipoId,
-        codigoOrdenInterna: item.cabecera.codigoOrdenInterna,
-        codigoReferencial: item.cabecera.codigoReferencial,
-        descripcion: item.cabecera.descripcion,
-        activo: item.cabecera.activo,
-        fechaInicial: item.cabecera.fechaInicial,
-        fechaFinal: item.cabecera.fechaFinal,
-        fechaEntrega: item.cabecera.fechaEntrega,
-        clienteId: item.externo.clienteId,
-        clienteSupervisorId: item.externo.clienteSupervisorId,
-        contratoCabeceraId: item.externo.contratoCabeceraId,
-        clientePlannerId: item.externo.clientePlannerId,
-        cotizacionId: item.externo.cotizacionId,
-        actaConformidadId: item.externo.actaConformidadId,
-        monedaId: item.externo.monedaId,
-        licitacionCodigo: item.externo.licitacionCodigo,
-        cpi: item.externo.cpi,
-        fechaEntregaCorreo: item.externo.fechaEntregaCorreo,
-        fechaFianzaInicio: item.externo.fechaFianzaInicio,
-        fechaFianzaFinal: item.externo.fechaFianzaFinal,
-        montoBruto: item.externo.montoBruto,
-        montoNeto: item.externo.montoNeto,
-        montoFianza: item.externo.montoFianza,
-        reporteMedicion: item.externo.reporteMedicion,
-        reporteCalidad: item.externo.reporteCalidad,
-        fechaEntregaInforme: item.externo.fechaEntregaInforme,
-        fechaRecepcionHES: item.externo.fechaRecepcionHES,
-        numeroHES: item.externo.numeroHES,
-        mantenimientoTipoId: item.externo.mantenimientoTipoId,
-        numeroFactura: item.externo.numeroFactura,
-        valorFacturadoNeto: item.externo.valorFacturadoNeto,
-        fechaFactura: item.externo.fechaFactura,
-        fechaRecepcionFactura: item.externo.fechaRecepcionFactura,
-        fechaVencimientoFactura: item.externo.fechaVencimientoFactura,
-        fechaPagoFactura: item.externo.fechaPagoFactura,
-        ordenServicioTipo: item.cabecera.ordenServicioTipo,
-        cliente: item.externo.cliente
-      }));
-      
+      // Cargar tipos de orden
+      const tiposResponse = await firstValueFrom(
+        this.apiService.getOrdenesServicioTipo()
+      );
+      this.ordenesServicioTipo = tiposResponse;
+
+      // Cargar terceros (clientes)
+      const tercerosResponse = await firstValueFrom(
+        this.apiService.getTerceros()
+      );
+      this.terceros = tercerosResponse;
+
+      // Transformar la respuesta para aplanar la estructura
+      this.ordenes = this.transformarOrdenes(ordenesResponse);
+
       this.blockUI.stop();
     } catch (error) {
+      console.error('Error al cargar datos:', error);
       this.blockUI.stop();
       this.mostrarMensaje('Error al cargar los datos', 'error');
-      console.error('Error:', error);
     }
   }
 
-  async insertar(event: any): Promise<void> {
+  transformarOrdenes(ordenes: any[]): any[] {
+    return ordenes.map(orden => ({
+      // Campos de cabecera
+      id: orden.id,
+      empresaId: orden.empresaId,
+      ordenServicioTipoId: orden.ordenServicioTipoId,
+      codigoOrdenInterna: orden.codigoOrdenInterna,
+      codigoReferencial: orden.codigoReferencial,
+      descripcion: orden.descripcion,
+      activo: orden.activo,
+      fechaInicial: orden.fechaInicial,
+      fechaFinal: orden.fechaFinal,
+      fechaEntrega: orden.fechaEntrega,
+      
+      // Campos de externo
+      externoId: orden.externo?.id,
+      clienteId: orden.externo?.clienteId,
+      clienteSupervisorId: orden.externo?.clienteSupervisorId,
+      contratoCabeceraId: orden.externo?.contratoCabeceraId,
+      clientePlannerId: orden.externo?.clientePlannerId,
+      cotizacionId: orden.externo?.cotizacionId,
+      actaConformidadId: orden.externo?.actaConformidadId,
+      monedaId: orden.externo?.monedaId,
+      licitacionCodigo: orden.externo?.licitacionCodigo,
+      cpi: orden.externo?.cpi,
+      fechaEntregaCorreo: orden.externo?.fechaEntregaCorreo,
+      fechaFianzaInicio: orden.externo?.fechaFianzaInicio,
+      fechaFianzaFinal: orden.externo?.fechaFianzaFinal,
+      montoBruto: orden.externo?.montoBruto,
+      montoNeto: orden.externo?.montoNeto,
+      montoFianza: orden.externo?.montoFianza,
+      reporteMedicion: orden.externo?.reporteMedicion,
+      reporteCalidad: orden.externo?.reporteCalidad,
+      fechaEntregaInforme: orden.externo?.fechaEntregaInforme,
+      fechaRecepcionHES: orden.externo?.fechaRecepcionHES,
+      numeroHES: orden.externo?.numeroHES,
+      mantenimientoTipoId: orden.externo?.mantenimientoTipoId,
+      numeroFactura: orden.externo?.numeroFactura,
+      valorFacturadoNeto: orden.externo?.valorFacturadoNeto,
+      fechaFactura: orden.externo?.fechaFactura,
+      fechaRecepcionFactura: orden.externo?.fechaRecepcionFactura,
+      fechaVencimientoFactura: orden.externo?.fechaVencimientoFactura,
+      fechaPagoFactura: orden.externo?.fechaPagoFactura
+    }));
+  }
+
+  construirPayload(rowData: any): any {
+    return {
+      cabecera: {
+        empresaId: rowData.empresaId || 0,
+        ordenServicioTipoId: rowData.ordenServicioTipoId || 0,
+        codigoOrdenInterna: rowData.codigoOrdenInterna || '',
+        codigoReferencial: rowData.codigoReferencial || '',
+        descripcion: rowData.descripcion || '',
+        activo: rowData.activo !== undefined ? rowData.activo : true,
+        fechaInicial: rowData.fechaInicial || new Date().toISOString(),
+        fechaFinal: rowData.fechaFinal || new Date().toISOString(),
+        fechaEntrega: rowData.fechaEntrega || new Date().toISOString()
+      },
+      externo: {
+        id: rowData.externoId || 0,
+        empresaId: rowData.empresaId || 0,
+        clienteId: rowData.clienteId || 0,
+        clienteSupervisorId: rowData.clienteSupervisorId || 1,
+        contratoCabeceraId: rowData.contratoCabeceraId || 1,
+        clientePlannerId: rowData.clientePlannerId || 1,
+        cotizacionId: rowData.cotizacionId || 1,
+        actaConformidadId: rowData.actaConformidadId || 1,
+        monedaId: rowData.monedaId || 1,
+        licitacionCodigo: rowData.licitacionCodigo || '',
+        cpi: rowData.cpi || '',
+        fechaEntregaCorreo: rowData.fechaEntregaCorreo || new Date().toISOString(),
+        fechaFianzaInicio: rowData.fechaFianzaInicio || new Date().toISOString(),
+        fechaFianzaFinal: rowData.fechaFianzaFinal || new Date().toISOString(),
+        montoBruto: rowData.montoBruto || 0,
+        montoNeto: rowData.montoNeto || 0,
+        montoFianza: rowData.montoFianza || 0,
+        reporteMedicion: rowData.reporteMedicion || 'N/A',  // ✅ Valor por defecto
+        reporteCalidad: rowData.reporteCalidad || 'N/A',    // ✅ Valor por defecto
+        fechaEntregaInforme: rowData.fechaEntregaInforme || new Date().toISOString(),
+        fechaRecepcionHES: rowData.fechaRecepcionHES || new Date().toISOString(),
+        numeroHES: rowData.numeroHES || 0,
+        mantenimientoTipoId: rowData.mantenimientoTipoId || 1,
+        numeroFactura: rowData.numeroFactura || '',
+        valorFacturadoNeto: rowData.valorFacturadoNeto || 0,
+        fechaFactura: rowData.fechaFactura || new Date().toISOString(),
+        fechaRecepcionFactura: rowData.fechaRecepcionFactura || new Date().toISOString(),
+        fechaVencimientoFactura: rowData.fechaVencimientoFactura || new Date().toISOString(),
+        fechaPagoFactura: rowData.fechaPagoFactura || new Date().toISOString()
+      }
+    };
+  }
+  async insertar(e: any) {
     try {
       this.blockUI.start('Guardando...');
       
-      const nuevoRegistro = {
-        cabecera: {
-          empresaId: event.data.empresaId || 1,
-          ordenServicioTipoId: event.data.ordenServicioTipoId,
-          codigoOrdenInterna: event.data.codigoOrdenInterna,
-          codigoReferencial: event.data.codigoReferencial || '',
-          descripcion: event.data.descripcion,
-          activo: event.data.activo !== undefined ? event.data.activo : true,
-          fechaInicial: event.data.fechaInicial,
-          fechaFinal: event.data.fechaFinal,
-          fechaEntrega: event.data.fechaEntrega
-        },
-        externo: {
-          empresaId: event.data.empresaId || 1,
-          clienteId: event.data.clienteId,
-          clienteSupervisorId: event.data.clienteSupervisorId || 1,
-          contratoCabeceraId: event.data.contratoCabeceraId || 1,
-          clientePlannerId: event.data.clientePlannerId || 1,
-          cotizacionId: event.data.cotizacionId || 1,
-          actaConformidadId: event.data.actaConformidadId || 1,
-          monedaId: event.data.monedaId || 1,
-          licitacionCodigo: event.data.licitacionCodigo || '',
-          cpi: event.data.cpi || '',
-          fechaEntregaCorreo: event.data.fechaEntregaCorreo || new Date().toISOString(),
-          fechaFianzaInicio: event.data.fechaFianzaInicio || new Date().toISOString(),
-          fechaFianzaFinal: event.data.fechaFianzaFinal || new Date().toISOString(),
-          montoBruto: event.data.montoBruto || 0,
-          montoNeto: event.data.montoNeto || 0,
-          montoFianza: event.data.montoFianza || 0,
-          reporteMedicion: event.data.reporteMedicion || '',
-          reporteCalidad: event.data.reporteCalidad || '',
-          fechaEntregaInforme: event.data.fechaEntregaInforme || new Date().toISOString(),
-          fechaRecepcionHES: event.data.fechaRecepcionHES || new Date().toISOString(),
-          numeroHES: event.data.numeroHES || 0,
-          mantenimientoTipoId: event.data.mantenimientoTipoId || 1,
-          numeroFactura: event.data.numeroFactura || '',
-          valorFacturadoNeto: event.data.valorFacturadoNeto || 0,
-          fechaFactura: event.data.fechaFactura || new Date().toISOString(),
-          fechaRecepcionFactura: event.data.fechaRecepcionFactura || new Date().toISOString(),
-          fechaVencimientoFactura: event.data.fechaVencimientoFactura || new Date().toISOString(),
-          fechaPagoFactura: event.data.fechaPagoFactura || new Date().toISOString()
-        }
-      };
-
-      await firstValueFrom(
-        this.apiService.registrarOrdenServicioMantenimientoExterno(nuevoRegistro)
-      );
+      const payload = this.construirPayload(e.data);
       
+      await firstValueFrom(
+        this.apiService.registrarOrdenServicioMantenimientoExterno(payload)
+      );
+
+      this.mostrarMensaje('Orden de servicio registrada exitosamente', 'success');
       await this.cargarDatos();
+      
       this.blockUI.stop();
-      this.mostrarMensaje('Orden de servicio creada exitosamente', 'success');
     } catch (error) {
+      console.error('Error al insertar:', error);
       this.blockUI.stop();
-      this.mostrarMensaje('Error al crear la orden de servicio', 'error');
-      console.error('Error:', error);
+      this.mostrarMensaje('Error al guardar la orden de servicio', 'error');
+      e.cancel = true;
     }
   }
 
-  async actualizar(event: any): Promise<void> {
+  async actualizar(e: any) {
     try {
       this.blockUI.start('Actualizando...');
       
-      const datosActualizados = {
-        cabecera: {
-          empresaId: event.newData.empresaId ?? event.oldData.empresaId,
-          ordenServicioTipoId: event.newData.ordenServicioTipoId ?? event.oldData.ordenServicioTipoId,
-          codigoOrdenInterna: event.newData.codigoOrdenInterna ?? event.oldData.codigoOrdenInterna,
-          codigoReferencial: event.newData.codigoReferencial ?? event.oldData.codigoReferencial,
-          descripcion: event.newData.descripcion ?? event.oldData.descripcion,
-          activo: event.newData.activo ?? event.oldData.activo,
-          fechaInicial: event.newData.fechaInicial ?? event.oldData.fechaInicial,
-          fechaFinal: event.newData.fechaFinal ?? event.oldData.fechaFinal,
-          fechaEntrega: event.newData.fechaEntrega ?? event.oldData.fechaEntrega
-        },
-        externo: {
-          empresaId: event.newData.empresaId ?? event.oldData.empresaId,
-          clienteId: event.newData.clienteId ?? event.oldData.clienteId,
-          clienteSupervisorId: event.newData.clienteSupervisorId ?? event.oldData.clienteSupervisorId,
-          contratoCabeceraId: event.newData.contratoCabeceraId ?? event.oldData.contratoCabeceraId,
-          clientePlannerId: event.newData.clientePlannerId ?? event.oldData.clientePlannerId,
-          cotizacionId: event.newData.cotizacionId ?? event.oldData.cotizacionId,
-          actaConformidadId: event.newData.actaConformidadId ?? event.oldData.actaConformidadId,
-          monedaId: event.newData.monedaId ?? event.oldData.monedaId,
-          licitacionCodigo: event.newData.licitacionCodigo ?? event.oldData.licitacionCodigo,
-          cpi: event.newData.cpi ?? event.oldData.cpi,
-          fechaEntregaCorreo: event.newData.fechaEntregaCorreo ?? event.oldData.fechaEntregaCorreo,
-          fechaFianzaInicio: event.newData.fechaFianzaInicio ?? event.oldData.fechaFianzaInicio,
-          fechaFianzaFinal: event.newData.fechaFianzaFinal ?? event.oldData.fechaFianzaFinal,
-          montoBruto: event.newData.montoBruto ?? event.oldData.montoBruto,
-          montoNeto: event.newData.montoNeto ?? event.oldData.montoNeto,
-          montoFianza: event.newData.montoFianza ?? event.oldData.montoFianza,
-          reporteMedicion: event.newData.reporteMedicion ?? event.oldData.reporteMedicion,
-          reporteCalidad: event.newData.reporteCalidad ?? event.oldData.reporteCalidad,
-          fechaEntregaInforme: event.newData.fechaEntregaInforme ?? event.oldData.fechaEntregaInforme,
-          fechaRecepcionHES: event.newData.fechaRecepcionHES ?? event.oldData.fechaRecepcionHES,
-          numeroHES: event.newData.numeroHES ?? event.oldData.numeroHES,
-          mantenimientoTipoId: event.newData.mantenimientoTipoId ?? event.oldData.mantenimientoTipoId,
-          numeroFactura: event.newData.numeroFactura ?? event.oldData.numeroFactura,
-          valorFacturadoNeto: event.newData.valorFacturadoNeto ?? event.oldData.valorFacturadoNeto,
-          fechaFactura: event.newData.fechaFactura ?? event.oldData.fechaFactura,
-          fechaRecepcionFactura: event.newData.fechaRecepcionFactura ?? event.oldData.fechaRecepcionFactura,
-          fechaVencimientoFactura: event.newData.fechaVencimientoFactura ?? event.oldData.fechaVencimientoFactura,
-          fechaPagoFactura: event.newData.fechaPagoFactura ?? event.oldData.fechaPagoFactura
-        }
-      };
-
-      await firstValueFrom(
-        this.apiService.actualizarOrdenServicioMantenimientoExterno(event.key, datosActualizados)
-      );
+      const rowData = { ...e.oldData, ...e.newData };
+      const payload = this.construirPayload(rowData);
       
-      await this.cargarDatos();
-      this.blockUI.stop();
+      await firstValueFrom(
+        this.apiService.actualizarOrdenServicioMantenimientoExterno(e.key, payload)
+      );
+
       this.mostrarMensaje('Orden de servicio actualizada exitosamente', 'success');
+      await this.cargarDatos();
+      
+      this.blockUI.stop();
     } catch (error) {
+      console.error('Error al actualizar:', error);
       this.blockUI.stop();
       this.mostrarMensaje('Error al actualizar la orden de servicio', 'error');
-      console.error('Error:', error);
+      e.cancel = true;
     }
   }
 
-  async eliminar(event: any): Promise<void> {
+  async eliminar(e: any) {
     try {
       this.blockUI.start('Eliminando...');
       
       await firstValueFrom(
-        this.apiService.eliminarOrdenServicioMantenimientoExterno(event.key)
+        this.apiService.eliminarOrdenServicioMantenimientoExterno(e.key)
       );
-      
-      await this.cargarDatos();
-      this.blockUI.stop();
+
       this.mostrarMensaje('Orden de servicio eliminada exitosamente', 'success');
+      
+      this.blockUI.stop();
     } catch (error) {
+      console.error('Error al eliminar:', error);
       this.blockUI.stop();
       this.mostrarMensaje('Error al eliminar la orden de servicio', 'error');
-      console.error('Error:', error);
+      e.cancel = true;
     }
   }
 
@@ -288,16 +220,19 @@ export class ManttoOrdenservicioComponent implements OnInit {
     return cliente ? cliente.razonSocial : '';
   }
 
-  mostrarMensaje(mensaje: string, tipo: 'success' | 'error'): void {
+  mostrarMensaje(mensaje: string, tipo: 'success' | 'error') {
     const messageBox = document.getElementById('messageBox');
     if (messageBox) {
       messageBox.textContent = mensaje;
       messageBox.style.display = 'block';
       messageBox.style.backgroundColor = tipo === 'success' ? '#d4edda' : '#f8d7da';
       messageBox.style.color = tipo === 'success' ? '#155724' : '#721c24';
-      
+      messageBox.style.border = `1px solid ${tipo === 'success' ? '#c3e6cb' : '#f5c6cb'}`;
+
       setTimeout(() => {
-        messageBox.style.display = 'none';
+        if (messageBox) {
+          messageBox.style.display = 'none';
+        }
       }, 3000);
     }
   }
