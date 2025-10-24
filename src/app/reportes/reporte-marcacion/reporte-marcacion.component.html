@@ -1,4 +1,7 @@
 <div class="container-fluid">
+    <!-- Leaflet CSS y JS desde CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <div class="row g-1 mt-2 justify-content-md-center mb-4">
         <div class="col-4">
             <div class="dx-field-label">Fecha Inicial</div>
@@ -22,38 +25,178 @@
             </dx-button>
         </div>
     </div>
+    
     <div class="row g-1 mt-2 justify-content-md-center mb-4">
         <div class="col-12">
             <h3>Reporte de marcaciones</h3>
-            <div id="data-grid">
-                <dx-data-grid id="gridContainer" [dataSource]="marcaciones" [showBorders]="true"
-                    [showColumnLines]="true" [showRowLines]="true" [allowColumnResizing]="true"
-                    [columnAutoWidth]="true">
-                    <dxo-paging [pageSize]="15"></dxo-paging>
-                    <dxo-pager [visible]="true" [showPageSizeSelector]="true"
-                        [allowedPageSizes]="[15, 25, 50, 100]"></dxo-pager>
-                    <dxo-search-panel [visible]="true"></dxo-search-panel>
-
-                    <dxi-column dataField="personal" caption="Personal" alignment="left" [width]="250"></dxi-column>
-                    <dxi-column dataField="fecha" caption="Fecha y Hora" dataType="datetime" 
-                        format="dd/MM/yyyy HH:mm:ss" [width]="180"></dxi-column>
-                    <dxi-column dataField="fechaJornal" caption="Fecha Jornal" dataType="date"
-                        format="dd/MM/yyyy" [width]="130"></dxi-column>
-                    <dxi-column dataField="tipoEvento" caption="Tipo de Evento" [width]="140" alignment="center"></dxi-column>
-                    <dxi-column dataField="esTardanza" caption="¿Tardanza?" [width]="120" alignment="center"></dxi-column>
-                    <dxi-column dataField="diferenciaMinutos" caption="Diferencia (min)" [width]="140" alignment="center"></dxi-column>
-                    <dxi-column dataField="latitud" caption="Latitud" [width]="110" alignment="center"></dxi-column>
-                    <dxi-column dataField="longitud" caption="Longitud" [width]="110" alignment="center"></dxi-column>
-                    <dxi-column dataField="politica" caption="Política" [width]="130"></dxi-column>
-                    <dxi-column dataField="horaEvento" caption="Hora Programada" [width]="150" alignment="center"></dxi-column>
-                </dx-data-grid>
-
-                <div id="messageBox"
-                    style="display: none; background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;">
-                </div>
-
-                <block-ui></block-ui>
+            
+            <div class="table-responsive" style="overflow-x: auto; max-height: 600px;">
+                <table class="table table-bordered table-hover" style="font-size: 12px;">
+                    <thead class="table-dark" style="position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th rowspan="2" class="align-middle text-center" style="min-width: 100px; position: sticky; left: 0; background-color: #212529; z-index: 11;">DNI</th>
+                            <th rowspan="2" class="align-middle text-center" style="min-width: 250px; position: sticky; left: 100px; background-color: #212529; z-index: 11;">PERSONAL</th>
+                            <th *ngFor="let col of columnasdinamicas" colspan="2" class="text-center" 
+                                [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">
+                                <div><strong>{{ col.diaSemana }}</strong> {{ col.fechaDisplay }}</div>
+                            </th>
+                        </tr>
+                        <tr>
+                            <ng-container *ngFor="let col of columnasdinamicas">
+                                <th class="text-center" style="min-width: 60px;" 
+                                    [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">E</th>
+                                <th class="text-center" style="min-width: 60px;" 
+                                    [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">S</th>
+                            </ng-container>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let empleado of datosReporte">
+                            <td class="text-center align-middle" style="position: sticky; left: 0; background-color: white; font-weight: 500;">
+                                {{ empleado.dni }}
+                            </td>
+                            <td class="align-middle" style="position: sticky; left: 100px; background-color: white; font-weight: 500;">
+                                {{ empleado.personal }}
+                            </td>
+                            <ng-container *ngFor="let col of columnasdinamicas">
+                                <td class="text-center align-middle celda-clickeable" 
+                                    [ngClass]="{
+                                        'bg-danger text-white': esTardanza(empleado, col.fecha),
+                                        'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                        'tiene-datos': obtenerMarcacion(empleado, col.fecha, 'E')
+                                    }"
+                                    (click)="obtenerMarcacion(empleado, col.fecha, 'E') && abrirDetalleMarcacion(empleado, col.fecha, 'E')"
+                                    [style.cursor]="obtenerMarcacion(empleado, col.fecha, 'E') ? 'pointer' : 'default'">
+                                    {{ obtenerMarcacion(empleado, col.fecha, 'E') }}
+                                </td>
+                                <td class="text-center align-middle celda-clickeable" 
+                                    [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                                'tiene-datos': obtenerMarcacion(empleado, col.fecha, 'S')}"
+                                    (click)="obtenerMarcacion(empleado, col.fecha, 'S') && abrirDetalleMarcacion(empleado, col.fecha, 'S')"
+                                    [style.cursor]="obtenerMarcacion(empleado, col.fecha, 'S') ? 'pointer' : 'default'">
+                                    {{ obtenerMarcacion(empleado, col.fecha, 'S') }}
+                                </td>
+                            </ng-container>
+                        </tr>
+                        <tr *ngIf="datosReporte.length === 0">
+                            <td [attr.colspan]="2 + (columnasdinamicas.length * 2)" class="text-center text-muted">
+                                No hay datos para mostrar en el rango de fechas seleccionado
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+
+            <div id="messageBox"
+                style="display: none; background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;">
+            </div>
+
+            <!-- Modal de detalle de marcación -->
+            <div class="modal-backdrop" *ngIf="mostrarModal" (click)="cerrarModal()"></div>
+            <div class="modal-detalle" *ngIf="mostrarModal && detalleMarcacion">
+                <div class="modal-content-detalle" (click)="$event.stopPropagation()">
+                    <div class="modal-header-detalle">
+                        <h5 class="modal-title">Información de la marcación {{ detalleMarcacion.fechaJornal }}</h5>
+                        <button type="button" class="btn-close-detalle" (click)="cerrarModal()">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body-detalle">
+                        <div class="info-grid">
+                            <!-- Fila 1 -->
+                            <div class="info-row">
+                                <div class="info-item">
+                                    <label class="info-label">Fecha marcación</label>
+                                    <div class="info-value">{{ detalleMarcacion.fecha }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Fecha registro</label>
+                                    <div class="info-value">{{ detalleMarcacion.fecha }}</div>
+                                </div>
+                            </div>
+
+                            <!-- Fila 2 -->
+                            <div class="info-row">
+                                <div class="info-item">
+                                    <label class="info-label">Jornal</label>
+                                    <div class="info-value">{{ detalleMarcacion.fechaJornal }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Regularizado?</label>
+                                    <div class="info-value">NO</div>
+                                </div>
+                            </div>
+
+                            <!-- Fila 3 -->
+                            <div class="info-row">
+                                <div class="info-item">
+                                    <label class="info-label">Usuario</label>
+                                    <div class="info-value">{{ detalleMarcacion.personal }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Aplicación</label>
+                                    <div class="info-value">Web / Mobile</div>
+                                </div>
+                            </div>
+
+                            <!-- Fila 4 -->
+                            <div class="info-row">
+                                <div class="info-item">
+                                    <label class="info-label">Tipo de Evento</label>
+                                    <div class="info-value">{{ detalleMarcacion.tipoEvento }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Hora Programada</label>
+                                    <div class="info-value">{{ detalleMarcacion.horaProgramada }}</div>
+                                </div>
+                            </div>
+
+                            <!-- Fila 5 -->
+                            <div class="info-row">
+                                <div class="info-item">
+                                    <label class="info-label">Política</label>
+                                    <div class="info-value">{{ detalleMarcacion.politica }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label">Tardanza</label>
+                                    <div class="info-value" [ngClass]="{'text-danger fw-bold': detalleMarcacion.esTardanza}">
+                                        {{ detalleMarcacion.esTardanza ? 'SÍ' : 'NO' }}
+                                        <span *ngIf="detalleMarcacion.esTardanza"> ({{ detalleMarcacion.diferenciaMinutos }} min)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ubicación -->
+                            <div class="info-row full-width">
+                                <div class="info-item-full">
+                                    <label class="info-label">Ubicación</label>
+                                    <div class="info-value" *ngIf="detalleMarcacion.latitud && detalleMarcacion.longitud">
+                                        <a [href]="detalleMarcacion.linkGoogleMaps" target="_blank" class="link-ubicacion">
+                                            <i class="fa-solid fa-map-marker-alt"></i>
+                                            {{ detalleMarcacion.latitud }}, {{ detalleMarcacion.longitud }}
+                                        </a>
+                                        
+                                        <!-- Mapa -->
+                                        <div id="mapaMarcacion" class="mapa-container"></div>
+                                    </div>
+                                    <div class="info-value text-muted" *ngIf="!detalleMarcacion.latitud || !detalleMarcacion.longitud">
+                                        Sin coordenadas disponibles
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer-detalle">
+                        <button type="button" class="btn btn-light btn-cerrar" (click)="cerrarModal()">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <block-ui></block-ui>
         </div>
     </div>
 </div>

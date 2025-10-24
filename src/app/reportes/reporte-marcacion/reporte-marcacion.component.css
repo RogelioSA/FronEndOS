@@ -1,0 +1,317 @@
+/* Estilos para el reporte de marcaciones tipo calendario */
+
+.table-responsive {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.table {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.table thead th {
+    vertical-align: middle;
+    font-size: 11px;
+    padding: 8px 4px;
+    border: 1px solid #dee2e6;
+}
+
+.table tbody td {
+    padding: 6px 4px;
+    border: 1px solid #dee2e6;
+    font-size: 11px;
+}
+
+/* Celdas clickeables */
+.celda-clickeable.tiene-datos:hover {
+    background-color: #e3f2fd !important;
+    box-shadow: inset 0 0 0 2px #2196F3;
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+}
+
+.celda-clickeable.tiene-datos.bg-danger:hover {
+    background-color: #c62828 !important;
+    box-shadow: inset 0 0 0 2px #ffcdd2;
+}
+
+/* Columnas fijas */
+.table thead th:nth-child(1),
+.table thead th:nth-child(2),
+.table tbody td:nth-child(1),
+.table tbody td:nth-child(2) {
+    position: sticky;
+    z-index: 5;
+}
+
+.table thead th:nth-child(1),
+.table tbody td:nth-child(1) {
+    left: 0;
+}
+
+.table thead th:nth-child(2),
+.table tbody td:nth-child(2) {
+    left: 100px;
+}
+
+/* Fondo para días especiales */
+.table-info {
+    background-color: #cfe2ff !important;
+}
+
+.table-warning {
+    background-color: #fff3cd !important;
+}
+
+/* Efecto hover en las filas */
+.table-hover tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+.table-hover tbody tr:hover td {
+    background-color: inherit;
+}
+
+/* Tardanzas en rojo */
+.bg-danger {
+    background-color: #dc3545 !important;
+    font-weight: bold;
+}
+
+/* Scrollbar personalizado */
+.table-responsive::-webkit-scrollbar {
+    height: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ========== ESTILOS DEL MODAL ========== */
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1040;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-detalle {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    padding: 20px;
+}
+
+.modal-content-detalle {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideDown 0.2s ease;
+}
+
+.modal-header-detalle {
+    padding: 20px 24px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header-detalle .modal-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #212529;
+}
+
+.btn-close-detalle {
+    background: transparent;
+    border: none;
+    color: #6c757d;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-close-detalle:hover {
+    background-color: #e9ecef;
+    color: #212529;
+}
+
+.modal-body-detalle {
+    padding: 24px;
+}
+
+.info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.info-row.full-width {
+    grid-template-columns: 1fr;
+}
+
+.info-item {
+    padding: 16px 12px;
+    border-right: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.info-item:last-child {
+    border-right: none;
+}
+
+.info-item-full {
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.info-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 400;
+    margin: 0;
+}
+
+.info-value {
+    font-size: 0.95rem;
+    color: #212529;
+    font-weight: 400;
+}
+
+.link-ubicacion {
+    color: #0d6efd;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s ease;
+}
+
+.link-ubicacion:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+.mapa-container {
+    width: 100%;
+    height: 300px;
+    margin-top: 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.modal-footer-detalle {
+    padding: 16px 24px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    background-color: #ffffff;
+}
+
+.btn-cerrar {
+    padding: 8px 20px;
+    font-size: 0.95rem;
+    border: 1px solid #dee2e6;
+    background-color: #ffffff;
+    color: #212529;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-cerrar:hover {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsivo para pantallas pequeñas */
+@media (max-width: 768px) {
+    .table {
+        font-size: 10px;
+    }
+    
+    .table thead th,
+    .table tbody td {
+        padding: 4px 2px;
+    }
+
+    .modal-content-detalle {
+        max-width: 95%;
+        margin: 10px;
+    }
+
+    .modal-body-detalle {
+        padding: 15px;
+    }
+
+    .seccion-detalle {
+        padding: 10px;
+    }
+}
