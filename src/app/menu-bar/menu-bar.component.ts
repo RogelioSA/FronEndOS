@@ -123,24 +123,20 @@ export class MenuBarComponent {
   }
 
   async onEmpresaChange(event: any) {
-    // ✅ Ignorar el primer cambio que ocurre al cargar
     if (this.isInitialLoad) {
       console.log('Ignorando cambio inicial de empresa');
       return;
     }
-
-    // ✅ Validar que haya un valor seleccionado
     if (!event.value) {
       console.log('No hay valor seleccionado');
       return;
     }
-
+  
     console.log('Empresa cambiada - Nuevo valor:', event.value);
     
     this.blockUI.start('Cambiando empresa...');
     
     try {
-      // Buscar la empresa seleccionada en el array
       const empresaSeleccionadaObj = this.usuariosEmpresas.find(ue => ue.empresaId === event.value);
       
       if (!empresaSeleccionadaObj) {
@@ -151,6 +147,10 @@ export class MenuBarComponent {
       }
   
       console.log('Cambiando a empresa:', empresaSeleccionadaObj.empresa.nombre);
+  
+      // ✅ Guardar el empresaId en localStorage
+      localStorage.setItem('empresa_id', event.value.toString());
+      console.log('Empresa ID guardado en localStorage:', event.value);
   
       // Obtener el email del usuario
       const email = empresaSeleccionadaObj.usuario?.email || 
@@ -204,6 +204,8 @@ export class MenuBarComponent {
         console.error('No se recibió un token válido del API');
         this.mostrarError('No se recibió un token válido del servidor');
         this.empresaSeleccionada = null; // Resetear selección
+        // ✅ Limpiar el localStorage si falla
+        localStorage.removeItem('empresa_id');
       }
   
     } catch (error: any) {
@@ -215,6 +217,8 @@ export class MenuBarComponent {
       this.mostrarError(mensajeError);
       
       this.empresaSeleccionada = null; // Resetear selección en caso de error
+      // ✅ Limpiar el localStorage si hay error
+      localStorage.removeItem('empresa_id');
     } finally {
       this.blockUI.stop();
     }

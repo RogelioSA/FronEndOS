@@ -258,6 +258,19 @@ export class ApiService{
         { headers: this.getHttpHeaders() }
       );
     }
+
+    getRegistroAsistenciaPersonal(personalId: number, fechaInicio: string, fechaFin: string): Observable<any> {
+      return this.https.get(
+        `${this.baseUrl}/rrhh/RegistroAsistencia/personal/${personalId}`,
+        { 
+          headers: this.getHttpHeaders(),
+          params: {
+            fechaInicio,
+            fechaFin
+          }
+        }
+      );
+    }  
     
     //menu
 
@@ -1675,12 +1688,6 @@ export class ApiService{
   }
 
 
-  //ordens ervicio cabecera
-  ordenServicioCabecera(): Observable<any> {
-    const headers = this.getHeaders();
-    return this.https.get(`${this.baseUrl}/mantto/OrdenServicioCabecera`, { headers });
-  }
-
   //usuario
   listarUsuarios(): Observable<any> {
     const headers = this.getHeaders();
@@ -1760,26 +1767,34 @@ export class ApiService{
   //registroasistencia
   registrarAsistencia(body: any): Observable<any> {
     const headers = this.getHeaders();
-    const url = `${this.baseUrl}/rrhh/RegistroAsistencia/serverdt`;
+    const url = `${this.baseUrl}/rrhh/RegistroAsistencia/current_user`;
     return this.https.post<any>(url, body, { headers });
   }
 
+  //
   //subir foto
 
   subirAdjunto(modulo: number, archivo: File): Observable<any> {
-    const headers = this.getHeaders(); // Debe permitir multipart/form-data
     const url = `${this.baseUrl}/general/Adjunto/${modulo}`;
   
     const formData = new FormData();
-    formData.append('modulo', modulo.toString());
     formData.append('Archivo', archivo);
+  
+    const token = this.getToken();
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
   
     return this.https.post<any>(url, formData, { headers });
   }
+  
 
   crearPersonaAdjuntosUseCase(data: any): Observable<any> {
     const url = `${this.baseUrl}/general/PersonaAdjuntosUseCase`;
     const headers = this.getHeaders();
     return this.https.post<any>(url, data, { headers });
   }
+
+  //
 }

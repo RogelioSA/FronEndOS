@@ -63,6 +63,7 @@ import { DistritoComponent } from './distrito/distrito.component';
 import { PuntofinancieroComponent } from './puntofinanciero/puntofinanciero.component';
 import { OrigenfinancieroComponent } from './origenfinanciero/origenfinanciero.component';
 import { CuentaCorrienteComponent } from './cuenta-corriente/cuenta-corriente.component';
+import { PersonalMarcacionComponent } from './personal-marcacion/personal-marcacion.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -119,7 +120,8 @@ import { CuentaCorrienteComponent } from './cuenta-corriente/cuenta-corriente.co
         DistritoComponent,
         PuntofinancieroComponent,
         OrigenfinancieroComponent,
-        CuentaCorrienteComponent
+        CuentaCorrienteComponent,
+        PersonalMarcacionComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

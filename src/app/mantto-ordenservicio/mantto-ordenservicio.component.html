@@ -1,271 +1,153 @@
 <div class="container-fluid">
-    <div class="row g-1 mt-2 justify-content-md-center mb-4">
-      <div class="col-12">
-        <h3>Orden de Servicio - Mantenimiento Externo</h3>
-        <div id="data-grid">
-          <dx-data-grid
-            id="gridContainer"
-            [dataSource]="ordenes"
-            keyExpr="id"
-            [showBorders]="true"
-            (onRowUpdating)="actualizar($event)"
-            (onRowInserting)="insertar($event)"
-            (onRowRemoving)="eliminar($event)"
-            [columnHidingEnabled]="true"
-            [rowAlternationEnabled]="true"
-            [showColumnLines]="true"
-            [showRowLines]="true"
-            [allowColumnResizing]="true"
-          >
-            <dxo-paging [pageSize]="15"></dxo-paging>
-            <dxo-pager
-              [visible]="true"
-              [showPageSizeSelector]="true"
-              [allowedPageSizes]="[15, 25, 50, 100]"
-            ></dxo-pager>
-            
-            <dxo-editing
-              mode="row"
-              [allowUpdating]="true"
-              [allowAdding]="true"
-              [allowDeleting]="true"
-              [selectTextOnEditStart]="true"
-              [useIcons]="true"
-            >
-            </dxo-editing>
-  
-            <!-- SECCIÓN CABECERA -->
-            <dxi-column 
-              dataField="id" 
-              caption="ID" 
-              [width]="70" 
-              [allowEditing]="false" 
-              alignment="center"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="ordenServicioTipoId" 
-              caption="Tipo de Orden"
-              [width]="180"
-              [calculateDisplayValue]="calculateNombreTipoOrden"
-            >
-              <dxo-lookup
-                [dataSource]="ordenesServicioTipo"
-                valueExpr="id"
-                displayExpr="nombre"
-              >
-              </dxo-lookup>
-              <dxi-validation-rule 
-                type="required" 
-                message="El tipo de orden es requerido"
-              ></dxi-validation-rule>
-            </dxi-column>
-  
-            <dxi-column 
-              dataField="codigoOrdenInterna" 
-              caption="Código Orden"
-              [width]="130"
-            >
-              <dxi-validation-rule 
-                type="required" 
-                message="El código es requerido"
-              ></dxi-validation-rule>
-            </dxi-column>
-  
-            <dxi-column 
-              dataField="codigoReferencial" 
-              caption="Código Referencial"
-              [width]="150"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="descripcion" 
-              caption="Descripción"
-              [width]="200"
-            >
-              <dxi-validation-rule 
-                type="required" 
-                message="La descripción es requerida"
-              ></dxi-validation-rule>
-            </dxi-column>
-  
-            <dxi-column 
-              dataField="activo" 
-              caption="Activo" 
-              dataType="boolean"
-              [width]="80"
-              alignment="center"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="fechaInicial" 
-              caption="Fecha Inicial"
-              dataType="datetime"
-              [width]="150"
-            >
-              <dxi-validation-rule 
-                type="required" 
-                message="La fecha inicial es requerida"
-              ></dxi-validation-rule>
-            </dxi-column>
-  
-            <dxi-column 
-              dataField="fechaFinal" 
-              caption="Fecha Final"
-              dataType="datetime"
-              [width]="150"
-            >
-              <dxi-validation-rule 
-                type="required" 
-                message="La fecha final es requerida"
-              ></dxi-validation-rule>
-            </dxi-column>
-  
-            <dxi-column 
-              dataField="fechaEntrega" 
-              caption="Fecha Entrega"
-              dataType="datetime"
-              [width]="150"
-            >
-              <dxi-validation-rule 
-                type="required" 
-                message="La fecha de entrega es requerida"
-              ></dxi-validation-rule>
-            </dxi-column>
-  
-            <!-- SECCIÓN EXTERNO -->
-            <dxi-column 
-              dataField="clienteId" 
-              caption="Cliente"
-              [width]="200"
-              [calculateDisplayValue]="calculateRazonSocialCliente"
-            >
-              <dxo-lookup
-                [dataSource]="terceros"
-                valueExpr="id"
-                displayExpr="razonSocial"
-              >
-              </dxo-lookup>
-              <dxi-validation-rule 
-                type="required" 
-                message="El cliente es requerido"
-              ></dxi-validation-rule>
-            </dxi-column>
-  
-            <dxi-column 
-              dataField="licitacionCodigo" 
-              caption="Código Licitación"
-              [width]="150"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="cpi" 
-              caption="CPI"
-              [width]="100"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="montoBruto" 
-              caption="Monto Bruto"
-              dataType="number"
-              format="#,##0.00"
-              [width]="120"
-              alignment="right"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="montoNeto" 
-              caption="Monto Neto"
-              dataType="number"
-              format="#,##0.00"
-              [width]="120"
-              alignment="right"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="montoFianza" 
-              caption="Monto Fianza"
-              dataType="number"
-              format="#,##0.00"
-              [width]="120"
-              alignment="right"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="numeroHES" 
-              caption="Número HES"
-              dataType="number"
-              [width]="110"
-              alignment="center"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="numeroFactura" 
-              caption="Número Factura"
-              [width]="130"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="valorFacturadoNeto" 
-              caption="Valor Facturado"
-              dataType="number"
-              format="#,##0.00"
-              [width]="140"
-              alignment="right"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="fechaFactura" 
-              caption="Fecha Factura"
-              dataType="date"
-              [width]="130"
-            ></dxi-column>
-  
-            <dxi-column 
-              dataField="fechaPagoFactura" 
-              caption="Fecha Pago"
-              dataType="date"
-              [width]="130"
-            ></dxi-column>
-            <!-- Agregar después de la columna montoFianza -->
-<dxi-column 
-dataField="reporteMedicion" 
-caption="Reporte Medición"
-[width]="150"
->
-<dxi-validation-rule 
-  type="required" 
-  message="El reporte de medición es requerido"
-></dxi-validation-rule>
-</dxi-column>
-
-<dxi-column 
-dataField="reporteCalidad" 
-caption="Reporte Calidad"
-[width]="150"
->
-<dxi-validation-rule 
-  type="required" 
-  message="El reporte de calidad es requerido"
-></dxi-validation-rule>
-</dxi-column>
-  
-            <dxi-column type="buttons" [width]="110" [fixed]="true" fixedPosition="right">
-              <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
-              <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
-              <dxi-button name="save" icon="save" hint="Guardar"></dxi-button>
-              <dxi-button name="cancel" icon="revert" hint="Cancelar"></dxi-button>
-            </dxi-column>
-          </dx-data-grid>
-  
-          <div 
-            id="messageBox" 
-            style="display: none; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;"
-          >
-          </div>
+  <div class="row g-1 mt-2 justify-content-md-center mb-4">
+    <div class="col-12">
+      <h3>Orden de Servicio - Cabecera</h3>
+      <div id="data-grid">
+        <dx-data-grid
+          id="gridContainer"
+          [dataSource]="ordenes"
+          keyExpr="id"
+          [showBorders]="true"
+          (onRowUpdating)="actualizar($event)"
+          (onRowInserting)="insertar($event)"
+          (onRowRemoving)="eliminar($event)"
+          [columnHidingEnabled]="true"
+          [rowAlternationEnabled]="true"
+          [showColumnLines]="true"
+          [showRowLines]="true"
+          [allowColumnResizing]="true"
+        >
+          <dxo-paging [pageSize]="15"></dxo-paging>
+          <dxo-pager
+            [visible]="true"
+            [showPageSizeSelector]="true"
+            [allowedPageSizes]="[15, 25, 50, 100]"
+          ></dxo-pager>
           
-          <block-ui></block-ui>
+          <dxo-editing
+            mode="row"
+            [allowUpdating]="true"
+            [allowAdding]="true"
+            [allowDeleting]="true"
+            [selectTextOnEditStart]="true"
+            [useIcons]="true"
+          >
+          </dxo-editing>
+
+          <dxi-column 
+            dataField="id" 
+            caption="ID" 
+            [width]="70" 
+            [allowEditing]="false" 
+            alignment="center"
+          ></dxi-column>
+
+          <dxi-column 
+            dataField="ordenServicioTipoId" 
+            caption="Tipo de Orden"
+            [width]="180"
+            [calculateDisplayValue]="calculateNombreTipoOrden"
+          >
+            <dxo-lookup
+              [dataSource]="ordenesServicioTipo"
+              valueExpr="id"
+              displayExpr="nombre"
+            >
+            </dxo-lookup>
+            <dxi-validation-rule 
+              type="required" 
+              message="El tipo de orden es requerido"
+            ></dxi-validation-rule>
+          </dxi-column>
+
+          <dxi-column 
+            dataField="codigoOrdenInterna" 
+            caption="Código Orden"
+            [width]="150"
+          >
+            <dxi-validation-rule 
+              type="required" 
+              message="El código es requerido"
+            ></dxi-validation-rule>
+          </dxi-column>
+
+          <dxi-column 
+            dataField="codigoReferencial" 
+            caption="Código Referencial"
+            [width]="150"
+          ></dxi-column>
+
+          <dxi-column 
+            dataField="descripcion" 
+            caption="Descripción"
+            [width]="250"
+          >
+            <dxi-validation-rule 
+              type="required" 
+              message="La descripción es requerida"
+            ></dxi-validation-rule>
+          </dxi-column>
+
+          <dxi-column 
+            dataField="activo" 
+            caption="Activo" 
+            dataType="boolean"
+            [width]="80"
+            alignment="center"
+          ></dxi-column>
+
+          <dxi-column 
+            dataField="fechaInicial" 
+            caption="Fecha Inicial"
+            dataType="datetime"
+            [width]="150"
+          >
+            <dxi-validation-rule 
+              type="required" 
+              message="La fecha inicial es requerida"
+            ></dxi-validation-rule>
+          </dxi-column>
+
+          <dxi-column 
+            dataField="fechaFinal" 
+            caption="Fecha Final"
+            dataType="datetime"
+            [width]="150"
+          >
+            <dxi-validation-rule 
+              type="required" 
+              message="La fecha final es requerida"
+            ></dxi-validation-rule>
+          </dxi-column>
+
+          <dxi-column 
+            dataField="fechaEntrega" 
+            caption="Fecha Entrega"
+            dataType="datetime"
+            [width]="150"
+          >
+            <dxi-validation-rule 
+              type="required" 
+              message="La fecha de entrega es requerida"
+            ></dxi-validation-rule>
+          </dxi-column>
+
+          <dxi-column type="buttons" [width]="110" [fixed]="true" fixedPosition="right">
+            <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
+            <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
+            <dxi-button name="save" icon="save" hint="Guardar"></dxi-button>
+            <dxi-button name="cancel" icon="revert" hint="Cancelar"></dxi-button>
+          </dxi-column>
+        </dx-data-grid>
+
+        <div 
+          id="messageBox" 
+          style="display: none; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;"
+        >
         </div>
+        
+        <block-ui></block-ui>
       </div>
     </div>
   </div>
+</div>

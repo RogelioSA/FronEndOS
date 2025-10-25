@@ -297,7 +297,7 @@ export class PersonalHorarioComponent {
     if (!this.seleccionDisponibles || this.seleccionDisponibles.length === 0) return;
   
     // Obtener empresaId del localStorage (es solo el ID, no un objeto)
-    const empresaSeleccionada = localStorage.getItem('empresaSeleccionada');
+    const empresaSeleccionada = localStorage.getItem('empresa_id');
     console.log('🔍 DEBUG - empresaSeleccionada (raw):', empresaSeleccionada);
   
     if (!empresaSeleccionada) {

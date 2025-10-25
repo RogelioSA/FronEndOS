@@ -34,6 +34,7 @@ export class MarcacionComponent implements OnInit, OnDestroy {
   showStatusCard: boolean = false;
   isProcessing: boolean = false;
   hasError: boolean = false;
+  errorMessage: string = '';
   
   statusSteps = {
     creatingMarcacion: 'pending',
@@ -115,7 +116,6 @@ export class MarcacionComponent implements OnInit, OnDestroy {
 
   // Método para convertir base64 a File
   base64ToFile(base64String: string, filename: string): File {
-    // Separar el data URL
     const arr = base64String.split(',');
     const mime = arr[0].match(/:(.*?);/)![1];
     const bstr = atob(arr[1]);
@@ -129,6 +129,27 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     return new File([u8arr], filename, { type: mime });
   }
 
+  // Método para extraer mensaje de error del servidor
+  private extractErrorMessage(error: any): string {
+    if (error?.error?.detail) {
+      return error.error.detail;
+    }
+    
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+    
+    if (typeof error?.error === 'string') {
+      return error.error;
+    }
+    
+    if (error?.message) {
+      return error.message;
+    }
+    
+    return 'Ocurrió un error inesperado. Por favor, intente nuevamente.';
+  }
+
   async marcar() {
     // Validaciones previas
     if (!this.latitude || !this.longitude) {
@@ -137,7 +158,7 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     }
   
     // Obtener empresaId del localStorage
-    const empresaSeleccionada = localStorage.getItem('empresaSeleccionada');
+    const empresaSeleccionada = localStorage.getItem('empresa_id');
     console.log('🔍 DEBUG - empresaSeleccionada (raw):', empresaSeleccionada);
   
     if (!empresaSeleccionada) {
@@ -156,6 +177,7 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     }
   
     this.isProcessing = true;
+    this.errorMessage = '';
     
     // CAPTURAR LA FOTO INMEDIATAMENTE
     this.capturedImage = this.capturePhoto();
@@ -176,89 +198,109 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     let marcacionResponse: any = null;
     let adjuntoId: number = 0;
   
-    try {
-      // Paso 1: Crear marcación
-      this.statusSteps.creatingMarcacion = 'pending';
-      
-      const fechaActual = new Date();
-      const payload = {
-        empresaId: empresaId,
-        personalId: 1,
-        fecha: fechaActual.toISOString(),
-        fechaJornal: fechaActual.toISOString().split('T')[0],
-        tipoEvento: 1,
-        esTardanza: true,
-        diferenciaMinutos: 1,
-        latitud: this.latitude,
-        longitud: this.longitude,
-        horarioDetalleEventoId: 1,
-        registroAsistenciaPoliticaId: 1
-      };
-  
-      console.log('📤 Payload a enviar (registrarAsistencia):', payload);
-  
-      marcacionResponse = await firstValueFrom(
-        this.apiService.registrarAsistencia(payload)
-      );
-  
-      console.log('✅ Respuesta de la API (registrar asistencia):', marcacionResponse);
-      
-      await this.delay(500);
-      this.statusSteps.creatingMarcacion = 'success';
-      
-    } catch (error: any) {
-      console.error('❌ Error al crear marcación:', error);
-      this.statusSteps.creatingMarcacion = 'error';
-    }
-  
-    try {
-      // Paso 2: Subir foto (SIEMPRE SE EJECUTA)
-      this.statusSteps.creatingDirectory = 'pending';
-      
-      if (this.capturedImage) {
-        // Convertir la imagen base64 a File
-        const timestamp = new Date().getTime();
-        const archivo = this.base64ToFile(
-          this.capturedImage, 
-          `marcacion_${empresaId}_${timestamp}.jpg`
-        );
-        
-        console.log('📸 DEBUG Archivo a subir:', {
-          name: archivo.name,
-          size: archivo.size,
-          type: archivo.type,
-          modulo: 1
-        });
-        
-        // Subir el adjunto con módulo 1
-        const uploadResponse = await firstValueFrom(
-          this.apiService.subirAdjunto(1, archivo)
-        );
-        
-        console.log('✅ Respuesta de la API (subir adjunto):', uploadResponse);
-        
-        // Guardar el ID del adjunto
-        if (uploadResponse && uploadResponse.id) {
-          adjuntoId = uploadResponse.id;
-          console.log('✅ ID del adjunto guardado:', adjuntoId);
+    // ✅ EJECUTAR EN PARALELO: Registrar Asistencia + Subir Foto
+    const resultados = await Promise.allSettled([
+      // Paso 1: Registrar asistencia
+      (async () => {
+        try {
+          this.statusSteps.creatingMarcacion = 'pending';
+          
+          const payload = {
+            latitud: this.latitude,
+            longitud: this.longitude,
+          };
+    
+          console.log('📤 Payload a enviar (registrarAsistencia):', payload);
+    
+          marcacionResponse = await firstValueFrom(
+            this.apiService.registrarAsistencia(payload)
+          );
+    
+          console.log('✅ Respuesta de la API (registrar asistencia):', marcacionResponse);
+          
+          await this.delay(500);
+          this.statusSteps.creatingMarcacion = 'success';
+          
+          return { success: true, data: marcacionResponse };
+        } catch (error: any) {
+          console.error('❌ Error al crear marcación:', error);
+          this.statusSteps.creatingMarcacion = 'error';
+          this.errorMessage = this.extractErrorMessage(error);
+          throw error;
         }
-        
-        await this.delay(500);
-        this.statusSteps.creatingDirectory = 'success';
-        
-      } else {
-        console.error('❌ No se pudo capturar la imagen');
-        this.statusSteps.creatingDirectory = 'error';
-      }
+      })(),
       
-    } catch (error: any) {
-      console.error('❌ Error al subir foto:', error);
-      console.error('❌ Error completo:', error.error);
-      this.statusSteps.creatingDirectory = 'error';
+      // Paso 2: Subir foto (EN PARALELO)
+      (async () => {
+        try {
+          this.statusSteps.creatingDirectory = 'pending';
+          
+          if (this.capturedImage) {
+            const timestamp = new Date().getTime();
+            const archivo = this.base64ToFile(
+              this.capturedImage, 
+              `marcacion_${empresaId}_${timestamp}.jpg`
+            );
+            
+            console.log('📸 Archivo a subir:', {
+              name: archivo.name,
+              size: archivo.size,
+              type: archivo.type,
+              modulo: 1
+            });
+            
+            const uploadResponse = await firstValueFrom(
+              this.apiService.subirAdjunto(1, archivo)
+            );
+            
+            console.log('✅ Foto subida exitosamente:', uploadResponse);
+            
+            if (uploadResponse && uploadResponse.id) {
+              adjuntoId = uploadResponse.id;
+              console.log('✅ ID del adjunto:', adjuntoId);
+            }
+            
+            await this.delay(500);
+            this.statusSteps.creatingDirectory = 'success';
+            
+            return { success: true, adjuntoId: adjuntoId };
+          } else {
+            throw new Error('No se pudo capturar la imagen');
+          }
+        } catch (error: any) {
+          console.error('❌ Error al subir foto:', error);
+          this.statusSteps.creatingDirectory = 'error';
+          if (!this.errorMessage) {
+            this.errorMessage = this.extractErrorMessage(error);
+          }
+          throw error;
+        }
+      })()
+    ]);
+
+    // Verificar resultados de las promesas paralelas
+    const resultadoMarcacion = resultados[0];
+    const resultadoFoto = resultados[1];
+
+    console.log('📊 Resultados paralelos:', {
+      marcacion: resultadoMarcacion.status,
+      foto: resultadoFoto.status
+    });
+
+    // Si falla la marcación, detenemos todo
+    if (resultadoMarcacion.status === 'rejected') {
+      this.hasError = true;
+      this.isProcessing = false;
+      return;
+    }
+
+    // Extraer adjuntoId si la foto se subió correctamente
+    if (resultadoFoto.status === 'fulfilled') {
+      adjuntoId = (resultadoFoto.value as any).adjuntoId;
     }
   
+    // ✅ PASO 3: CREAR PersonaAdjuntosUseCase (solo si hay adjuntoId)
     try {
-      // Paso 3: Crear PersonaAdjuntosUseCase
       this.statusSteps.registeringPhoto = 'pending';
       
       if (adjuntoId > 0) {
@@ -296,20 +338,25 @@ export class MarcacionComponent implements OnInit, OnDestroy {
           this.apiService.crearPersonaAdjuntosUseCase(personaAdjuntosPayload)
         );
   
-        console.log('✅ Respuesta PersonaAdjuntosUseCase:', personaAdjuntosResponse);
+        console.log('✅ PersonaAdjuntosUseCase creado exitosamente:', personaAdjuntosResponse);
         
         await this.delay(500);
         this.statusSteps.registeringPhoto = 'success';
         
       } else {
-        console.error('❌ No se pudo obtener el ID del adjunto');
+        console.error('❌ No se pudo obtener el ID del adjunto para PersonaAdjuntosUseCase');
         this.statusSteps.registeringPhoto = 'error';
+        if (!this.errorMessage) {
+          this.errorMessage = 'No se pudo obtener el ID del adjunto';
+        }
       }
       
     } catch (error: any) {
       console.error('❌ Error al crear PersonaAdjuntosUseCase:', error);
-      console.error('❌ Error completo:', error.error);
       this.statusSteps.registeringPhoto = 'error';
+      if (!this.errorMessage) {
+        this.errorMessage = this.extractErrorMessage(error);
+      }
     }
   
     // Determinar si hubo algún error
@@ -319,12 +366,21 @@ export class MarcacionComponent implements OnInit, OnDestroy {
       this.statusSteps.registeringPhoto === 'error';
   
     this.isProcessing = false;
+    
+    console.log('🏁 Proceso completado');
+    console.log('📊 Estado final:', {
+      marcacion: this.statusSteps.creatingMarcacion,
+      subirFoto: this.statusSteps.creatingDirectory,
+      personaAdjuntos: this.statusSteps.registeringPhoto,
+      adjuntoId: adjuntoId
+    });
   }
 
   cerrarStatus() {
     this.showStatusCard = false;
     this.capturedImage = null;
-    this.initCamera(); // Reiniciar cámara
+    this.errorMessage = '';
+    this.initCamera();
   }
 
   private delay(ms: number): Promise<void> {
