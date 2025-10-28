@@ -1767,7 +1767,7 @@ export class ApiService{
   //registroasistencia
   registrarAsistencia(body: any): Observable<any> {
     const headers = this.getHeaders();
-    const url = `${this.baseUrl}/rrhh/RegistroAsistencia/current_user`;
+    const url = `${this.baseUrl}/rrhh/RegistroAsistenciaOrdenTrabajo/current_user`;
     return this.https.post<any>(url, body, { headers });
   }
 
