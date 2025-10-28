@@ -29,17 +29,13 @@
       class="flex-1 flex justify-end items-center px-6 py-3 
             bg-gradient-to-r
             shadow-lg rounded-xl">
-      <dx-menu
-        #menu
-        [dataSource]="menuBar"
-        displayExpr="cNombre"
-        showFirstSubmenuMode="onHover"
-        orientation="horizontal"
-        [hideSubmenuOnMouseLeave]="true"
-        [adaptivityEnabled]="isMobile"
-        id="menu"
-        class="text-white font-semibold tracking-wide text-lg">
-      </dx-menu>
+            <dx-menu
+            [dataSource]="menuBar"
+            displayExpr="cNombre"
+            (onItemClick)="onMenuItemClick($event)"
+            [showFirstSubmenuMode]="{ name: 'onClick', delay: 0 }"
+            orientation="horizontal">
+          </dx-menu>
     </div>
 
   </div>

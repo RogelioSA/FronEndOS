@@ -54,7 +54,7 @@ import { OrigenfinancieroComponent } from './origenfinanciero/origenfinanciero.c
 import { CuentaCorrienteComponent } from './cuenta-corriente/cuenta-corriente.component';
 import { PersonalMarcacionComponent } from './personal-marcacion/personal-marcacion.component';
 
-
+ 
 const routes: Routes = [
   //{ path: '', redirectTo: '/home', pathMatch: 'full' },
   //{ path: 'home/:idVendedor', component: HomeComponent },
