@@ -36,12 +36,16 @@
         <div class="col-12" *ngIf="showStatusCard">
             <div class="status-card">
                 <div class="status-header">
-                    <i class="fa-solid fa-exclamation-triangle warning-icon"></i>
-                    <h4>Está a punto de registrar su marcación.</h4>
-                    <h4>¿Usted está seguro? <i class="fa-solid fa-question-circle"></i></h4>
+                    <i class="fa-solid fa-exclamation-triangle warning-icon" *ngIf="!successMessage"></i>
+                    <i class="fa-solid fa-check-circle success-icon" *ngIf="successMessage"></i>
+                    
+                    <h4 *ngIf="!successMessage">Está a punto de registrar su marcación.</h4>
+                    <h4 *ngIf="!successMessage">¿Usted está seguro? <i class="fa-solid fa-question-circle"></i></h4>
+                    
+                    <h4 *ngIf="successMessage" class="success-title">{{ successMessage }}</h4>
                 </div>
 
-                <div class="status-info">
+                <div class="status-info" *ngIf="!successMessage">
                     <p class="info-text">
                         Recuerde que la imagen de su rostro debe aparecer en la foto y 
                         debe de estar bien centrado, no se considerará una marca válida si no 
@@ -54,38 +58,48 @@
                         <div class="status-label">Operación</div>
                         <div class="status-value">Estado</div>
                     </div>
-                    <div class="status-row" [ngClass]="{'status-error': statusSteps.creatingMarcacion === 'error', 'status-success': statusSteps.creatingMarcacion === 'success'}">
-                        <div class="status-label">Creando marcación</div>
+                    
+                    <!-- Paso 1: Subiendo foto -->
+                    <div class="status-row" [ngClass]="{
+                        'status-error': statusSteps.uploadingPhoto === 'error', 
+                        'status-success': statusSteps.uploadingPhoto === 'success'
+                    }">
+                        <div class="status-label">Subiendo foto</div>
                         <div class="status-icon">
-                            <i class="fa-solid fa-circle-xmark" *ngIf="statusSteps.creatingMarcacion === 'error'"></i>
-                            <i class="fa-solid fa-circle-check" *ngIf="statusSteps.creatingMarcacion === 'success'"></i>
-                            <i class="fa-regular fa-clock" *ngIf="statusSteps.creatingMarcacion === 'pending'"></i>
+                            <i class="fa-solid fa-circle-xmark" *ngIf="statusSteps.uploadingPhoto === 'error'"></i>
+                            <i class="fa-solid fa-circle-check" *ngIf="statusSteps.uploadingPhoto === 'success'"></i>
+                            <i class="fa-regular fa-clock" *ngIf="statusSteps.uploadingPhoto === 'pending'"></i>
                         </div>
                     </div>
-                    <div class="status-row" [ngClass]="{'status-success': statusSteps.creatingDirectory === 'success'}">
-                        <div class="status-label">Creando directorio de marcación</div>
+                    
+                    <!-- Paso 2: Registrando asistencia -->
+                    <div class="status-row" [ngClass]="{
+                        'status-error': statusSteps.registeringAttendance === 'error', 
+                        'status-success': statusSteps.registeringAttendance === 'success'
+                    }">
+                        <div class="status-label">Registrando asistencia</div>
                         <div class="status-icon">
-                            <i class="fa-solid fa-circle-check" *ngIf="statusSteps.creatingDirectory === 'success'"></i>
-                            <i class="fa-regular fa-clock" *ngIf="statusSteps.creatingDirectory === 'pending'"></i>
-                        </div>
-                    </div>
-                    <div class="status-row" [ngClass]="{'status-success': statusSteps.registeringPhoto === 'success'}">
-                        <div class="status-label">Registrando foto</div>
-                        <div class="status-icon">
-                            <i class="fa-solid fa-circle-check" *ngIf="statusSteps.registeringPhoto === 'success'"></i>
-                            <i class="fa-regular fa-clock" *ngIf="statusSteps.registeringPhoto === 'pending'"></i>
+                            <i class="fa-solid fa-circle-xmark" *ngIf="statusSteps.registeringAttendance === 'error'"></i>
+                            <i class="fa-solid fa-circle-check" *ngIf="statusSteps.registeringAttendance === 'success'"></i>
+                            <i class="fa-regular fa-clock" *ngIf="statusSteps.registeringAttendance === 'pending'"></i>
                         </div>
                     </div>
                 </div>
 
+                <!-- Mensaje de error -->
                 <div class="error-message" *ngIf="hasError">
                     <p>{{ errorMessage || 'Hubo un error en el registro de la marcación, contacte al administrador del sistema.' }}</p>
+                </div>
+
+                <!-- Mensaje de éxito -->
+                <div class="success-message" *ngIf="successMessage">
+                    <p>Su asistencia ha sido registrada exitosamente. Puede cerrar esta ventana.</p>
                 </div>
 
                 <div class="button-container">
                     <dx-button text="Cerrar"
                             stylingMode="contained"
-                            type="danger"
+                            [type]="successMessage ? 'success' : 'danger'"
                             [width]="120"
                             (onClick)="cerrarStatus()">
                     </dx-button>
@@ -93,4 +107,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div>

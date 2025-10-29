@@ -35,11 +35,11 @@ export class MarcacionComponent implements OnInit, OnDestroy {
   isProcessing: boolean = false;
   hasError: boolean = false;
   errorMessage: string = '';
+  successMessage: string = '';
   
   statusSteps = {
-    creatingMarcacion: 'pending',
-    creatingDirectory: 'pending',
-    registeringPhoto: 'pending'
+    uploadingPhoto: 'pending',
+    registeringAttendance: 'pending'
   };
 
   constructor(
@@ -178,6 +178,7 @@ export class MarcacionComponent implements OnInit, OnDestroy {
   
     this.isProcessing = true;
     this.errorMessage = '';
+    this.successMessage = '';
     
     // CAPTURAR LA FOTO INMEDIATAMENTE
     this.capturedImage = this.capturePhoto();
@@ -189,9 +190,8 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     
     // Reset estados
     this.statusSteps = {
-      creatingMarcacion: 'pending',
-      creatingDirectory: 'pending',
-      registeringPhoto: 'pending'
+      uploadingPhoto: 'pending',
+      registeringAttendance: 'pending'
     };
   
     // Variables para almacenar IDs de respuestas
@@ -200,7 +200,7 @@ export class MarcacionComponent implements OnInit, OnDestroy {
   
     // ✅ PASO 1: Subir foto PRIMERO
     try {
-      this.statusSteps.creatingDirectory = 'pending';
+      this.statusSteps.uploadingPhoto = 'pending';
       
       if (!this.capturedImage) {
         throw new Error('No se pudo capturar la imagen');
@@ -233,11 +233,11 @@ export class MarcacionComponent implements OnInit, OnDestroy {
       }
       
       await this.delay(500);
-      this.statusSteps.creatingDirectory = 'success';
+      this.statusSteps.uploadingPhoto = 'success';
       
     } catch (error: any) {
       console.error('❌ Error al subir foto:', error);
-      this.statusSteps.creatingDirectory = 'error';
+      this.statusSteps.uploadingPhoto = 'error';
       this.errorMessage = this.extractErrorMessage(error);
       this.hasError = true;
       this.isProcessing = false;
@@ -246,7 +246,7 @@ export class MarcacionComponent implements OnInit, OnDestroy {
 
     // ✅ PASO 2: Registrar asistencia con el adjuntoId
     try {
-      this.statusSteps.creatingMarcacion = 'pending';
+      this.statusSteps.registeringAttendance = 'pending';
       
       const payload = {
         latitud: this.latitude,
@@ -263,77 +263,29 @@ export class MarcacionComponent implements OnInit, OnDestroy {
       console.log('✅ Respuesta de la API (registrar asistencia):', marcacionResponse);
       
       await this.delay(500);
-      this.statusSteps.creatingMarcacion = 'success';
+      this.statusSteps.registeringAttendance = 'success';
+      
+      // ✅ Mensaje de éxito
+      this.successMessage = '¡Asistencia registrada correctamente!';
+      console.log('🎉 Proceso completado exitosamente');
       
     } catch (error: any) {
-      console.error('❌ Error al crear marcación:', error);
-      this.statusSteps.creatingMarcacion = 'error';
+      console.error('❌ Error al registrar asistencia:', error);
+      this.statusSteps.registeringAttendance = 'error';
       this.errorMessage = this.extractErrorMessage(error);
       this.hasError = true;
       this.isProcessing = false;
       return; // Detenemos el proceso si falla el registro de asistencia
     }
   
-    // ✅ PASO 3: Crear PersonaAdjuntosUseCase
-    try {
-      this.statusSteps.registeringPhoto = 'pending';
-      
-      const personaAdjuntosPayload = {
-        persona: {
-          empresaId: empresaId,
-          nombres: this.claims.cNombres || "string",
-          apellidoPaterno: this.claims.cApPater || "string",
-          apellidoMaterno: this.claims.cApMater || "string",
-          fechaNacimiento: new Date().toISOString(),
-          documentoIdentidad: "string",
-          correo: "string",
-          celular: "string",
-          estado: true,
-          sexoId: 0,
-          distritoId: 0,
-          licenciaConducirId: 0,
-          documentoIdentidadTipoId: 0
-        },
-        personaAdjuntos: [
-          {
-            id: 0,
-            empresaId: empresaId,
-            personaId: 0,
-            adjuntoId: adjuntoId,
-            adjuntoTipoId: 1,
-            esFotoPrincipal: true
-          }
-        ]
-      };
-
-      console.log('📤 Payload PersonaAdjuntosUseCase:', personaAdjuntosPayload);
-
-      const personaAdjuntosResponse = await firstValueFrom(
-        this.apiService.crearPersonaAdjuntosUseCase(personaAdjuntosPayload)
-      );
-
-      console.log('✅ PersonaAdjuntosUseCase creado exitosamente:', personaAdjuntosResponse);
-      
-      await this.delay(500);
-      this.statusSteps.registeringPhoto = 'success';
-      
-    } catch (error: any) {
-      console.error('❌ Error al crear PersonaAdjuntosUseCase:', error);
-      this.statusSteps.registeringPhoto = 'error';
-      if (!this.errorMessage) {
-        this.errorMessage = this.extractErrorMessage(error);
-      }
-      this.hasError = true;
-    }
-  
     this.isProcessing = false;
     
     console.log('🏁 Proceso completado');
     console.log('📊 Estado final:', {
-      subirFoto: this.statusSteps.creatingDirectory,
-      marcacion: this.statusSteps.creatingMarcacion,
-      personaAdjuntos: this.statusSteps.registeringPhoto,
-      adjuntoId: adjuntoId
+      subirFoto: this.statusSteps.uploadingPhoto,
+      registrarAsistencia: this.statusSteps.registeringAttendance,
+      adjuntoId: adjuntoId,
+      marcacionId: marcacionResponse?.id
     });
   }
 
@@ -341,6 +293,9 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     this.showStatusCard = false;
     this.capturedImage = null;
     this.errorMessage = '';
+    this.successMessage = '';
+    
+    // Reiniciar la cámara
     this.initCamera();
   }
 
