@@ -56,7 +56,7 @@ import { PersonalMarcacionComponent } from './personal-marcacion/personal-marcac
 
  
 const routes: Routes = [
-  //{ path: '', redirectTo: '/home', pathMatch: 'full' },
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
   //{ path: 'home/:idVendedor', component: HomeComponent },
   
   //{ path: '#', pathMatch: 'full', redirectTo: '#', }, 
