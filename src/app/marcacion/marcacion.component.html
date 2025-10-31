@@ -1,109 +1,197 @@
-<div class="marcacion-container h-screen">
-    <div class="row">
-        <div class="col-12 mb-4 text-center">
-            <h2 class="text-center">Marcación</h2>
-            
-            <!-- Contenedor de video/cámara -->
-            <div class="video-container" *ngIf="!showStatusCard">
-                <video #videoElement autoplay playsinline class="video-feed"></video>
-                <canvas #canvasElement class="d-none"></canvas>
-            </div>
-
-            <!-- Mostrar imagen capturada cuando se procesa -->
-            <div *ngIf="capturedImage && !showStatusCard" class="captured-image-container">
-                <img [src]="capturedImage" alt="Foto capturada" class="captured-image">
-            </div>
-
-            <app-analog-clock #reloj *ngIf="!showStatusCard"></app-analog-clock>
-            <h3 *ngIf="!showStatusCard">({{ fecha }})</h3>
-            <h3 *ngIf="!showStatusCard">{{ claims.cApPater | uppercase }}, {{ claims.cNombres | uppercase }}</h3>
-            <p *ngIf="!showStatusCard" class="coordinates-text">{{ coordinates }}</p>
-        </div>
-
-        <!-- Botón de marcar asistencia -->
-        <div class="col-12 text-center" *ngIf="!showStatusCard">
-            <dx-button text="Marcar asistencia"
-                    stylingMode="contained"
-                    type="default"
-                    [width]="250"
-                    icon="fa-solid fa-check"
-                    [disabled]="isProcessing"
-                    (onClick)="marcar()">
-            </dx-button>
-        </div>
-
-        <!-- Card de estado del proceso -->
-        <div class="col-12" *ngIf="showStatusCard">
-            <div class="status-card">
-                <div class="status-header">
-                    <i class="fa-solid fa-exclamation-triangle warning-icon" *ngIf="!successMessage"></i>
-                    <i class="fa-solid fa-check-circle success-icon" *ngIf="successMessage"></i>
-                    
-                    <h4 *ngIf="!successMessage">Está a punto de registrar su marcación.</h4>
-                    <h4 *ngIf="!successMessage">¿Usted está seguro? <i class="fa-solid fa-question-circle"></i></h4>
-                    
-                    <h4 *ngIf="successMessage" class="success-title">{{ successMessage }}</h4>
+<div class="marcacion-container">
+    <div class="container-fluid px-4 py-3">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10 col-xl-8">
+                
+                <!-- Header -->
+                <div class="text-center mb-4" *ngIf="!showStatusCard">
+                    <h4 class="mb-1 fw-semibold text-dark">Sistema de Marcación</h4>
+                    <p class="text-muted small mb-0">Registro de asistencia mediante reconocimiento facial</p>
                 </div>
 
-                <div class="status-info" *ngIf="!successMessage">
-                    <p class="info-text">
-                        Recuerde que la imagen de su rostro debe aparecer en la foto y 
-                        debe de estar bien centrado, no se considerará una marca válida si no 
-                        se ve su rostro.
-                    </p>
-                </div>
+                <!-- Card Principal -->
+                <div class="card border-0 shadow-sm" *ngIf="!showStatusCard">
+                    <div class="card-body p-4">
+                        
+                        
 
-                <div class="status-table">
-                    <div class="status-row">
-                        <div class="status-label">Operación</div>
-                        <div class="status-value">Estado</div>
-                    </div>
-                    
-                    <!-- Paso 1: Subiendo foto -->
-                    <div class="status-row" [ngClass]="{
-                        'status-error': statusSteps.uploadingPhoto === 'error', 
-                        'status-success': statusSteps.uploadingPhoto === 'success'
-                    }">
-                        <div class="status-label">Subiendo foto</div>
-                        <div class="status-icon">
-                            <i class="fa-solid fa-circle-xmark" *ngIf="statusSteps.uploadingPhoto === 'error'"></i>
-                            <i class="fa-solid fa-circle-check" *ngIf="statusSteps.uploadingPhoto === 'success'"></i>
-                            <i class="fa-regular fa-clock" *ngIf="statusSteps.uploadingPhoto === 'pending'"></i>
+                        <!-- Reloj Analógico -->
+                        <div class="clock-section mb-4">
+                            <app-analog-clock #reloj></app-analog-clock>
                         </div>
-                    </div>
-                    
-                    <!-- Paso 2: Registrando asistencia -->
-                    <div class="status-row" [ngClass]="{
-                        'status-error': statusSteps.registeringAttendance === 'error', 
-                        'status-success': statusSteps.registeringAttendance === 'success'
-                    }">
-                        <div class="status-label">Registrando asistencia</div>
-                        <div class="status-icon">
-                            <i class="fa-solid fa-circle-xmark" *ngIf="statusSteps.registeringAttendance === 'error'"></i>
-                            <i class="fa-solid fa-circle-check" *ngIf="statusSteps.registeringAttendance === 'success'"></i>
-                            <i class="fa-regular fa-clock" *ngIf="statusSteps.registeringAttendance === 'pending'"></i>
+
+                        <!-- Contenedor de Video/Cámara -->
+                        <div class="camera-section mb-4">
+                            <div class="video-wrapper">
+                                <video #videoElement autoplay playsinline class="video-feed"></video>
+                                <canvas #canvasElement class="d-none"></canvas>
+                                <div class="camera-overlay">
+                                    <div class="face-frame"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Imagen Capturada -->
+                            <div *ngIf="capturedImage" class="captured-image-wrapper">
+                                <img [src]="capturedImage" alt="Foto capturada" class="captured-image">
+                                <div class="capture-badge">
+                                    <i class="fas fa-check-circle"></i> Foto capturada
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Coordenadas -->
+                        <div class="location-info text-center mb-4" *ngIf="coordinates">
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ coordinates }}
+                            </small>
+                        </div>
+
+                        <!-- Botón de Marcar -->
+                        <div class="text-center">
+                            <dx-button 
+                                text="Marcar Asistencia"
+                                stylingMode="contained"
+                                type="success"
+                                [width]="250"
+                                icon="check"
+                                [disabled]="isProcessing"
+                                (onClick)="marcar()"
+                            >
+                            </dx-button>
+                            
+                            <div *ngIf="isProcessing" class="processing-indicator mt-3">
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                    <span class="visually-hidden">Procesando...</span>
+                                </div>
+                                <small class="text-muted">Procesando marcación...</small>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                <!-- Mensaje de error -->
-                <div class="error-message" *ngIf="hasError">
-                    <p>{{ errorMessage || 'Hubo un error en el registro de la marcación, contacte al administrador del sistema.' }}</p>
+                <!-- Card de Estado del Proceso -->
+                <div class="card border-0 shadow-sm" *ngIf="showStatusCard">
+                    <div class="card-body p-4">
+                        
+                        <!-- Header del Estado -->
+                        <div class="status-header text-center mb-4">
+                            <div class="status-icon-wrapper mb-3">
+                                <i class="fas fa-exclamation-triangle warning-icon" *ngIf="!successMessage"></i>
+                                <i class="fas fa-check-circle success-icon" *ngIf="successMessage"></i>
+                            </div>
+                            
+                            <div *ngIf="!successMessage">
+                                <h5 class="fw-semibold mb-2">Confirmación de Marcación</h5>
+                                <p class="text-muted small mb-0">¿Está seguro de registrar su asistencia?</p>
+                            </div>
+                            
+                            <div *ngIf="successMessage">
+                                <h5 class="fw-semibold text-success mb-2">{{ successMessage }}</h5>
+                            </div>
+                        </div>
+
+                        <!-- Información Importante -->
+                        <div class="alert alert-warning border-0 mb-4" *ngIf="!successMessage">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-info-circle me-2 mt-1"></i>
+                                <small>
+                                    Recuerde que la imagen de su rostro debe aparecer en la foto y 
+                                    debe estar bien centrado.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Estado de Operaciones -->
+                        <div class="card border mb-4">
+                            <div class="card-header bg-light py-2">
+                                <div class="row">
+                                    <div class="col-8">
+                                        <small class="fw-semibold text-muted">Operación</small>
+                                    </div>
+                                    <div class="col-4 text-end">
+                                        <small class="fw-semibold text-muted">Estado</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <!-- Paso 1: Subiendo foto -->
+                                <div class="status-item" [ngClass]="{
+                                    'status-error': statusSteps.uploadingPhoto === 'error', 
+                                    'status-success': statusSteps.uploadingPhoto === 'success'
+                                }">
+                                    <div class="row align-items-center py-3 px-3">
+                                        <div class="col-8">
+                                            <small class="fw-medium">
+                                                <i class="fas fa-cloud-upload-alt me-2"></i>Subiendo foto
+                                            </small>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <i class="fas fa-circle-xmark text-danger" *ngIf="statusSteps.uploadingPhoto === 'error'"></i>
+                                            <i class="fas fa-circle-check text-success" *ngIf="statusSteps.uploadingPhoto === 'success'"></i>
+                                            <i class="fas fa-clock text-muted" *ngIf="statusSteps.uploadingPhoto === 'pending'"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr class="m-0">
+                                
+                                <!-- Paso 2: Registrando asistencia -->
+                                <div class="status-item" [ngClass]="{
+                                    'status-error': statusSteps.registeringAttendance === 'error', 
+                                    'status-success': statusSteps.registeringAttendance === 'success'
+                                }">
+                                    <div class="row align-items-center py-3 px-3">
+                                        <div class="col-8">
+                                            <small class="fw-medium">
+                                                <i class="fas fa-user-check me-2"></i>Registrando asistencia
+                                            </small>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <i class="fas fa-circle-xmark text-danger" *ngIf="statusSteps.registeringAttendance === 'error'"></i>
+                                            <i class="fas fa-circle-check text-success" *ngIf="statusSteps.registeringAttendance === 'success'"></i>
+                                            <i class="fas fa-clock text-muted" *ngIf="statusSteps.registeringAttendance === 'pending'"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mensaje de Error -->
+                        <div class="alert alert-danger border-0 mb-4" *ngIf="hasError">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-exclamation-circle me-2 mt-1"></i>
+                                <div>
+                                    <small class="fw-semibold d-block mb-1">Error en el registro</small>
+                                    <small>{{ errorMessage || 'Hubo un error en el registro de la marcación, contacte al administrador del sistema.' }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mensaje de Éxito -->
+                        <div class="alert alert-success border-0 mb-4" *ngIf="successMessage">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-check-circle me-2 mt-1"></i>
+                                <small>Su asistencia ha sido registrada exitosamente. Puede cerrar esta ventana.</small>
+                            </div>
+                        </div>
+
+                        <!-- Botón Cerrar -->
+                        <div class="text-center">
+                            <dx-button 
+                                text="Cerrar"
+                                stylingMode="contained"
+                                [type]="successMessage ? 'success' : 'danger'"
+                                [width]="150"
+                                icon="close"
+                                (onClick)="cerrarStatus()"
+                            >
+                            </dx-button>
+                        </div>
+
+                    </div>
                 </div>
 
-                <!-- Mensaje de éxito -->
-                <div class="success-message" *ngIf="successMessage">
-                    <p>Su asistencia ha sido registrada exitosamente. Puede cerrar esta ventana.</p>
-                </div>
-
-                <div class="button-container">
-                    <dx-button text="Cerrar"
-                            stylingMode="contained"
-                            [type]="successMessage ? 'success' : 'danger'"
-                            [width]="120"
-                            (onClick)="cerrarStatus()">
-                    </dx-button>
-                </div>
             </div>
         </div>
     </div>

@@ -12,69 +12,69 @@ import { DxDataGridComponent, DxTreeListComponent } from 'devextreme-angular';
 })
 export class HorarioComponent {
 
-  horarios : [] = [];
-  filasSeleccionadasDescanso : any[] = [];
-  filasSeleccionadasHorario : any[] = [];
-  diasDisponibles: any[] = [];
-  diaSeleccionado: number | null = null;
-  todosLosDetalles: any[] = [];
-  descansos: any[] = [];
+  horarios: any[] = [];
+  detallesEventos: any[] = [];
+  filasSeleccionadasHorario: any[] = [];
   idHorarioActual: number | null = null;
   empresaId: number = 1;
 
-  desactivarTreeList: boolean = true;
-
   @ViewChild('dataGrid', { static: false }) dataGrid!: DxDataGridComponent;
-  @ViewChild('treeList', { static: false }) treeList!: DxTreeListComponent;
+  @ViewChild('detalleGrid', { static: false }) detalleGrid!: DxDataGridComponent;
 
   @BlockUI() blockUI!: NgBlockUI;
 
+  diasSemana = [
+    { id: 1, nombre: 'Lunes' },
+    { id: 2, nombre: 'Martes' },
+    { id: 3, nombre: 'Miércoles' },
+    { id: 4, nombre: 'Jueves' },
+    { id: 5, nombre: 'Viernes' },
+    { id: 6, nombre: 'Sábado' },
+    { id: 7, nombre: 'Domingo' }
+  ];
 
-  constructor(private apiService: ApiService,){}
+  tiposEvento = [
+    { id: 0, nombre: 'Entrada' },
+    { id: 1, nombre: 'Entrada' },
+    { id: 2, nombre: 'Salida' }
+  ];
 
-  async ngOnInit():Promise<void> {
+  // Función para manejar el cambio de días de trabajo
+  onDiasTrabajoChanged = (newData: any, value: any, currentRowData: any) => {
+    newData.nDiasTrabajo = value;
+    
+    // Si es una nueva fila o se está editando
+    if (value && value > 0 && value <= 7) {
+      // Aquí podrías generar automáticamente los días si lo deseas
+      console.log(`📅 Se configuraron ${value} días de trabajo`);
+    }
+  };
 
-    await this.traerDescansos();
+  constructor(private apiService: ApiService){}
 
+  async ngOnInit(): Promise<void> {
+    await this.traerHorarios();
   }
 
-
-  async traerDescansos() {
+  async traerHorarios() {
     this.blockUI.start('Cargando...');
-  
-    console.log("📅 Trayendo descansos...");
+    console.log("📅 Trayendo horarios...");
   
     try {
       const obser = this.apiService.getHorarios();
       const result = await firstValueFrom(obser);
   
-      // 🔹 Mapea los horarios al formato que usa tu grid
-      this.horarios = result.map((h: any) => {
-        // Buscar el detalle principal (por ejemplo, el primer día o el primero de la lista)
-        const detalle = h.horarioDetalles?.[0];
-        const eventos = detalle?.horarioDetalleEventos || [];
-  
-        // Buscar eventos de entrada y salida
-        const entrada = eventos.find((e: any) => e.tipoEvento === 0); // entrada
-        const salida = eventos.find((e: any) => e.tipoEvento === 1);  // salida
-  
-        return {
-          nCodigo: h.id,
-          cNombre: h.nombre,
-          cDescripcion: h.descripcion,
-          cEntrada: entrada?.hora || null,
-          cInicioEntrada: null, // si luego deseas mapear las ventanas min/max
-          cFinalEntrada: null,
-          cSalida: salida?.hora || null,
-          cInicioSalida: null,
-          cFinalSalida: null,
-          nDiasTrabajo: h.horarioDetalles?.length || 0,
-        };
-      });
+      this.horarios = result.map((h: any) => ({
+        nCodigo: h.id,
+        cNombre: h.nombre,
+        cDescripcion: h.descripcion,
+        nDiasTrabajo: h.horarioDetalles?.length || 0,
+        horarioDetalles: h.horarioDetalles
+      }));
   
       console.log("✅ Horarios cargados:", this.horarios);
     } catch (error) {
-      console.error('❌ Error trayendo los descansos:', error);
+      console.error('❌ Error trayendo los horarios:', error);
     } finally {
       this.blockUI.stop();
     }
@@ -82,176 +82,396 @@ export class HorarioComponent {
 
   mostrarDetalleHorario(e: any) {
     const filaSeleccionada = e.selectedRowsData?.[0];
+    
     if (!filaSeleccionada) {
-      this.descansos = [];
-      this.diasDisponibles = [];
-      this.diaSeleccionado = null;
+      this.detallesEventos = [];
       this.idHorarioActual = null;
       return;
     }
   
-    const idHorario = filaSeleccionada.nCodigo;
-    this.idHorarioActual = idHorario;
-    console.log("🕓 Horario seleccionado:", idHorario);
+    this.idHorarioActual = filaSeleccionada.nCodigo;
+    console.log("🕓 Horario seleccionado:", this.idHorarioActual);
   
-    // 🔹 Llamada al servicio que trae los horarios
-    this.apiService.getHorarios().subscribe({
-      next: (result: any[]) => {
-        const horario = result.find((h) => h.id === idHorario);
-        if (!horario) {
-          console.warn("⚠️ No se encontró el horario con ID:", idHorario);
-          this.descansos = [];
-          this.generarDiasDisponibles([]);
-          return;
-        }
-  
-        // Guardar todos los detalles de todos los días
-        this.todosLosDetalles = horario.horarioDetalles || [];
-  
-        // Generar siempre 7 días disponibles
-        this.generarDiasDisponibles(this.todosLosDetalles);
-  
-        console.log("📅 Días disponibles:", this.diasDisponibles);
-  
-        // Limpiar selección previa
-        this.diaSeleccionado = null;
-        this.descansos = [];
-      },
-      error: (err) => {
-        console.error("❌ Error trayendo detalles del horario:", err);
-      }
-    });
-  }
-
-  generarDiasDisponibles(detalles: any[]) {
-    this.diasDisponibles = [];
-    for (let i = 1; i <= 7; i++) {
-      const detalleExistente = detalles.find((d: any) => d.diaSemana === i);
-      this.diasDisponibles.push({
-        diaSemana: i,
-        nombre: `Día ${i}`,
-        existe: !!detalleExistente
-      });
-    }
-  }
-  
-  // 🔹 Cuando el usuario selecciona un día
-  onDiaSeleccionado(e: any) {
-    const dia = e.value;
-    this.diaSeleccionado = dia;
-  
-    const detalle = this.todosLosDetalles.find((d: any) => d.diaSemana === dia);
+    const horario = this.horarios.find(h => h.nCodigo === this.idHorarioActual);
     
-    if (!detalle) {
-      // Si no existe detalle para este día, mostrar una fila vacía para crear
-      this.descansos = [
-        {
-          nCodigo: null,
-          cNombre: `Día ${dia}`,
-          cHoraInicial: null,
-          cHoraFinal: null,
-          nDuracion: 0,
-          esNuevo: true,
-          diaSemana: dia,
-          idHorario: this.idHorarioActual
-        }
-      ];
-      console.log(`⚠️ No hay datos para el Día ${dia}, permitiendo crear nuevo registro`);
+    if (!horario || !horario.horarioDetalles) {
+      this.detallesEventos = [];
       return;
     }
-  
-    const eventos = detalle.horarioDetalleEventos || [];
-  
-    // Combinar evento de entrada (tipoEvento = 0) y salida (tipoEvento = 1)
-    const entrada = eventos.find((e: any) => e.tipoEvento === 0);
-    const salida = eventos.find((e: any) => e.tipoEvento === 1);
-  
-    this.descansos = [
-      {
-        nCodigo: detalle.id,
-        cNombre: `Día ${detalle.diaSemana}`,
-        cHoraInicial: entrada?.hora || null,
-        cHoraFinal: salida?.hora || null,
-        nDuracion: salida?.ventanaMax ?? entrada?.ventanaMax ?? 0,
-        esNuevo: false,
-        diaSemana: dia,
-        idHorario: this.idHorarioActual
-      }
-    ];
-  
-    console.log(`✅ Detalles del Día ${dia}:`, this.descansos);
-  }
-  
 
-  guardar(event : any){
-    console.log(event);
+    // Convertir la estructura de detalles a eventos individuales
+    this.detallesEventos = [];
+    horario.horarioDetalles.forEach((detalle: any) => {
+      const eventos = detalle.horarioDetalleEventos || [];
+      
+      eventos.forEach((evento: any) => {
+        this.detallesEventos.push({
+          keyUnico: `${detalle.id}-${evento.id}`, // Key único para el grid
+          detalleId: detalle.id,
+          eventoId: evento.id,
+          diaSemana: detalle.diaSemana,
+          nombreDia: this.obtenerNombreDia(detalle.diaSemana),
+          tipoEvento: (evento.tipoEvento === 0 || evento.tipoEvento === 1) ? 1 : 2,         
+          hora: this.formatearHora(evento.hora),
+          diferenciaDia: evento.diferenciaDia || 0,
+          ventanaMin: evento.ventanaMin || 75,
+          ventanaMax: evento.ventanaMax || 75
+        });
+      });
+    });
+
+    console.log("✅ Eventos cargados:", this.detallesEventos);
   }
 
-  actualizar(event : any){
+  obtenerNombreDia(diaSemana: number): string {
+    const dia = this.diasSemana.find(d => d.id === diaSemana);
+    return dia ? dia.nombre : `Día ${diaSemana}`;
+  }
+
+  actualizar(event: any) {
     const idHorario = event.oldData.nCodigo;
     const nuevosDatos = event.newData;
+  
+    // Si se cambió el número de días, generar días automáticamente
+    let detallesParaEnviar = this.construirDetallesDesdeHorario(idHorario);
+    
+    if (nuevosDatos.nDiasTrabajo && nuevosDatos.nDiasTrabajo !== event.oldData.nDiasTrabajo) {
+      detallesParaEnviar = this.generarDiasAutomaticos(nuevosDatos.nDiasTrabajo);
+    }
 
-    // Construir la estructura esperada por el API
     const datos = {
-      cabecera: {
-        empresaId: this.empresaId,
-        nombre: nuevosDatos.cNombre || event.oldData.cNombre,
-        descripcion: nuevosDatos.cDescripcion || event.oldData.cDescripcion || '',
-        activo: true
-      },
-      detalles: this.construirDetallesDesdeHorario(idHorario)
+      id: idHorario, // 🔥 Agregar el ID en el body
+      empresaId: this.empresaId,
+      nombre: nuevosDatos.cNombre || event.oldData.cNombre,
+      descripcion: nuevosDatos.cDescripcion || event.oldData.cDescripcion || '',
+      activo: true,
+      detalles: detallesParaEnviar
     };
-
+  
     this.apiService.updateHorario(idHorario, datos).subscribe(
       (response: any) => {
         console.log('✅ Horario actualizado correctamente:', response);
-        // Recargar la lista de horarios
-        this.traerDescansos();
+        this.traerHorarios().then(() => {
+          // Reseleccionar el horario
+          this.mostrarDetalleHorario({ 
+            selectedRowsData: [{ nCodigo: idHorario }] 
+          });
+        });
       },
       (error: any) => {
         console.error('❌ Error al actualizar horario.', error);
       }
     );
-
-    console.log('Actualizando horario:', datos);
   }
 
-  insertar(event : any){
-
-    // Construir la estructura esperada por el API
+  insertar(event: any) {
+    const numDias = event.data.nDiasTrabajo || 5; // Por defecto 5 días
+    
     const datos = {
-      cabecera: {
-        empresaId: this.empresaId,
-        nombre: event.data.cNombre,
-        descripcion: event.data.cDescripcion || '',
-        activo: true
-      },
-      detalles: this.construirDetalles(event.data.nDiasTrabajo)
+      empresaId: this.empresaId,
+      nombre: event.data.cNombre,
+      descripcion: event.data.cDescripcion || '',
+      activo: true,
+      detalles: this.generarDiasAutomaticos(numDias)
     };
-
+  
     this.apiService.createHorario(datos).subscribe(
       (response: any) => {
         console.log('✅ Horario insertado correctamente:', response);
-        // Recargar la lista de horarios
-        this.traerDescansos();
+        this.traerHorarios();
       },
       (error: any) => {
         console.error('❌ Error al insertar horario.', error);
       }
     );
+  }
 
-    console.log('Insertando horario:', datos);
+  eliminar(event: any) {
+    const id = event.data.nCodigo;
+  
+    this.apiService.sincronizarHorario(id).subscribe(
+      (response: any) => {
+        console.log('✅ Horario eliminado correctamente:', response);
+        this.traerHorarios();
+        this.detallesEventos = [];
+        this.idHorarioActual = null;
+      },
+      (error: any) => {
+        console.error('❌ Error al eliminar registro.', error);
+      }
+    );
+  }
+
+  // Generar días automáticamente según el número indicado
+  generarDiasAutomaticos(numDias: number): any[] {
+    const detalles = [];
+    
+    for (let i = 1; i <= numDias; i++) {
+      detalles.push({
+        id: 0,
+        empresaId: this.empresaId,
+        horarioCabeceraId: this.idHorarioActual || 0,
+        diaSemana: i,
+        eventos: [
+          {
+            id: 0,
+            empresaId: this.empresaId,
+            horarioDetalleId: 0,
+            tipoEvento: 1, // Entrada
+            hora: '08:00:00',
+            diferenciaDia: 0,
+            ventanaMin: 75,
+            ventanaMax: 75
+          },
+          {
+            id: 0,
+            empresaId: this.empresaId,
+            horarioDetalleId: 0,
+            tipoEvento: 2, // Salida
+            hora: '17:00:00',
+            diferenciaDia: 0,
+            ventanaMin: 75,
+            ventanaMax: 75
+          }
+        ]
+      });
+    }
+    
+    return detalles;
+  }
+
+  // Métodos para los eventos individuales
+
+  actualizarDetalleEvento(event: any) {
+    if (!this.idHorarioActual) {
+      console.error('❌ No hay horario seleccionado');
+      return;
+    }
+
+    console.log('🔍 EVENT RECIBIDO:', event);
+    console.log('🔍 event.key:', event.key);
+    console.log('🔍 event.oldData:', event.oldData);
+    console.log('🔍 event.newData:', event.newData);
+    console.log('🔍 detallesEventos ANTES:', JSON.stringify(this.detallesEventos, null, 2));
+
+    const horario = this.horarios.find(h => h.nCodigo === this.idHorarioActual);
+    if (!horario) {
+      console.error('❌ No se encontró el horario');
+      return;
+    }
+
+    // 🔥 ACTUALIZAR el evento en el array antes de reconstruir
+    // Intentar con event.key primero, si no existe usar event.oldData.keyUnico
+    const keyBuscado = event.key || event.oldData?.keyUnico;
+    console.log('🔍 Buscando key:', keyBuscado);
+    
+    const index = this.detallesEventos.findIndex(e => e.keyUnico === keyBuscado);
+    console.log('🔍 Index encontrado:', index);
+    
+    if (index !== -1) {
+      // Fusionar los datos antiguos con los nuevos
+      const eventoActualizado = {
+        ...this.detallesEventos[index],
+        ...event.newData
+      };
+      
+      // Asegurarse de formatear la hora si viene en newData
+      if (event.newData.hora !== undefined) {
+        eventoActualizado.hora = this.formatearHora(event.newData.hora);
+        console.log('🕐 Hora formateada:', eventoActualizado.hora);
+      }
+      
+      // Actualizar nombre del día si cambió
+      if (event.newData.diaSemana !== undefined) {
+        eventoActualizado.nombreDia = this.obtenerNombreDia(event.newData.diaSemana);
+      }
+      
+      this.detallesEventos[index] = eventoActualizado;
+      console.log('✅ Evento actualizado en array:', this.detallesEventos[index]);
+    } else {
+      console.error('❌ No se encontró el evento con key:', keyBuscado);
+    }
+
+    console.log('🔍 detallesEventos DESPUÉS:', JSON.stringify(this.detallesEventos, null, 2));
+
+    // Reconstruir todos los detalles desde el grid de eventos actualizado
+    const detallesActualizados = this.reconstruirDetallesDesdeEventos();
+    console.log('🔍 DETALLES A ENVIAR:', JSON.stringify(detallesActualizados, null, 2));
+
+    const datos = {
+      id: this.idHorarioActual, // 🔥 Agregar el ID en el body
+      empresaId: this.empresaId,
+      nombre: horario.cNombre,
+      descripcion: horario.cDescripcion || '',
+      activo: true,
+      detalles: detallesActualizados
+    };
+
+    console.log('🚀 DATOS COMPLETOS A ENVIAR:', JSON.stringify(datos, null, 2));
+
+    this.apiService.updateHorario(this.idHorarioActual, datos).subscribe(
+      (response: any) => {
+        console.log('✅ Evento actualizado correctamente:', response);
+        this.traerHorarios().then(() => {
+          this.mostrarDetalleHorario({ 
+            selectedRowsData: [{ nCodigo: this.idHorarioActual }] 
+          });
+        });
+      },
+      (error: any) => {
+        console.error('❌ Error al actualizar evento.', error);
+      }
+    );
+  }
+
+  insertarDetalleEvento(event: any) {
+    if (!this.idHorarioActual) {
+      console.error('❌ No hay horario seleccionado');
+      return;
+    }
+
+    const horario = this.horarios.find(h => h.nCodigo === this.idHorarioActual);
+    if (!horario) {
+      console.error('❌ No se encontró el horario');
+      return;
+    }
+
+    // Agregar el nuevo evento a la lista temporal
+    this.detallesEventos.push({
+      keyUnico: `nuevo-${Date.now()}`,
+      detalleId: 0,
+      eventoId: 0,
+      diaSemana: event.data.diaSemana,
+      nombreDia: this.obtenerNombreDia(event.data.diaSemana),
+      tipoEvento: event.data.tipoEvento,
+      hora: this.formatearHora(event.data.hora),
+      diferenciaDia: 0,
+      ventanaMin: event.data.ventanaMin || 75,
+      ventanaMax: event.data.ventanaMax || 75
+    });
+
+    // Reconstruir y enviar
+    const detallesActualizados = this.reconstruirDetallesDesdeEventos();
+
+    const datos = {
+      empresaId: this.empresaId,
+      nombre: horario.cNombre,
+      descripcion: horario.cDescripcion || '',
+      activo: true,
+      detalles: detallesActualizados
+    };
+
+    this.apiService.updateHorario(this.idHorarioActual, datos).subscribe(
+      (response: any) => {
+        console.log('✅ Evento insertado correctamente:', response);
+        this.traerHorarios().then(() => {
+          this.mostrarDetalleHorario({ 
+            selectedRowsData: [{ nCodigo: this.idHorarioActual }] 
+          });
+        });
+      },
+      (error: any) => {
+        console.error('❌ Error al insertar evento.', error);
+      }
+    );
+  }
+
+  eliminarDetalleEvento(event: any) {
+    if (!this.idHorarioActual) {
+      console.error('❌ No hay horario seleccionado');
+      return;
+    }
+
+    const horario = this.horarios.find(h => h.nCodigo === this.idHorarioActual);
+    if (!horario) {
+      console.error('❌ No se encontró el horario');
+      return;
+    }
+
+    // Filtrar el evento eliminado
+    this.detallesEventos = this.detallesEventos.filter(
+      e => e.keyUnico !== event.data.keyUnico
+    );
+
+    // Reconstruir y enviar
+    const detallesActualizados = this.reconstruirDetallesDesdeEventos();
+
+    const datos = {
+      empresaId: this.empresaId,
+      nombre: horario.cNombre,
+      descripcion: horario.cDescripcion || '',
+      activo: true,
+      detalles: detallesActualizados
+    };
+
+    this.apiService.updateHorario(this.idHorarioActual, datos).subscribe(
+      (response: any) => {
+        console.log('✅ Evento eliminado correctamente:', response);
+        this.traerHorarios().then(() => {
+          this.mostrarDetalleHorario({ 
+            selectedRowsData: [{ nCodigo: this.idHorarioActual }] 
+          });
+        });
+      },
+      (error: any) => {
+        console.error('❌ Error al eliminar evento.', error);
+      }
+    );
+  }
+
+  // Reconstruir la estructura de detalles desde los eventos individuales
+  reconstruirDetallesDesdeEventos(): any[] {
+    // Agrupar eventos por día
+    const eventosPorDia = new Map<number, any[]>();
+    
+    this.detallesEventos.forEach(evento => {
+      if (!eventosPorDia.has(evento.diaSemana)) {
+        eventosPorDia.set(evento.diaSemana, []);
+      }
+      eventosPorDia.get(evento.diaSemana)!.push(evento);
+    });
+
+    // Convertir a estructura de detalles
+    const detalles: any[] = [];
+    
+    eventosPorDia.forEach((eventos, diaSemana) => {
+      // Buscar si ya existe un detalleId para este día
+      const detalleId = eventos.find(e => e.detalleId > 0)?.detalleId || 0;
+      
+      const detalle = {
+        id: detalleId,
+        empresaId: this.empresaId,
+        horarioCabeceraId: this.idHorarioActual!,
+        diaSemana: diaSemana,
+        eventos: eventos.map(e => ({
+          id: e.eventoId || 0,
+          empresaId: this.empresaId,
+          horarioDetalleId: detalleId,
+          tipoEvento: e.tipoEvento,
+          hora: this.formatearHora(e.hora),
+          diferenciaDia: e.diferenciaDia || 0,
+          ventanaMin: e.ventanaMin || 75,
+          ventanaMax: e.ventanaMax || 75
+        }))
+      };
+      
+      detalles.push(detalle);
+    });
+
+    return detalles;
+  }
+
+  construirDetallesDesdeHorario(idHorario: number): any[] {
+    return this.reconstruirDetallesDesdeEventos();
   }
 
   formatearHora(hora: any): string {
     if (!hora) return '08:00:00';
     
-    // Si ya está en formato HH:mm:ss, devolverlo
     if (typeof hora === 'string' && hora.match(/^\d{2}:\d{2}:\d{2}$/)) {
       return hora;
     }
     
-    // Si es una fecha/objeto
     if (hora instanceof Date) {
       const horas = String(hora.getHours()).padStart(2, '0');
       const minutos = String(hora.getMinutes()).padStart(2, '0');
@@ -259,397 +479,11 @@ export class HorarioComponent {
       return `${horas}:${minutos}:${segundos}`;
     }
     
-    // Si es string pero no en formato correcto
     if (typeof hora === 'string') {
       return hora.includes(':') ? hora : '08:00:00';
     }
     
     return '08:00:00';
-  }
-
-  construirDetalles(nDiasTrabajo: number): any[] {
-    const detalles = [];
-    
-    // Si no se especifica, crear detalles para los días seleccionados en el tree-list
-    if (this.filasSeleccionadasDescanso.length > 0) {
-      this.filasSeleccionadasDescanso.forEach((descanso: any, index: number) => {
-        const detalle = {
-          empresaId: this.empresaId,
-          item: index + 1,
-          diaSemana: descanso.diaSemana || index + 1,
-          eventos: [
-            {
-              id: 0,
-              empresaId: this.empresaId,
-              tipoEvento: 0, // Entrada
-              hora: this.formatearHora(descanso.cHoraInicial),
-              diferenciaDia: 0,
-              ventanaMin: 75,
-              ventanaMax: 75
-            },
-            {
-              id: 0,
-              empresaId: this.empresaId,
-              tipoEvento: 1, // Salida
-              hora: this.formatearHora(descanso.cHoraFinal),
-              diferenciaDia: 0,
-              ventanaMin: 75,
-              ventanaMax: 75
-            }
-          ]
-        };
-        detalles.push(detalle);
-      });
-    } else {
-      // Si no hay detalles seleccionados, crear días vacíos
-      for (let i = 1; i <= (nDiasTrabajo || 5); i++) {
-        const detalle = {
-          empresaId: this.empresaId,
-          item: i,
-          diaSemana: i,
-          eventos: []
-        };
-        detalles.push(detalle);
-      }
-    }
-    
-    return detalles;
-  }
-
-  construirDetallesDesdeHorario(idHorario: number): any[] {
-    // Buscar el horario actual en la lista de horarios
-    const horarioData: any = this.horarios.find((h: any) => h.nCodigo === idHorario);
-    
-    if (!horarioData || !this.todosLosDetalles.length) {
-      return [];
-    }
-
-    const detalles = this.todosLosDetalles.map((detalle: any, index: number) => {
-      const eventos = detalle.horarioDetalleEventos || [];
-      
-      const entrada = eventos.find((e: any) => e.tipoEvento === 0);
-      const salida = eventos.find((e: any) => e.tipoEvento === 1);
-
-      return {
-        id: detalle.id,
-        empresaId: this.empresaId,
-        item: detalle.item || index + 1,
-        diaSemana: detalle.diaSemana,
-        eventos: [
-          {
-            id: entrada?.id || 0,
-            empresaId: this.empresaId,
-            tipoEvento: 0, // Entrada
-            hora: this.formatearHora(entrada?.hora),
-            diferenciaDia: entrada?.diferenciaDia || 0,
-            ventanaMin: entrada?.ventanaMin || 75,
-            ventanaMax: entrada?.ventanaMax || 75
-          },
-          {
-            id: salida?.id || 0,
-            empresaId: this.empresaId,
-            tipoEvento: 1, // Salida
-            hora: this.formatearHora(salida?.hora),
-            diferenciaDia: salida?.diferenciaDia || 0,
-            ventanaMin: salida?.ventanaMin || 75,
-            ventanaMax: salida?.ventanaMax || 75
-          }
-        ]
-      };
-    });
-
-    return detalles;
-  }
-
-  eliminar(event : any){
-    let registro = {
-      nCodigo : event.data.nCodigo,
-      cTipo : "eliminar"
-    };
-
-    this.apiService.sincronizarHorario(registro).subscribe(
-      (response: any) => {
-      },
-      (error: any) => {
-        console.error('Error al eliminar registro.', error);
-      }
-    );
-
-    console.log(registro);
-
-    console.log(event);
-    
-  }
-
-  iniciaEdicion(event: any){
-    //console.log('inicia la edicion',event);
-
-    this.filasSeleccionadasHorario = [event.data.nCodigo];
-
-    this.desactivarTreeList = false;
-  }
-
-  cancelaEdicion(event: any){
-    //console.log('cancela la edicion');
-    this.desactivarTreeList = true;
-  }
-
-  agregarNuevaFila(event: any){
-    //console.log('agrega fila');
-    this.desactivarTreeList = false;
-
-    this.filasSeleccionadasHorario = [];
-    this.filasSeleccionadasDescanso = [];
-  }
-
-  async traerHorarioDescanso(rol : number){
-    console.log("traer horarioDescansos");
-
-    try{
-      const obser = this.apiService.getHorarioDescansos(rol);
-      const result = await firstValueFrom(obser);
-
-      this.filasSeleccionadasDescanso = result.data;
-    }catch(error){
-      console.log('Error traendo los horarioDescansos.')
-    }finally{
-    }
-  }
-
-  async onSelectionChangedGrid(event: any) {
-    if(event.selectedRowsData.length > 0){
-      await this.traerHorarioDescanso(event.selectedRowsData[0].nCodigo);
-    }else{
-      this.filasSeleccionadasDescanso = [];
-    }
-  }
-
-  guardando(event : any){
-
-    if(event.changes.length === 0){
-
-      let registro = {
-        nCodigo: this.filasSeleccionadasHorario[0],
-        descansos: this.filasSeleccionadasDescanso,
-        cTipo: "actualizar"
-      }
-
-      this.apiService.sincronizarHorario(registro).subscribe(
-        (response: any) => {
-        },
-        (error: any) => {
-          console.error('Error al insertar registro.', error);
-        }
-      );
-
-      console.log('guardando',event);
-    }
-
-  }
-
-  // Métodos para el dx-tree-list (Descansos/Detalles)
-
-  actualizarDescanso(event: any) {
-    const idHorario = this.idHorarioActual;
-    const nuevosDatos = event.newData;
-
-    // Construir la estructura completa del horario actualizado
-    const datos = {
-      cabecera: {
-        empresaId: this.empresaId,
-        nombre: '',
-        descripcion: '',
-        activo: true
-      },
-      detalles: this.construirDetallesConDescansoActualizado(nuevosDatos, event.oldData)
-    };
-
-    this.apiService.updateHorario(idHorario!, datos).subscribe(
-      (response: any) => {
-        console.log('✅ Descanso actualizado correctamente:', response);
-        // Recargar los detalles del horario
-        this.mostrarDetalleHorario({ selectedRowsData: [{ nCodigo: this.idHorarioActual }] });
-      },
-      (error: any) => {
-        console.error('❌ Error al actualizar descanso.', error);
-      }
-    );
-
-    console.log('Actualizando descanso:', datos);
-  }
-
-  construirDetallesConDescansoActualizado(nuevosDatos: any, datosAntiguos: any): any[] {
-    const detalles = this.todosLosDetalles.map((detalle: any) => {
-      // Si es el detalle que estamos editando
-      if (detalle.id === datosAntiguos.nCodigo) {
-        const eventos = detalle.horarioDetalleEventos || [];
-        const entrada = eventos.find((e: any) => e.tipoEvento === 0);
-        const salida = eventos.find((e: any) => e.tipoEvento === 1);
-
-        return {
-          id: detalle.id,
-          empresaId: this.empresaId,
-          item: detalle.item,
-          diaSemana: nuevosDatos.diaSemana || detalle.diaSemana,
-          eventos: [
-            {
-              id: entrada?.id || 0,
-              empresaId: this.empresaId,
-              tipoEvento: 0,
-              hora: this.formatearHora(nuevosDatos.cHoraInicial || entrada?.hora),
-              diferenciaDia: entrada?.diferenciaDia || 0,
-              ventanaMin: 75,
-              ventanaMax: 75
-            },
-            {
-              id: salida?.id || 0,
-              empresaId: this.empresaId,
-              tipoEvento: 1,
-              hora: this.formatearHora(nuevosDatos.cHoraFinal || salida?.hora),
-              diferenciaDia: salida?.diferenciaDia || 0,
-              ventanaMin: 75,
-              ventanaMax: 75
-            }
-          ]
-        };
-      }
-
-      // Para otros detalles, mantener los datos existentes
-      const eventos = detalle.horarioDetalleEventos || [];
-      const entrada = eventos.find((e: any) => e.tipoEvento === 0);
-      const salida = eventos.find((e: any) => e.tipoEvento === 1);
-
-      return {
-        id: detalle.id,
-        empresaId: this.empresaId,
-        item: detalle.item,
-        diaSemana: detalle.diaSemana,
-        eventos: [
-          {
-            id: entrada?.id || 0,
-            empresaId: this.empresaId,
-            tipoEvento: 0,
-            hora: this.formatearHora(entrada?.hora),
-            diferenciaDia: entrada?.diferenciaDia || 0,
-            ventanaMin: entrada?.ventanaMin || 75,
-            ventanaMax: entrada?.ventanaMax || 75
-          },
-          {
-            id: salida?.id || 0,
-            empresaId: this.empresaId,
-            tipoEvento: 1,
-            hora: this.formatearHora(salida?.hora),
-            diferenciaDia: salida?.diferenciaDia || 0,
-            ventanaMin: salida?.ventanaMin || 75,
-            ventanaMax: salida?.ventanaMax || 75
-          }
-        ]
-      };
-    });
-
-    return detalles;
-  }
-
-  insertarDescanso(event: any) {
-    // Crear la estructura completa del horario con el nuevo descanso
-    const nuevoDescanso = event.data;
-    
-    // Obtener el día seleccionado desde el nuevo descanso o usar el diaSeleccionado
-    const diaDelDescanso = nuevoDescanso.diaSemana || this.diaSeleccionado;
-    
-    // Agregar el nuevo descanso a la lista
-    this.filasSeleccionadasDescanso.push({
-      cHoraInicial: nuevoDescanso.cHoraInicial,
-      cHoraFinal: nuevoDescanso.cHoraFinal,
-      nDuracion: nuevoDescanso.nDuracion,
-      diaSemana: diaDelDescanso
-    });
-
-    const datos = {
-      cabecera: {
-        empresaId: this.empresaId,
-        nombre: '',
-        descripcion: '',
-        activo: true
-      },
-      detalles: [
-        {
-          empresaId: this.empresaId,
-          item: 1,
-          diaSemana: diaDelDescanso,
-          eventos: [
-            {
-              id: 0,
-              empresaId: this.empresaId,
-              tipoEvento: 0, // Entrada
-              hora: this.formatearHora(nuevoDescanso.cHoraInicial),
-              diferenciaDia: 0,
-              ventanaMin: 75,
-              ventanaMax: 75
-            },
-            {
-              id: 0,
-              empresaId: this.empresaId,
-              tipoEvento: 1, // Salida
-              hora: this.formatearHora(nuevoDescanso.cHoraFinal),
-              diferenciaDia: 0,
-              ventanaMin: 75,
-              ventanaMax: 75
-            }
-          ]
-        }
-      ]
-    };
-
-    this.apiService.createHorario(datos).subscribe(
-      (response: any) => {
-        console.log('✅ Descanso insertado correctamente:', response);
-        // Recargar los detalles del horario para actualizar la lista
-        this.mostrarDetalleHorario({ selectedRowsData: [{ nCodigo: this.idHorarioActual }] });
-      },
-      (error: any) => {
-        console.error('❌ Error al insertar descanso.', error);
-      }
-    );
-
-    console.log('Insertando descanso:', datos);
-  }
-
-  eliminarDescanso(event: any) {
-    let registro = {
-      nCodigo: event.data.nCodigo,
-      cTipo: "eliminar_descanso",
-      idHorario: this.idHorarioActual,
-      diaSemana: this.diaSeleccionado,
-      empresaId: this.empresaId
-    };
-
-    this.apiService.sincronizarHorario(registro).subscribe(
-      (response: any) => {
-        console.log('✅ Descanso eliminado:', response);
-      },
-      (error: any) => {
-        console.error('❌ Error al eliminar descanso.', error);
-      }
-    );
-
-    console.log('Eliminando descanso:', registro);
-  }
-
-  guardandoDescanso(event: any) {
-    console.log('Guardando cambios en descanso:', event);
-  }
-
-  iniciaEdicionDescanso(event: any) {
-    console.log('Inicia edición de descanso:', event);
-  }
-
-  cancelaEdicionDescanso(event: any) {
-    console.log('Cancelada edición de descanso:', event);
-  }
-
-  agregarNuevaFilaDescanso(event: any) {
-    console.log('Agregando nueva fila de descanso:', event);
   }
 
 }

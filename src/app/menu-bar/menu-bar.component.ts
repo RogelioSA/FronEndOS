@@ -122,8 +122,8 @@ export class MenuBarComponent {
               cNombre: 'Grupo Horario',
               nCodigo: 12,
               nPadre: 1,
-              cPath: '/mantenimiento/grupoHorario/horario',
-              path: '/mantenimiento/grupoHorario/horario',
+              cPath: '/recursoshumanos/grupotrabajo',
+              path: '/recursoshumanos/grupotrabajo',
               icono: 'clock',
               nOrden: 2,
               items: []
@@ -132,8 +132,8 @@ export class MenuBarComponent {
               cNombre: 'Personal Horario',
               nCodigo: 13,
               nPadre: 1,
-              cPath: '/mantenimiento/personal/personalHorario',
-              path: '/mantenimiento/personal/personalHorario',
+              cPath: '/mantenimiento/grupoHorario/horario',
+              path: '/mantenimiento/grupoHorario/horario',
               icono: 'calendar',
               nOrden: 3,
               items: []
@@ -161,11 +161,21 @@ export class MenuBarComponent {
               items: []
             },
             {
+              cNombre: 'Ordenes de Trabajo',
+              nCodigo: 21,
+              nPadre: 2,
+              cPath: '/procesos/ordentrabajo',
+              path: '/procesos/ordentrabajo',
+              icono: 'folder',
+              nOrden: 1,
+              items: []
+            },
+            {
               cNombre: 'Asignacion de Personal',
               nCodigo: 22,
               nPadre: 2,
-              cPath: '/mantenimiento/ordenServicio/clientes',
-              path: '/mantenimiento/ordenServicio/clientes',
+              cPath: '/mantenimiento/personal/personalHorario',
+              path: '/mantenimiento/personal/personalHorario',
               icono: 'group',
               nOrden: 2,
               items: []

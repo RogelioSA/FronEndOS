@@ -9,6 +9,7 @@ interface GrupoTrabajoCabecera {
   nombre: string;
   nombreCorto: string;
   estado: boolean;
+  grupoTrabajoPersonas?: any[]; // Agregamos esta propiedad
 }
 
 interface GrupoTrabajoPersona {
@@ -37,7 +38,7 @@ export class GrupotrabajoComponent implements OnInit {
   cabeceras: GrupoTrabajoCabecera[] = [];
   personas: Persona[] = [];
   personasAsignadas: any[] = [];
-  grupoSeleccionado: any = null;
+  grupoSeleccionado: GrupoTrabajoCabecera | null = null;
   filasSeleccionadasCabecera: number[] = [];
   filasSeleccionadasPersonas: number[] = [];
   
@@ -65,14 +66,14 @@ export class GrupotrabajoComponent implements OnInit {
         this.apiService.getGruposTrabajo()
       );
       
-      // Aplanar la estructura para mostrar solo cabeceras
+      // La estructura ya viene correcta, solo la asignamos
       this.cabeceras = gruposResponse.map((grupo: any) => ({
-        id: grupo.cabecera.id,
-        empresaId: grupo.cabecera.empresaId,
-        nombre: grupo.cabecera.nombre,
-        nombreCorto: grupo.cabecera.nombreCorto,
-        estado: grupo.cabecera.estado,
-        personas: grupo.personas || []
+        id: grupo.id,
+        empresaId: grupo.empresaId,
+        nombre: grupo.nombre,
+        nombreCorto: grupo.nombreCorto,
+        estado: grupo.estado,
+        grupoTrabajoPersonas: grupo.grupoTrabajoPersonas || []
       }));
       
       this.blockUI.stop();
@@ -95,26 +96,16 @@ export class GrupotrabajoComponent implements OnInit {
   }
 
   cargarPersonasDelGrupo(): void {
-    if (!this.grupoSeleccionado || !this.grupoSeleccionado.personas) {
+    if (!this.grupoSeleccionado || !this.grupoSeleccionado.grupoTrabajoPersonas) {
       this.personasAsignadas = [];
       this.filasSeleccionadasPersonas = [];
       return;
     }
 
-    // Mapear las personas asignadas con su información completa
-    this.personasAsignadas = this.grupoSeleccionado.personas.map((gp: any) => {
-      const persona = this.personas.find(p => p.id === gp.personaId);
-      return {
-        id: gp.id,
-        personaId: gp.personaId,
-        esLider: gp.esLider,
-        nombreCompleto: persona ? persona.nombreCompleto : 'Desconocido',
-        documentoIdentidad: persona ? persona.documentoIdentidad : ''
-      };
-    });
-
-    // Seleccionar las personas que ya están asignadas
-    this.filasSeleccionadasPersonas = this.personasAsignadas.map(pa => pa.personaId);
+    // Extraer los IDs de las personas asignadas al grupo
+    this.filasSeleccionadasPersonas = this.grupoSeleccionado.grupoTrabajoPersonas.map(
+      (gp: any) => gp.personaId
+    );
   }
 
   onSelectionChangedPersonas(event: any): void {
@@ -134,12 +125,12 @@ export class GrupotrabajoComponent implements OnInit {
       // Construir el array de personas según las seleccionadas
       const personasSeleccionadas = this.filasSeleccionadasPersonas.map(personaId => {
         // Buscar si la persona ya existía en el grupo
-        const personaExistente = this.grupoSeleccionado.personas?.find(
+        const personaExistente = this.grupoSeleccionado!.grupoTrabajoPersonas?.find(
           (p: any) => p.personaId === personaId
         );
 
         return {
-          empresaId: this.grupoSeleccionado.empresaId,
+          empresaId: this.grupoSeleccionado!.empresaId,
           id: personaExistente ? personaExistente.id : 0,
           personaId: personaId,
           esLider: personaExistente ? personaExistente.esLider : false
@@ -164,7 +155,7 @@ export class GrupotrabajoComponent implements OnInit {
       
       // Reseleccionar el grupo actual
       this.filasSeleccionadasCabecera = [this.grupoSeleccionado.id];
-      const grupoActualizado = this.cabeceras.find(c => c.id === this.grupoSeleccionado.id);
+      const grupoActualizado = this.cabeceras.find(c => c.id === this.grupoSeleccionado!.id);
       if (grupoActualizado) {
         this.grupoSeleccionado = grupoActualizado;
         this.cargarPersonasDelGrupo();

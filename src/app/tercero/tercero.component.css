@@ -1,0 +1,73 @@
+@keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+  }
+
+  /* Card hover effect */
+  .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.08) !important;
+  }
+
+  /* Grid headers */
+  ::ng-deep #gridContainer .dx-datagrid-headers {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #6c757d;
+  }
+
+  /* Row alternation */
+  ::ng-deep #gridContainer .dx-row-alt {
+    background-color: #fafbfc;
+  }
+
+  /* Hover effect */
+  ::ng-deep #gridContainer .dx-datagrid-rowsview .dx-row:hover {
+    background-color: #f1f3f5;
+  }
+
+  /* Selection styling */
+  ::ng-deep #gridContainer .dx-datagrid-rowsview .dx-selection.dx-row:not(.dx-row-focused) > td {
+    background-color: #eff6ff;
+  }
+
+  /* Fixed column border - columna Acciones */
+  ::ng-deep #gridContainer .dx-datagrid .dx-column-lines > td:last-child {
+    border-left: 2px solid #dee2e6 !important;
+  }
+
+  /* Botones deshabilitados */
+  ::ng-deep .dx-button.dx-state-disabled {
+    opacity: 0.5;
+  }
+
+  /* Columnas read-only con fondo diferente */
+  ::ng-deep #gridContainer .dx-datagrid-rowsview td[aria-describedby*="nombreCorto"],
+  ::ng-deep #gridContainer .dx-datagrid-rowsview td[aria-describedby*="nombreCompleto"] {
+    background-color: #f8f9fa;
+    font-style: italic;
+    color: #6c757d;
+  }

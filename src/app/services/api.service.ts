@@ -192,10 +192,13 @@ export class ApiService{
     }
 
     deletePersonal(id: number): Observable<any> {
-      return this.https.delete(
-        `${this.baseUrl}/general/Persona/${id}`,
-        { headers: this.getHttpHeaders() }
-      );
+      const headers = this.getHttpHeaders();
+      const body = { id: id.toString() };
+    
+      return this.https.request('DELETE', `${this.baseUrl}/general/Persona/${id}`, {
+        headers,
+        body
+      });
     }
 
     getPersonalById(id: number): Observable<any> {
@@ -366,11 +369,10 @@ export class ApiService{
         });
     }
 
-    sincronizarHorario(horario: any ): Observable<any> {
-        return this.https.get(`${this.baseUrl}/Horario/SincronizarHorario`, {
-          headers: this.getHeaders(),
-          params: horario
-        });
+
+    sincronizarHorario(id: number): Observable<any> {
+      const headers = this.getHttpHeaders();
+      return this.https.delete(`${this.baseUrl}/rrhh/Horario/${id}`, { headers });
     }
 
     getHorarioDescansos(horario: number ): Observable<any> {
