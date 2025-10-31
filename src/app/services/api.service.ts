@@ -1803,4 +1803,22 @@ export class ApiService{
     const headers = this.getHeaders();
     return this.https.get(`${this.baseUrl}/rrhh/RegistroAsistenciaPolitica`, { headers });
   }
+
+  //usuario
+  crearUsuario(usuarioData: any): Observable<any> {
+    return this.https.post(
+      `${this.baseUrl}/security/Usuario`,
+      usuarioData,
+      { headers: this.getHttpHeaders() }
+    );
+  }
+
+  listarUsuarioEmpresa(): Observable<any> {
+    return this.https.get(
+      `${this.baseUrl}/security/Usuario`,
+      { headers: this.getHttpHeaders() }
+    );
+  }
+
+
 }
