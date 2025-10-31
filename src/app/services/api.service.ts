@@ -1796,5 +1796,9 @@ export class ApiService{
     return this.https.post<any>(url, data, { headers });
   }
 
-  //
+  //registro asistencia
+  getRegistroAsistenciaPolitica(): Observable<any> {
+    const headers = this.getHeaders();
+    return this.https.get(`${this.baseUrl}/rrhh/RegistroAsistenciaPolitica`, { headers });
+  }
 }

@@ -157,25 +157,6 @@ export class MarcacionComponent implements OnInit, OnDestroy {
       return;
     }
   
-    // Obtener empresaId del localStorage
-    const empresaSeleccionada = localStorage.getItem('empresa_id');
-    console.log('🔍 DEBUG - empresaSeleccionada (raw):', empresaSeleccionada);
-  
-    if (!empresaSeleccionada) {
-      console.error('❌ No existe "empresaSeleccionada" en localStorage');
-      alert('No se encontró la empresa seleccionada');
-      return;
-    }
-  
-    const empresaId = parseInt(empresaSeleccionada, 10);
-    console.log('🔍 DEBUG - empresaId extraído:', empresaId);
-  
-    if (!empresaId || isNaN(empresaId)) {
-      console.error('❌ empresaId no es un número válido');
-      alert('No se pudo obtener el ID de la empresa');
-      return;
-    }
-  
     this.isProcessing = true;
     this.errorMessage = '';
     this.successMessage = '';
@@ -209,7 +190,7 @@ export class MarcacionComponent implements OnInit, OnDestroy {
       const timestamp = new Date().getTime();
       const archivo = this.base64ToFile(
         this.capturedImage, 
-        `marcacion_${empresaId}_${timestamp}.jpg`
+        `marcacion_${timestamp}.jpg`
       );
       
       console.log('📸 Archivo a subir:', {

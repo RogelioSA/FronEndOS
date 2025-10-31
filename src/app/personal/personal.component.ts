@@ -28,6 +28,8 @@ export class PersonalComponent {
   selectedHorarioId: number | null = null;
   superiores: any[] = [];
   estados: any[] = [];
+  politicasRegistro: any[] = [];
+  usuarios: any[] = [];
 
   @BlockUI() blockUI!: NgBlockUI;
 
@@ -38,16 +40,14 @@ export class PersonalComponent {
     this.blockUI.start('Cargando...'); // Start blocking
 
     await this.traerPersonal();
-    //await this.traerCargos();
-    //await this.traerAreas();
     await this.traerContratoTipos();
-    //await this.traerSituaciones();
-    //await this.traerCondiciones();
     await this.traerLicencias();
     await this.traerDocumentoTipos();
     await this.traerSexo();
     await this.traerDistritos();
     await this.traerHorarios();
+    await this.traerPoliticasRegistro();
+    await this.traerUsuarios();
 
     try {
       const resp: any[] = await firstValueFrom(this.apiService.getPersonas());
@@ -98,106 +98,84 @@ export class PersonalComponent {
       console.log("Error trayendo el personal.", error);
     }
   }
-  
 
-  /*async traerCargos() {
-    console.log("traer cargos");
-  
+  async traerContratoTipos() {
+    console.log("traer tipos");
     try {
-      const obser = this.apiService.getCargos();
+      const obser = this.apiService.getContratoTipos();
       const result = await firstValueFrom(obser);
   
-      // Mapeo de API → formato que espera el lookup
-      this.cargos = result.map((t: any) => ({
-        nCodigo: t.id,
-        cNombre: t.nombre
+      // Mapeo API → formato que usabas antes
+      this.contratos = result.map((t: any) => ({
+        id: t.id,
+        nombre: t.nombre
       }));
   
+      console.log("✅ Contratos cargados:", this.contratos);
     } catch (error) {
-      console.log('Error trayendo los cargos.', error);
+      console.log('❌ Error trayendo los tipos.', error);
     }
-  }*/
+  }
   
-
-  /*async traerAreas(){
-    console.log("traer areas");
-
-    try{
-      const obser = this.apiService.getAreas();
+  async traerHorarios() {
+    console.log("traer horarios");
+  
+    try {
+      const obser = this.apiService.getHorarios();
       const result = await firstValueFrom(obser);
-
-      this.areas = result.data;
-    }catch(error){
-      console.log('Error traendo las areas.')
-    }finally{
+  
+      // Mapeo API → formato simple
+      this.horarios = result.map((h: any) => ({
+        id: h.id,
+        nombre: h.nombre
+      }));
+  
+      console.log("✅ Horarios cargados:", this.horarios);
+  
+    } catch (error) {
+      console.error("❌ Error trayendo horarios", error);
     }
-  }*/
+  }
 
-    async traerContratoTipos() {
-      console.log("traer tipos");
-      try {
-        const obser = this.apiService.getContratoTipos();
-        const result = await firstValueFrom(obser);
-    
-        // Mapeo API → formato que usabas antes
-        this.contratos = result.map((t: any) => ({
-          id: t.id,
-          nombre: t.nombre
-        }));
-    
-        console.log("✅ Contratos cargados:", this.contratos);
-      } catch (error) {
-        console.log('❌ Error trayendo los tipos.', error);
-      }
-    }
-    
-    async traerHorarios() {
-      console.log("traer horarios");
-    
-      try {
-        const obser = this.apiService.getHorarios();
-        const result = await firstValueFrom(obser);
-    
-        // Mapeo API → formato simple
-        this.horarios = result.map((h: any) => ({
-          id: h.id,
-          nombre: h.nombre
-        }));
-    
-        console.log("✅ Horarios cargados:", this.horarios);
-    
-      } catch (error) {
-        console.error("❌ Error trayendo horarios", error);
-      }
-    }
-    
-  /*async traerSituaciones(){
-    console.log("traer situaciones");
-
-    try
-      const obser = this.apiService.getPersonalSituaciones();
+  async traerPoliticasRegistro() {
+    console.log("traer políticas de registro");
+    try {
+      const obser = this.apiService.getRegistroAsistenciaPolitica();
       const result = await firstValueFrom(obser);
-
-      this.situaciones = result.data;
-    }catch(error){
-      console.log('Error traendo las situaciones.')
-    }finally{
+  
+      // Mapeo usando el campo 'nombre' y 'nombreCorto' del API
+      this.politicasRegistro = result.map((p: any) => ({
+        id: p.id,
+        nombre: p.nombre,
+        nombreCorto: p.nombreCorto,
+        descripcion: p.descripcion
+      }));
+  
+      console.log("✅ Políticas de registro cargadas:", this.politicasRegistro);
+    } catch (error) {
+      console.error("❌ Error trayendo políticas de registro:", error);
     }
-  }*/
+  }
 
-  /*async traerCondiciones(){
-    console.log("traer condiciones");
-
-    try{
-      const obser = this.apiService.getCondicionesContract();
+  async traerUsuarios() {
+    console.log("traer usuarios");
+    try {
+      const obser = this.apiService.listarUsuarios();
       const result = await firstValueFrom(obser);
-
-      this.condiciones = result.data;
-    }catch(error){
-      console.log('Error traendo las condiciones.')
-    }finally{
+  
+      // Mapeo usando userName del API (que es el email)
+      this.usuarios = result.map((u: any) => ({
+        id: u.id,
+        userName: u.userName,
+        email: u.email,
+        displayName: u.userName // Usamos userName como nombre para mostrar
+      }));
+  
+      console.log("✅ Usuarios cargados:", this.usuarios);
+    } catch (error) {
+      console.error("❌ Error trayendo usuarios:", error);
     }
-  }*/
+  }
 
   async traerSexo() {
     try {
@@ -424,121 +402,119 @@ export class PersonalComponent {
   }
   
   popupVisible = false;
-selectedPersonal: any = {};
+  selectedPersonal: any = {};
 
-asignarPersonal(e: any) {
-  const fila = e.row?.data;
-  const id = fila?.nCodigo;
+  asignarPersonal(e: any) {
+    const fila = e.row?.data;
+    const id = fila?.nCodigo;
 
-  if (!id) {
-    console.error("❌ No se encontró ID de personal");
-    return;
-  }
-
-  this.popupVisible = true;
-
-  this.selectedPersonal = {
-    empresaId: fila?.empresaId ?? 1,
-    id: id,
-    marcaAsistencia: true,
-    contratoCabeceraId: null,
-    horarioCabeceraId: null,
-    superiorId: null,
-    personalEstadoId: 1
-  };
-
-  this.selectedHorarioId = null;
-
-  if (!this.horarios?.length) this.traerHorarios();
-  if (!this.superiores?.length) this.traerPersonal();
-
-  this.apiService.getPersonalById(id).subscribe({
-    next: (resp) => {
-      if (!resp) {
-        // ✅ No hay asignación previa → modo creación
-        this.existeAsignacion = false;
-        console.log("🆕 No existe asignación previa, modo creación");
-        return;
-      }
-
-      // ✅ Ya existe asignación → modo edición
-      this.existeAsignacion = true;
-      console.log("✏️ Editando asignación existente:", resp);
-
-      this.selectedPersonal = {
-        empresaId: resp.empresaId ?? fila?.empresaId ?? 1,
-        id: resp.id,
-        marcaAsistencia: resp.marcaAsistencia ?? true,
-        contratoCabeceraId: resp.contratoCabeceraId ?? null,
-        horarioCabeceraId: resp.horarioCabecera?.id ?? null,
-        superiorId: null,
-        personalEstadoId: resp.personalEstadoId ?? 1
-      };
-
-      if (resp.horarioCabecera?.id) {
-        const horarioSeleccionado = this.horarios.find(
-          (h: any) => h.id === resp.horarioCabecera.id
-        );
-        if (horarioSeleccionado) this.selectedHorarioId = horarioSeleccionado.id;
-      }
-
-      if (resp.persona?.id) {
-        const superiorEncontrado = this.superiores.find(
-          (s: any) => s.id === resp.persona.id
-        );
-        if (superiorEncontrado) {
-          this.selectedPersonal.superiorId = superiorEncontrado.id;
-        }
-      }
-    },
-    error: (err) => {
-      this.existeAsignacion = false;
-      console.warn("⚠️ No tiene asignación previa o error:", err);
+    if (!id) {
+      console.error("❌ No se encontró ID de personal");
+      return;
     }
-  });
-}
 
+    this.popupVisible = true;
 
-guardarAsignacion() {
-  if (!this.selectedPersonal) {
-    console.error("❌ No hay datos seleccionados para guardar.");
-    return;
+    this.selectedPersonal = {
+      empresaId: fila?.empresaId ?? 1,
+      id: id,
+      marcaAsistencia: true,
+      contratoCabeceraId: null,
+      horarioCabeceraId: null,
+      superiorId: null,
+      personalEstadoId: 1,
+      registroAsistenciaPoliticaId: null,
+      usuarioId: null
+    };
+
+    this.selectedHorarioId = null;
+
+    if (!this.horarios?.length) this.traerHorarios();
+    if (!this.superiores?.length) this.traerPersonal();
+    if (!this.politicasRegistro?.length) this.traerPoliticasRegistro();
+    if (!this.usuarios?.length) this.traerUsuarios();
+
+    this.apiService.getPersonalById(id).subscribe({
+      next: (resp) => {
+        if (!resp) {
+          // ✅ No hay asignación previa → modo creación
+          this.existeAsignacion = false;
+          console.log("🆕 No existe asignación previa, modo creación");
+          return;
+        }
+
+        // ✅ Ya existe asignación → modo edición
+        this.existeAsignacion = true;
+        console.log("✏️ Editando asignación existente:", resp);
+
+        this.selectedPersonal = {
+          empresaId: resp.empresaId ?? fila?.empresaId ?? 1,
+          id: resp.id,
+          marcaAsistencia: resp.marcaAsistencia ?? true,
+          contratoCabeceraId: resp.contratoCabeceraId ?? null,
+          horarioCabeceraId: resp.horarioCabecera?.id ?? null,
+          superiorId: resp.persona?.id ?? null,
+          personalEstadoId: resp.personalEstadoId ?? 1,
+          registroAsistenciaPoliticaId: resp.registroAsistenciaPolitica?.id ?? null,
+          usuarioId: resp.usuario?.id ?? null
+        };
+
+        if (resp.horarioCabecera?.id) {
+          const horarioSeleccionado = this.horarios.find(
+            (h: any) => h.id === resp.horarioCabecera.id
+          );
+          if (horarioSeleccionado) this.selectedHorarioId = horarioSeleccionado.id;
+        }
+      },
+      error: (err) => {
+        this.existeAsignacion = false;
+        console.warn("⚠️ No tiene asignación previa o error:", err);
+      }
+    });
   }
 
-  // Construimos el payload
-  const payload = {
-    empresaId: this.selectedPersonal.empresaId,
-    id: this.selectedPersonal.id,
-    marcaAsistencia: this.selectedPersonal.marcaAsistencia,
-    contratoCabeceraId: this.selectedPersonal.contratoCabeceraId,
-    horarioCabeceraId: this.selectedHorarioId,
-    superiorId: this.selectedPersonal.superiorId,
-    personalEstadoId: this.selectedPersonal.personalEstadoId
-  };
+  guardarAsignacion() {
+    if (!this.selectedPersonal) {
+      console.error("❌ No hay datos seleccionados para guardar.");
+      return;
+    }
 
-  console.log("📤 Datos a enviar:", payload);
+    // Construimos el payload con todos los campos
+    const payload = {
+      empresaId: this.selectedPersonal.empresaId,
+      id: this.selectedPersonal.id,
+      marcaAsistencia: this.selectedPersonal.marcaAsistencia,
+      contratoCabeceraId: this.selectedPersonal.contratoCabeceraId || 0,
+      horarioCabeceraId: this.selectedHorarioId || 0,
+      superiorId: this.selectedPersonal.superiorId || 0,
+      personalEstadoId: this.selectedPersonal.personalEstadoId || 0,
+      registroAsistenciaPoliticaId: this.selectedPersonal.registroAsistenciaPoliticaId || 0,
+      usuarioId: this.selectedPersonal.usuarioId || 0
+    };
 
-  // 🔹 Si el registro ya tiene un ID en backend → editar
-  if (this.selectedPersonal.id && this.existeAsignacion) {
-    this.apiService.editarPersonal(this.selectedPersonal.id, payload).subscribe({
-      next: (resp) => {
-        console.log("✅ Personal actualizado correctamente:", resp);
-        this.popupVisible = false;
-      },
-      error: (err) => console.error("❌ Error al actualizar personal:", err)
-    });
-  } 
-  // 🔹 Si no tiene asignación previa → crear
-  else {
-    this.apiService.crearPersonal(payload).subscribe({
-      next: (resp) => {
-        console.log("✅ Personal creado correctamente:", resp);
-        this.popupVisible = false;
-      },
-      error: (err) => console.error("❌ Error al crear personal:", err)
-    });
+    console.log("📤 Datos a enviar:", payload);
+
+    // 🔹 Si el registro ya tiene un ID en backend → editar
+    if (this.selectedPersonal.id && this.existeAsignacion) {
+      this.apiService.editarPersonal(this.selectedPersonal.id, payload).subscribe({
+        next: (resp) => {
+          console.log("✅ Personal actualizado correctamente:", resp);
+          this.popupVisible = false;
+          this.traerPersonal();
+        },
+        error: (err) => console.error("❌ Error al actualizar personal:", err)
+      });
+    } 
+    // 🔹 Si no tiene asignación previa → crear
+    else {
+      this.apiService.crearPersonal(payload).subscribe({
+        next: (resp) => {
+          console.log("✅ Personal creado correctamente:", resp);
+          this.popupVisible = false;
+          this.traerPersonal();
+        },
+        error: (err) => console.error("❌ Error al crear personal:", err)
+      });
+    }
   }
-}
-
-
 }

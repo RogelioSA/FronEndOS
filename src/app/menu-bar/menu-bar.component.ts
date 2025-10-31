@@ -22,6 +22,7 @@ export class MenuBarComponent {
   isMobile = false;
   claims: any;
   private isInitialLoad = true;
+  esUsuarioDocumento: boolean = false; // Nueva propiedad
 
   constructor(
     private router: Router,
@@ -33,137 +34,202 @@ export class MenuBarComponent {
 
   async ngOnInit(): Promise<void> {
     this.claims = this.authService.getClaims();
+    
+    // Verificar si es usuario logueado con documento
+    this.esUsuarioDocumento = localStorage.getItem('tipo') === 'U';
+    console.log('Es usuario con documento (tipo U):', this.esUsuarioDocumento);
+    
     await this.traerUsuariosEmpresas();
     this.crearMenusEstaticos();
   }
 
   crearMenusEstaticos() {
-    this.menuBar = [
-      // Menú Personal
-      {
-        cNombre: 'Personal',
-        nCodigo: 1,
-        nPadre: 0,
-        cPath: '#',
-        path: '#',
-        icono: 'user',
-        nOrden: 1,
-        items: [
-          {
-            cNombre: 'Personal',
-            nCodigo: 11,
-            nPadre: 1,
-            cPath: '/mantenimiento/personal',
-            path: '/mantenimiento/personal',
-            icono: 'user',
-            nOrden: 1,
-            items: []
-          },
-          {
-            cNombre: 'Grupo Horario',
-            nCodigo: 12,
-            nPadre: 1,
-            cPath: '/mantenimiento/grupoHorario/horario',
-            path: '/mantenimiento/grupoHorario/horario',
-            icono: 'clock',
-            nOrden: 2,
-            items: []
-          },
-          {
-            cNombre: 'Personal Horario',
-            nCodigo: 13,
-            nPadre: 1,
-            cPath: '/mantenimiento/personal/personalHorario',
-            path: '/mantenimiento/personal/personalHorario',
-            icono: 'calendar',
-            nOrden: 3,
-            items: []
-          }
-        ]
-      },
-      // Menú Ordenes de Servicio
-      {
-        cNombre: 'Ordenes Servicio',
-        nCodigo: 2,
-        nPadre: 0,
-        cPath: '#',
-        path: '#',
-        icono: 'folder',
-        nOrden: 2,
-        items: [
-          {
-            cNombre: 'Ordenes Servicio',
-            nCodigo: 21,
-            nPadre: 2,
-            cPath: '/procesos/ordenservicio',
-            path: '/procesos/ordenservicio',
-            icono: 'folder',
-            nOrden: 1,
-            items: []
-          },
-          {
-            cNombre: 'Asignacion de Personal',
-            nCodigo: 22,
-            nPadre: 2,
-            cPath: '/mantenimiento/ordenServicio/clientes',
-            path: '/mantenimiento/ordenServicio/clientes',
-            icono: 'group',
-            nOrden: 2,
-            items: []
-          },
-          {
-            cNombre: 'Marcacion',
-            nCodigo: 23,
-            nPadre: 2,
-            cPath: '/procesos/marcacion',
-            path: '/procesos/marcacion',
-            icono: 'check',
-            nOrden: 3,
-            items: []
-          }
-        ]
-      },
-      // Menú Mis Marcaciones
-      {
-        cNombre: 'Mis Marcaciones',
-        nCodigo: 3,
-        nPadre: 0,
-        cPath: '/general/mismarcaciones',
-        path: '/general/mismarcaciones',
-        icono: 'event',
-        nOrden: 3,
-        items: []
-      },
-      // Menú de Usuario (al final)
-      {
-        cNombre: this.claims.cUsuario || 'Usuario',
-        nCodigo: 990,
-        nPadre: 0,
-        nOrden: 999,
-        cPath: '#',
-        path: '#',
-        cssClass: 'logout-item',
-        icono: 'user',
-        items: [
-          {
-            cNombre: 'Cerrar Sesión',
-            nCodigo: 999,
-            nPadre: 990,
-            nOrden: 1000,
-            cPath: '#',
-            path: '#',
-            icono: 'logout',
-            items: []
-          }
-        ]
-      }
-    ];
+    // Si es usuario con documento (tipo U), crear menú reducido
+    if (this.esUsuarioDocumento) {
+      this.menuBar = [
+        // Menú Marcación
+        {
+          cNombre: 'Marcación',
+          nCodigo: 23,
+          nPadre: 0,
+          cPath: '/procesos/marcacion',
+          path: '/procesos/marcacion',
+          icono: 'check',
+          nOrden: 1,
+          items: []
+        },
+        // Menú Mis Marcaciones
+        {
+          cNombre: 'Mis Marcaciones',
+          nCodigo: 3,
+          nPadre: 0,
+          cPath: '/general/mismarcaciones',
+          path: '/general/mismarcaciones',
+          icono: 'event',
+          nOrden: 2,
+          items: []
+        },
+        // Menú de Usuario (al final)
+        {
+          cNombre: this.claims.cUsuario || 'Usuario',
+          nCodigo: 990,
+          nPadre: 0,
+          nOrden: 999,
+          cPath: '#',
+          path: '#',
+          cssClass: 'logout-item',
+          icono: 'user',
+          items: [
+            {
+              cNombre: 'Cerrar Sesión',
+              nCodigo: 999,
+              nPadre: 990,
+              nOrden: 1000,
+              cPath: '#',
+              path: '#',
+              icono: 'logout',
+              items: []
+            }
+          ]
+        }
+      ];
+      
+      console.log('MenuBar reducido para usuario tipo U creado:', this.menuBar);
+    } else {
+      // Menú completo para usuarios normales
+      this.menuBar = [
+        // Menú Personal
+        {
+          cNombre: 'Personal',
+          nCodigo: 1,
+          nPadre: 0,
+          cPath: '#',
+          path: '#',
+          icono: 'user',
+          nOrden: 1,
+          items: [
+            {
+              cNombre: 'Personal',
+              nCodigo: 11,
+              nPadre: 1,
+              cPath: '/mantenimiento/personal',
+              path: '/mantenimiento/personal',
+              icono: 'user',
+              nOrden: 1,
+              items: []
+            },
+            {
+              cNombre: 'Grupo Horario',
+              nCodigo: 12,
+              nPadre: 1,
+              cPath: '/mantenimiento/grupoHorario/horario',
+              path: '/mantenimiento/grupoHorario/horario',
+              icono: 'clock',
+              nOrden: 2,
+              items: []
+            },
+            {
+              cNombre: 'Personal Horario',
+              nCodigo: 13,
+              nPadre: 1,
+              cPath: '/mantenimiento/personal/personalHorario',
+              path: '/mantenimiento/personal/personalHorario',
+              icono: 'calendar',
+              nOrden: 3,
+              items: []
+            }
+          ]
+        },
+        // Menú Ordenes de Servicio
+        {
+          cNombre: 'Ordenes Servicio',
+          nCodigo: 2,
+          nPadre: 0,
+          cPath: '#',
+          path: '#',
+          icono: 'folder',
+          nOrden: 2,
+          items: [
+            {
+              cNombre: 'Ordenes Servicio',
+              nCodigo: 21,
+              nPadre: 2,
+              cPath: '/procesos/ordenservicio',
+              path: '/procesos/ordenservicio',
+              icono: 'folder',
+              nOrden: 1,
+              items: []
+            },
+            {
+              cNombre: 'Asignacion de Personal',
+              nCodigo: 22,
+              nPadre: 2,
+              cPath: '/mantenimiento/ordenServicio/clientes',
+              path: '/mantenimiento/ordenServicio/clientes',
+              icono: 'group',
+              nOrden: 2,
+              items: []
+            },
+            {
+              cNombre: 'Marcacion',
+              nCodigo: 23,
+              nPadre: 2,
+              cPath: '/procesos/marcacion',
+              path: '/procesos/marcacion',
+              icono: 'check',
+              nOrden: 3,
+              items: []
+            }
+          ]
+        },
+        // Menú Mis Marcaciones
+        {
+          cNombre: 'Mis Marcaciones',
+          nCodigo: 3,
+          nPadre: 0,
+          cPath: '/general/mismarcaciones',
+          path: '/general/mismarcaciones',
+          icono: 'event',
+          nOrden: 3,
+          items: []
+        },
+        // Menú de Usuario (al final)
+        {
+          cNombre: this.claims.cUsuario || 'Usuario',
+          nCodigo: 990,
+          nPadre: 0,
+          nOrden: 999,
+          cPath: '#',
+          path: '#',
+          cssClass: 'logout-item',
+          icono: 'user',
+          items: [
+            {
+              cNombre: 'Cerrar Sesión',
+              nCodigo: 999,
+              nPadre: 990,
+              nOrden: 1000,
+              cPath: '#',
+              path: '#',
+              icono: 'logout',
+              items: []
+            }
+          ]
+        }
+      ];
 
-    console.log('MenuBar estático creado:', this.menuBar);
+      console.log('MenuBar completo creado:', this.menuBar);
+    }
   }
 
   async traerUsuariosEmpresas() {
     console.log("traer usuarios empresas");
+
+    // Si es usuario tipo U, no cargar empresas
+    if (this.esUsuarioDocumento) {
+      console.log('Usuario tipo U: No se cargan empresas');
+      return;
+    }
 
     try {
       const userId = localStorage.getItem('user_id');

@@ -118,7 +118,7 @@ export class PersonalMarcacionComponent implements OnInit {
       return;
     }
 
-    try {
+    try { 
       this.blockUI.start('Cargando registros de asistencia...');
 
       const response = await firstValueFrom(

@@ -1,0 +1,67 @@
+/* Colores corporativos profesionales */
+:root {
+    --primary-color: #2563eb;
+    --secondary-color: #64748b;
+    --border-color: #e2e8f0;
+    --hover-bg: #f8fafc;
+  }
+  
+  .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  .btn-primary:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+  }
+  
+  .nav-tabs {
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .nav-tabs .nav-link {
+    color: var(--secondary-color);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+  
+  .nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    background-color: transparent;
+  }
+  
+  .card {
+    border-radius: 0.5rem;
+  }
+  
+  /* DevExtreme Grid Customization */
+  #gridContainer .dx-datagrid {
+    font-size: 0.875rem;
+  }
+  
+  #gridContainer .dx-datagrid-headers {
+    background-color: #f8fafc;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--secondary-color);
+    letter-spacing: 0.025em;
+  }
+  
+  #gridContainer .dx-row-alt {
+    background-color: #fafbfc;
+  }
+  
+  #gridContainer .dx-row:hover {
+    background-color: var(--hover-bg);
+  }
+  
+  #gridContainer .dx-datagrid-rowsview .dx-selection.dx-row:not(.dx-row-focused) > td {
+    background-color: #eff6ff;
+  }

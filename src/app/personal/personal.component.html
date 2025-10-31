@@ -1,259 +1,379 @@
-<div class="container-fluid">
-    <div class="row g-1 mt-2 justify-content-md-center mb-4">
-      <div class="col-12">
-        <h3>Personal Mantenimiento</h3>
-        <div id="data-grid">
-            <dx-data-grid
-              id="gridContainer"
-              [dataSource]="personal"
-              keyExpr="nCodigo"
-              [showBorders]="true"
-              (onRowUpdating)="actualizar($event)"
-              (onRowInserted)="insertar($event)"
-              (onRowRemoved)="eliminar($event)"
-              [rowAlternationEnabled]="true"
-              [showColumnLines]="true"
-              [showRowLines]="true"
-              [allowColumnResizing]="true"
-              [columnAutoWidth]="true"
-              [editing]="{
-                mode: 'popup',
-                allowUpdating: true,
-                popup: {
-                title: 'Editar Registro',
-                showTitle: true,
-                width: 900,
-                height: 600,
-                position: { my: 'center', at: 'center' }
-                },
-            }"
-            >
-            <dxo-paging [pageSize]="15"> </dxo-paging>
+<div class="container-fluid px-4 py-3">
+  <div class="row">
+    <div class="col-12">
+      <!-- Header Section -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h4 class="mb-1 fw-semibold text-dark">Personal</h4>
+          <p class="text-muted small mb-0">Gestión y mantenimiento de personal</p>
+        </div>
+      </div>
+
+      <!-- Grid Container -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+          <dx-data-grid
+            id="gridContainer"
+            [dataSource]="personal"
+            keyExpr="nCodigo"
+            [showBorders]="false"
+            (onRowUpdating)="actualizar($event)"
+            (onRowInserted)="insertar($event)"
+            (onRowRemoved)="eliminar($event)"
+            [rowAlternationEnabled]="true"
+            [showColumnLines]="false"
+            [showRowLines]="true"
+            [allowColumnResizing]="true"
+            [columnAutoWidth]="true"
+            [hoverStateEnabled]="true"
+          >
+            <dxo-paging [pageSize]="15"></dxo-paging>
             <dxo-pager
-                [visible]="true"
-                [showPageSizeSelector]="true"
-                [allowedPageSizes]="[15, 25, 50, 100]"
+              [visible]="true"
+              [showPageSizeSelector]="true"
+              [allowedPageSizes]="[15, 25, 50, 100]"
+              [showInfo]="true"
+              infoText="Mostrando {0}-{1} de {2} registros"
             ></dxo-pager>
-              <dxo-editing
-                mode="popup"
-                [allowUpdating]="true"
-                [allowAdding]="true"
-                [allowDeleting]="true"
-                [selectTextOnEditStart]="true"
-                startEditAction="click"
-                use-icons="true"
+
+            <dxo-search-panel [visible]="false"></dxo-search-panel>
+            <dxo-filter-row [visible]="false"></dxo-filter-row>
+            <dxo-header-filter [visible]="true"></dxo-header-filter>
+
+            <dxo-editing
+              mode="popup"
+              [allowUpdating]="true"
+              [allowAdding]="true"
+              [allowDeleting]="true"
+              [selectTextOnEditStart]="true"
+              startEditAction="click"
+              use-icons="true"
+            >
+              <dxo-popup
+                title="Gestión de Personal"
+                [showTitle]="true"
+                [width]="950"
+                [height]="650"
               >
-              </dxo-editing>
+                <dxo-position my="center" at="center"></dxo-position>
+              </dxo-popup>
+            </dxo-editing>
 
-              <dxo-export [enabled]="true" [allowExportSelectedData]="true"></dxo-export>
+            <dxo-export [enabled]="true" [allowExportSelectedData]="true"></dxo-export>
+            <dxo-selection mode="multiple" [showCheckBoxesMode]="'always'"></dxo-selection>
 
-              <dxi-column type="buttons">
-                <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
-                <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
-                <dxi-button name="save" icon="fa-solid fa-floppy-disk" hint="Guardar"></dxi-button>
-                <dxi-button name="cancel" icon="fa-solid fa-ban" hint="Cancelar"></dxi-button>
-                <dxi-button name="person" icon="group" hint="Asignar Personal" [onClick]="asignarPersonal.bind(this)">
-                </dxi-button>
-              </dxi-column>
-          
-              <dxi-column dataField="nCodigo" caption="Codigo" [width]="70" [allowEditing]="false" alignment='center'></dxi-column>
+            <dxi-column 
+              dataField="nCodigo" 
+              caption="ID" 
+              [width]="80" 
+              [allowEditing]="false" 
+              alignment="center"
+              cssClass="text-muted small"
+            ></dxi-column>
 
-              <dxi-column dataField="cNombres" caption="Nombres">
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column dataField="cNombres" caption="Nombres" [minWidth]="150">
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+            </dxi-column>
 
-              <dxi-column dataField="cApPater" caption="Apellido Paterno">
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column dataField="cApPater" caption="Ap. Paterno" [minWidth]="120">
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+            </dxi-column>
 
-              <dxi-column dataField="cApMater" caption="Apellido Materno">
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column dataField="cApMater" caption="Ap. Materno" [minWidth]="120">
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+            </dxi-column>
 
-              <dxi-column dataField="dFechaNacimiento" caption="Fecha Nacimiento" dataType="date">
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column dataField="cDNI" caption="DNI" [width]="100" dataType="number" [editorOptions]="{ format: '#'}" alignment="center">
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+              <dxi-validation-rule
+                type="stringLength"
+                [min]="8"
+                [max]="8"
+                message="El DNI debe tener 8 dígitos."
+              ></dxi-validation-rule>
+            </dxi-column>
 
-              <dxi-column dataField="cDNI" caption="DNI" dataType="number" [editorOptions]="{ format: '#'}">
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-                <dxi-validation-rule
-                    type="stringLength"
-                    [min]="8"
-                    [max]="8"
-                    message="El DNI solo puede tener 8 digitos."
-                ></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column dataField="cCorreo" caption="Correo Electrónico" [minWidth]="200">
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+              <dxi-validation-rule type="email"></dxi-validation-rule>
+            </dxi-column>
 
-              <dxi-column dataField="cCorreo" caption="Correo">
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-                <dxi-validation-rule type="email"></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column dataField="cCelular" caption="Celular" [width]="110" dataType="number" [editorOptions]="{ format: '#'}" alignment="center">
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+            </dxi-column>
 
-              <dxi-column dataField="cCelular" caption="Celular" dataType="number" [editorOptions]="{ format: '#'}">
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column dataField="cSexo" caption="Sexo" [width]="90" alignment="center">
+              <dxo-lookup 
+                [dataSource]="sexo" 
+                displayExpr="cNombre" 
+                valueExpr="nCodigo">
+              </dxo-lookup>
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+            </dxi-column>
 
-              <dxi-column dataField="lEstado" caption="Estado">
-              </dxi-column>
+            <dxi-column dataField="dFechaNacimiento" caption="F. Nacimiento" dataType="date" [width]="120" alignment="center">
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+            </dxi-column>
 
-              <dxi-column dataField="cSexo" caption="Sexo">
-                <dxo-lookup 
-                  [dataSource]="sexo" 
-                  displayExpr="cNombre" 
-                  valueExpr="nCodigo">
-                </dxo-lookup>
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
-              <dxi-column dataField="nLicenciaCategoria" caption="Licencia Categoria">
-                <dxo-lookup [dataSource]="licencias" displayExpr="cNombre" valueExpr="nCodigo">
-                </dxo-lookup>
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column dataField="nLicenciaCategoria" caption="Licencia" [width]="100" alignment="center">
+              <dxo-lookup 
+                [dataSource]="licencias" 
+                displayExpr="cNombre" 
+                valueExpr="nCodigo">
+              </dxo-lookup>
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+            </dxi-column>
 
-              <dxi-column dataField="nDocumentoIdentidadTipo" caption="Tipo Documento">
-                <dxo-lookup 
-                  [dataSource]="documentoTipos" 
-                  displayExpr="cNombre" 
-                  valueExpr="nCodigo">
-                </dxo-lookup>
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column dataField="nDocumentoIdentidadTipo" caption="Tipo Doc." [width]="100">
+              <dxo-lookup 
+                [dataSource]="documentoTipos" 
+                displayExpr="cNombre" 
+                valueExpr="nCodigo">
+              </dxo-lookup>
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+            </dxi-column>
 
-              <dxi-column dataField="nDistritoId" caption="Distrito">
-                <dxo-lookup 
-                  [dataSource]="distritos" 
-                  displayExpr="cNombre" 
-                  valueExpr="nCodigo">
-                </dxo-lookup>
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
-              
+            <dxi-column dataField="nDistritoId" caption="Distrito" [width]="130">
+              <dxo-lookup 
+                [dataSource]="distritos" 
+                displayExpr="cNombre" 
+                valueExpr="nCodigo">
+              </dxo-lookup>
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+            </dxi-column>
 
-              
-              <!--
-              <dxi-column dataField="nCargo" caption="Cargo">
-                <dxo-lookup [dataSource]="cargos" displayExpr="cNombre" valueExpr="nCodigo">
-                </dxo-lookup>
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column dataField="lEstado" caption="Estado" alignment="center" [width]="90">
+              <dxo-lookup 
+                [dataSource]="[{id: true, nombre: 'Activo'}, {id: false, nombre: 'Inactivo'}]" 
+                displayExpr="nombre" 
+                valueExpr="id">
+              </dxo-lookup>
+            </dxi-column>
 
-              <dxi-column dataField="nArea" caption="Area">
-                <dxo-lookup [dataSource]="areas" displayExpr="cNombre" valueExpr="nCodigo">
-                </dxo-lookup>
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
+            <dxi-column 
+              type="buttons" 
+              [width]="120" 
+              alignment="center"
+              caption="Acciones"
+              [fixed]="true"
+              fixedPosition="right"
+            >
+              <dxi-button name="edit" icon="edit" hint="Editar" cssClass="text-primary"></dxi-button>
+              <dxi-button name="delete" icon="trash" hint="Eliminar" cssClass="text-danger"></dxi-button>
+              <dxi-button name="person" icon="group" hint="Asignar Personal" [onClick]="asignarPersonal.bind(this)"></dxi-button>
+            </dxi-column>
+          </dx-data-grid>
+        </div>
+      </div>
 
-              <dxi-column dataField="dFechaIngreso" caption="Fecha Ingreso" dataType="date">
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
-
-              <dxi-column dataField="nContratoTipo" caption="Tipo Contrato">
-                <dxo-lookup [dataSource]="contratoTipos" displayExpr="cNombre" valueExpr="nCodigo">
-                </dxo-lookup>
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
-
-              <dxi-column dataField="nCondicionContractual" caption="Condicion Contractual">
-                <dxo-lookup [dataSource]="condiciones" displayExpr="cNombre" valueExpr="nCodigo">
-                </dxo-lookup>
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
-
-              <dxi-column dataField="nPersonalSituacion" caption="Personal Situacion">
-                <dxo-lookup [dataSource]="situaciones" displayExpr="cNombre" valueExpr="nCodigo">
-                </dxo-lookup>
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
-
-              <dxi-column dataField="cUsuario" caption="Usuario">
-                <dxi-validation-rule type="required"></dxi-validation-rule>
-              </dxi-column>
-               -->
-              
-
-              
-            </dx-data-grid>
-            <block-ui >
-              <!-- Markup here -->
-            </block-ui>
     </div>
   </div>
+
+  <block-ui></block-ui>
 </div>
+
+<!-- Popup Asignar Personal -->
 <dx-popup
   [(visible)]="popupVisible"
-  [width]="500"
-  [height]="500"
+  [width]="750"
+  [height]="'auto'"
+  [maxHeight]="'90vh'"
   [showTitle]="true"
-  title="Asignar Personal"
+  title="Asignación de Personal"
   [dragEnabled]="true"
-  [closeOnOutsideClick]="true">
-
-  <div class="p-4 space-y-3">
-    <div>
-      <label class="block font-medium">Empresa</label>
-      <input type="text" class="border rounded px-2 py-1 w-full bg-gray-100"
-             [value]="selectedPersonal.empresaId" disabled>
+  [closeOnOutsideClick]="false"
+  [showCloseButton]="true"
+>
+  <div class="p-4">
+    <div class="alert alert-info border-0 mb-4 py-2">
+      <small><i class="fas fa-info-circle me-1"></i>Complete la información de asignación del personal seleccionado</small>
     </div>
 
-    <div>
-      <label class="block font-medium">Marca Asistencia</label>
-      <input type="checkbox" [(ngModel)]="selectedPersonal.marcaAsistencia">
+    <!-- Sección: Información Básica -->
+    <div class="mb-4">
+      <h6 class="text-muted small text-uppercase mb-3 fw-semibold">
+        <i class="fas fa-building me-2"></i>Información Básica
+      </h6>
+      
+      <div class="mb-3">
+        <label class="form-label fw-medium small mb-1">Empresa</label>
+        <input 
+          type="text" 
+          class="form-control form-control-sm bg-light" 
+          [value]="'Empresa ID: ' + selectedPersonal.empresaId" 
+          disabled
+        >
+      </div>
+
+      <div class="mb-3">
+        <div class="form-check form-switch">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            role="switch"
+            [(ngModel)]="selectedPersonal.marcaAsistencia"
+            id="checkMarcaAsistencia"
+          >
+          <label class="form-check-label fw-medium small" for="checkMarcaAsistencia">
+            <i class="fas fa-clock me-1"></i>Habilitar marca de asistencia
+          </label>
+        </div>
+        <small class="text-muted ms-4">Permite registrar entrada y salida del personal</small>
+      </div>
     </div>
 
-    <div>
-      <label class="block font-medium">Contrato</label>
-      <dx-select-box
-        [(value)]="selectedPersonal.contratoCabeceraId"
-        [dataSource]="contratos"
-        displayExpr="nombre"
-        valueExpr="id"
-        [showClearButton]="true"
-        placeholder="Seleccione un contrato">
-      </dx-select-box>
+    <hr class="my-4">
+
+    <!-- Sección: Asignaciones Laborales -->
+    <div class="mb-4">
+      <h6 class="text-muted small text-uppercase mb-3 fw-semibold">
+        <i class="fas fa-briefcase me-2"></i>Asignaciones Laborales
+      </h6>
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label fw-medium small mb-1">
+            Contrato
+            <span class="text-danger">*</span>
+          </label>
+          <dx-select-box
+            [(value)]="selectedPersonal.contratoCabeceraId"
+            [dataSource]="contratos"
+            displayExpr="nombre"
+            valueExpr="id"
+            [showClearButton]="true"
+            placeholder="Seleccione un tipo de contrato"
+          >
+          </dx-select-box>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-medium small mb-1">
+            Horario
+            <span class="text-danger">*</span>
+          </label>
+          <dx-select-box
+            [items]="horarios"
+            displayExpr="nombre"
+            valueExpr="id"
+            [(value)]="selectedHorarioId"
+            placeholder="Seleccione un horario de trabajo"
+          >
+          </dx-select-box>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-medium small mb-1">
+            Superior Inmediato
+            <span class="text-muted ms-1">(Opcional)</span>
+          </label>
+          <dx-select-box
+            [(value)]="selectedPersonal.superiorId"
+            [items]="superiores"
+            displayExpr="nombreCompleto"
+            valueExpr="id"
+            [showClearButton]="true"
+            [searchEnabled]="true"
+            placeholder="Buscar y seleccionar superior jerárquico"
+          >
+          </dx-select-box>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-medium small mb-1">
+            Estado del Personal
+            <span class="text-danger">*</span>
+          </label>
+          <dx-select-box
+            [(value)]="selectedPersonal.personalEstadoId"
+            [items]="estados"
+            displayExpr="nombre"
+            valueExpr="id"
+            placeholder="Seleccione el estado laboral"
+          >
+          </dx-select-box>
+        </div>
+      </div>
     </div>
 
-    <div>
-      <label class="block font-medium">Horario</label>
-      <dx-select-box
-        [items]="horarios"
-        displayExpr="nombre"
-        valueExpr="id"
-        [(value)]="selectedHorarioId"
-        placeholder="Seleccionar horario"
+    <hr class="my-4">
+
+    <!-- Sección: Configuraciones Avanzadas -->
+    <div class="mb-4">
+      <h6 class="text-muted small text-uppercase mb-3 fw-semibold">
+        <i class="fas fa-cog me-2"></i>Configuraciones Avanzadas
+      </h6>
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label fw-medium small mb-1">
+            Política de Registro de Asistencia
+            <span class="text-muted ms-1">(Opcional)</span>
+          </label>
+          <dx-select-box
+            [(value)]="selectedPersonal.registroAsistenciaPoliticaId"
+            [items]="politicasRegistro"
+            displayExpr="nombre"
+            valueExpr="id"
+            [showClearButton]="true"
+            [searchEnabled]="true"
+            placeholder="Seleccione una política de asistencia"
+          >
+            <div *dxTemplate="let data of 'item'">
+              <div class="py-1">
+                <div class="fw-medium">{{ data.nombre }}</div>
+                <small class="text-muted d-block">{{ data.nombreCorto }} - {{ data.descripcion }}</small>
+              </div>
+            </div>
+          </dx-select-box>
+          <small class="text-muted d-block mt-1">
+            <i class="fas fa-info-circle me-1"></i>Define reglas de tardanzas y tiempo extra
+          </small>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-medium small mb-1">
+            Usuario del Sistema
+            <span class="text-muted ms-1">(Opcional)</span>
+          </label>
+          <dx-select-box
+            [(value)]="selectedPersonal.usuarioId"
+            [items]="usuarios"
+            displayExpr="displayName"
+            valueExpr="id"
+            [showClearButton]="true"
+            [searchEnabled]="true"
+            placeholder="Buscar por email del usuario"
+          >
+            <div *dxTemplate="let data of 'item'">
+              <div class="py-1">
+                <div class="fw-medium">
+                  <i class="fas fa-user-circle me-2 text-primary"></i>{{ data.userName }}
+                </div>
+                <small class="text-muted" *ngIf="data.email !== data.userName">{{ data.email }}</small>
+              </div>
+            </div>
+          </dx-select-box>
+          <small class="text-muted d-block mt-1">
+            <i class="fas fa-info-circle me-1"></i>Vincula al personal con una cuenta del sistema
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+      <button 
+        class="btn btn-secondary btn-sm px-4" 
+        (click)="popupVisible=false"
       >
-      </dx-select-box>
-    </div>
-
-    <div>
-      <label class="block font-medium">Superior</label>
-      <dx-select-box
-        [(value)]="selectedPersonal.superiorId"
-        [items]="superiores"
-        displayExpr="nombreCompleto"
-        valueExpr="id"
-        [showClearButton]="true"
-        [searchEnabled]="true"
-        placeholder="Seleccione un superior">
-      </dx-select-box>
-    </div>
-    
-
-    <div>
-      <label class="block font-medium">Estado</label>
-      <dx-select-box
-        [(value)]="selectedPersonal.personalEstadoId"
-        [items]="estados"
-        displayExpr="nombre"
-        valueExpr="id"
-        placeholder="Seleccione estado">
-      </dx-select-box>
-    </div>
-
-    <div class="flex justify-end gap-2 mt-4">
-      <button class="bg-blue-500 text-white px-4 py-1 rounded"
-              (click)="guardarAsignacion()">Guardar</button>
-      <button class="bg-gray-300 px-4 py-1 rounded"
-              (click)="popupVisible=false">Cancelar</button>
+        <i class="fas fa-times me-1"></i>Cancelar
+      </button>
+      <button 
+        class="btn btn-primary btn-sm px-4" 
+        (click)="guardarAsignacion()"
+      >
+        <i class="fas fa-check me-1"></i>Guardar Cambios
+      </button>
     </div>
   </div>
 </dx-popup>

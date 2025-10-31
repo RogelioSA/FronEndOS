@@ -17,6 +17,7 @@ export class LoginComponent {
   mostrarRequerido: boolean = false;
   formSubmitted = false;
   isLoading: boolean = false;
+  esLoginConDocumento: boolean = false;
 
   constructor(
     private authService: AuthService, 
@@ -24,63 +25,79 @@ export class LoginComponent {
     private router: Router
   ) {}
 
+  // Método para detectar si es un documento (dos primeros caracteres son números)
+  verificarTipoUsuario(): void {
+    const usuario = this.email.trim();
+    this.esLoginConDocumento = /^\d{2}/.test(usuario);
+  }
+
+  // Método para limpiar completamente localStorage, sessionStorage y cookies
+  limpiarSesionCompleta(): void {
+    console.log('Limpiando sesión anterior...');
+    
+    // Limpiar localStorage
+    localStorage.clear();
+    
+    // Limpiar sessionStorage
+    sessionStorage.clear();
+    
+    // Limpiar todas las cookies
+    this.eliminarTodasLasCookies();
+    
+    console.log('Sesión limpiada completamente');
+  }
+
+  // Método para eliminar todas las cookies
+  eliminarTodasLasCookies(): void {
+    const cookies = document.cookie.split(';');
+    
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i];
+      const eqPos = cookie.indexOf('=');
+      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+      
+      // Eliminar la cookie en diferentes paths y dominios
+      document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=' + window.location.hostname;
+      document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + window.location.hostname;
+    }
+  }
+
   async onLogin(): Promise<void> {
     this.formSubmitted = true;
     this.errorMessage = '';
+    this.verificarTipoUsuario();
 
-    // Validación de campos vacíos
-    if (this.email === '' || this.password === '') {
+    // Validación de campos vacíos según el tipo de login
+    if (this.email === '') {
+      this.mostrarRequerido = true;
+      return;
+    }
+
+    if (!this.esLoginConDocumento && this.password === '') {
       this.mostrarRequerido = true;
       return;
     }
 
     this.isLoading = true;
 
+    // PRIMERO: Limpiar toda la sesión anterior
+    this.limpiarSesionCompleta();
+
     try {
-      // Paso 1: Realizar el login
-      const loginResponse = await firstValueFrom(
-        this.authService.login(this.email, this.password)
-      );
-
-      console.log('Login exitoso:', loginResponse);
-
-      // Paso 2: Obtener la lista de usuarios
-      const usuarios = await firstValueFrom(
-        this.apiService.listarUsuarios()
-      );
-
-      console.log('Usuarios obtenidos:', usuarios);
-
-      // Paso 3: Buscar el usuario por email (normalizado para comparación)
-      const emailNormalizado = this.email.toLowerCase().trim();
-      const usuarioEncontrado = usuarios.find((usuario: any) => 
-        usuario.email?.toLowerCase().trim() === emailNormalizado ||
-        usuario.normalizedEmail?.toLowerCase().trim() === emailNormalizado
-      );
-
-      if (usuarioEncontrado) {
-        // Paso 4: Guardar el ID del usuario en localStorage
-        localStorage.setItem('user_id', usuarioEncontrado.id);
-        localStorage.setItem('user_email', usuarioEncontrado.email);
-        localStorage.setItem('user_name', usuarioEncontrado.userName);
-        
-        console.log('Usuario ID guardado en localStorage:', usuarioEncontrado.id);
-        console.log('Datos del usuario guardados correctamente');
-
-        // Paso 5: Redirigir a la página de inicio
-        this.router.navigate(['/inicio']);
+      if (this.esLoginConDocumento) {
+        // Login con documento de identidad
+        await this.loginConDocumento();
       } else {
-        console.error('No se encontró el usuario en la lista');
-        this.errorMessage = 'Error al obtener información del usuario';
-        this.isLoading = false;
+        // Login tradicional con email y contraseña
+        await this.loginTradicional();
       }
-
     } catch (error: any) {
       console.error('Error en el proceso de login:', error);
       
       // Manejo de errores específico
       if (error.status === 401) {
-        this.errorMessage = 'Credenciales incorrectas. Verifica tu email y contraseña.';
+        this.errorMessage = 'Credenciales incorrectas. Verifica tus datos.';
       } else if (error.status === 0) {
         this.errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexión.';
       } else {
@@ -89,5 +106,64 @@ export class LoginComponent {
       
       this.isLoading = false;
     }
+  }
+
+  async loginConDocumento(): Promise<void> {
+    // Login con documento (tipoDocumentoId = 1 por defecto) - Solo guardar token
+    const loginResponse = await firstValueFrom(
+      this.authService.loginDocumento(1, this.email.trim())
+    );
+
+    console.log('Login con documento exitoso:', loginResponse);
+
+    // Guardar tipo como 'U' por defecto
+    localStorage.setItem('tipo', 'U');
+    
+    // Redirigir a la página de inicio
+    this.router.navigate(['/inicio']);
+  }
+
+  async loginTradicional(): Promise<void> {
+    // Paso 1: Realizar el login tradicional
+    const loginResponse = await firstValueFrom(
+      this.authService.login(this.email, this.password)
+    );
+
+    console.log('Login exitoso:', loginResponse);
+
+    // Paso 2: Obtener la lista de usuarios
+    const usuarios = await firstValueFrom(
+      this.apiService.listarUsuarios()
+    );
+
+    console.log('Usuarios obtenidos:', usuarios);
+
+    // Paso 3: Buscar el usuario por email
+    const emailNormalizado = this.email.toLowerCase().trim();
+    const usuarioEncontrado = usuarios.find((usuario: any) => 
+      usuario.email?.toLowerCase().trim() === emailNormalizado ||
+      usuario.normalizedEmail?.toLowerCase().trim() === emailNormalizado
+    );
+
+    if (usuarioEncontrado) {
+      // Paso 4: Guardar datos del usuario en localStorage
+      this.guardarDatosUsuario(usuarioEncontrado);
+      
+      // Paso 5: Redirigir a la página de inicio
+      this.router.navigate(['/inicio']);
+    } else {
+      console.error('No se encontró el usuario en la lista');
+      this.errorMessage = 'Error al obtener información del usuario';
+      this.isLoading = false;
+    }
+  }
+
+  guardarDatosUsuario(usuario: any): void {
+    localStorage.setItem('user_id', usuario.id);
+    localStorage.setItem('user_email', usuario.email);
+    localStorage.setItem('user_name', usuario.userName);
+    
+    console.log('Usuario ID guardado en localStorage:', usuario.id);
+    console.log('Datos del usuario guardados correctamente');
   }
 }
