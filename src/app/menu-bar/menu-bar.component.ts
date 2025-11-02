@@ -98,6 +98,27 @@ export class MenuBarComponent {
     } else {
       // Menú completo para usuarios normales
       this.menuBar = [
+        {
+          cNombre: 'Mantenimiento',
+          nCodigo: 1,
+          nPadre: 0,
+          cPath: '#',
+          path: '#',
+          icono: 'user',
+          nOrden: 1,
+          items: [
+            {
+              cNombre: 'Usuario',
+              nCodigo: 11,
+              nPadre: 1,
+              cPath: '/mantenimiento/usuario',
+              path: '/mantenimiento/usuario',
+              icono: 'user',
+              nOrden: 1,
+              items: []
+            }
+          ]
+        },
         // Menú Personal
         {
           cNombre: 'Personal',
@@ -106,7 +127,7 @@ export class MenuBarComponent {
           cPath: '#',
           path: '#',
           icono: 'user',
-          nOrden: 1,
+          nOrden: 2,
           items: [
             {
               cNombre: 'Personal',

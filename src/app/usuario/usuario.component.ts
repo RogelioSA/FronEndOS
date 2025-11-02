@@ -4,9 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 
 interface CrearUsuarioPayload {
-  usuario: {
-    email: string;
-  };
+  email: string;
   password: string;
 }
 
@@ -46,9 +44,7 @@ export class UsuarioComponent implements OnInit {
 
   construirPayload(rowData: any): CrearUsuarioPayload {
     return {
-      usuario: {
-        email: rowData.email
-      },
+      email: rowData.email,
       password: rowData.password
     };
   }
