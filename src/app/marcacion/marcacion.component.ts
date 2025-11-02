@@ -6,10 +6,10 @@ import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-    selector: 'app-marcacion',
-    templateUrl: './marcacion.component.html',
-    styleUrl: './marcacion.component.css',
-    standalone: false
+  selector: 'app-marcacion',
+  templateUrl: './marcacion.component.html',
+  styleUrl: './marcacion.component.css',
+  standalone: false
 })
 export class MarcacionComponent implements OnInit, OnDestroy {
 
@@ -20,23 +20,29 @@ export class MarcacionComponent implements OnInit, OnDestroy {
   hoy: Date = new Date();
   fecha: any;
   claims: any;
-  
+
   // Variables para la cámara
   stream: MediaStream | null = null;
   capturedImage: string | null = null;
-  
+
   // Variables para coordenadas
   coordinates: string = '';
   latitude: number = 0;
   longitude: number = 0;
-  
+
+  // Variables para permisos de ubicación
+  hasLocationPermission: boolean = false;
+  locationPermissionDenied: boolean = false;
+  isRequestingLocation: boolean = false;
+  locationWatchId: number | null = null;
+
   // Variables para el estado
   showStatusCard: boolean = false;
   isProcessing: boolean = false;
   hasError: boolean = false;
   errorMessage: string = '';
   successMessage: string = '';
-  
+
   statusSteps = {
     uploadingPhoto: 'pending',
     registeringAttendance: 'pending'
@@ -46,27 +52,28 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private apiService: ApiService
   ){
-    
+
   }
 
   ngOnInit(){
     this.claims = this.authService.getClaims();
     this.fecha = this.hoy.toLocaleDateString('en-GB');
     this.initCamera();
-    this.getLocation();
+    this.requestLocationPermission();
   }
 
   ngOnDestroy() {
     this.stopCamera();
+    this.stopLocationWatch();
   }
 
   async initCamera() {
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({ 
+      this.stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user' },
-        audio: false 
+        audio: false
       });
-      
+
       if (this.videoElement) {
         this.videoElement.nativeElement.srcObject = this.stream;
       }
@@ -82,30 +89,134 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     }
   }
 
-  getLocation() {
-    if (navigator.geolocation) {
+  /**
+   * Solicita permiso de ubicación al usuario
+   */
+  async requestLocationPermission() {
+    if (!navigator.geolocation) {
+      console.error('Geolocalización no soportada por este navegador');
+      this.locationPermissionDenied = true;
+      this.hasLocationPermission = false;
+      return;
+    }
+
+    this.isRequestingLocation = true;
+    this.locationPermissionDenied = false;
+
+    try {
+      // Intentar obtener la ubicación una vez para verificar permisos
+      const position = await this.getCurrentPosition();
+
+      // Si llegamos aquí, tenemos permiso
+      this.hasLocationPermission = true;
+      this.locationPermissionDenied = false;
+      this.updateLocationData(position);
+
+      // Iniciar el seguimiento continuo de la ubicación
+      this.startLocationWatch();
+
+      console.log('✅ Permiso de ubicación otorgado');
+    } catch (error: any) {
+      console.error('❌ Error al obtener ubicación:', error);
+
+      // Verificar si fue una denegación de permiso
+      if (error.code === 1) { // PERMISSION_DENIED
+        this.locationPermissionDenied = true;
+        this.hasLocationPermission = false;
+        this.coordinates = '';
+        console.log('❌ Permiso de ubicación denegado por el usuario');
+      } else {
+        // Otros errores (timeout, position unavailable, etc.)
+        this.hasLocationPermission = false;
+        this.coordinates = 'Error al obtener ubicación';
+        console.error('Error de geolocalización:', error.message);
+      }
+    } finally {
+      this.isRequestingLocation = false;
+    }
+  }
+
+  /**
+   * Obtiene la posición actual como una promesa
+   */
+  private getCurrentPosition(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          this.latitude = position.coords.latitude;
-          this.longitude = position.coords.longitude;
-          this.coordinates = `${this.latitude.toFixed(7)}, ${this.longitude.toFixed(7)}`;
-          console.log('📍 Ubicación obtenida:', this.coordinates);
-        },
-        (error) => {
-          console.error('Error al obtener ubicación:', error);
-          this.coordinates = 'No disponible';
+        position => resolve(position),
+        error => reject(error),
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         }
       );
+    });
+  }
+
+  /**
+   * Inicia el seguimiento continuo de la ubicación
+   */
+  private startLocationWatch() {
+    if (!navigator.geolocation) {
+      return;
     }
+
+    // Si ya hay un watch activo, detenerlo primero
+    this.stopLocationWatch();
+
+    console.log('🔄 Iniciando seguimiento de ubicación en tiempo real...');
+
+    this.locationWatchId = navigator.geolocation.watchPosition(
+      (position) => {
+        this.updateLocationData(position);
+        console.log('📍 Ubicación actualizada:', this.coordinates);
+      },
+      (error) => {
+        console.error('Error en watchPosition:', error);
+
+        if (error.code === 1) { // PERMISSION_DENIED
+          this.locationPermissionDenied = true;
+          this.hasLocationPermission = false;
+          this.stopLocationWatch();
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  }
+
+  /**
+   * Detiene el seguimiento de ubicación
+   */
+  private stopLocationWatch() {
+    if (this.locationWatchId !== null) {
+      navigator.geolocation.clearWatch(this.locationWatchId);
+      this.locationWatchId = null;
+      console.log('⏹️ Seguimiento de ubicación detenido');
+    }
+  }
+
+  /**
+   * Actualiza los datos de ubicación
+   */
+  private updateLocationData(position: GeolocationPosition) {
+    this.latitude = position.coords.latitude;
+    this.longitude = position.coords.longitude;
+    this.coordinates = `${this.latitude.toFixed(7)}, ${this.longitude.toFixed(7)}`;
+    this.hasLocationPermission = true;
+    this.locationPermissionDenied = false;
   }
 
   capturePhoto(): string {
     const video = this.videoElement.nativeElement;
     const canvas = this.canvasElement.nativeElement;
-    
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
+
     const context = canvas.getContext('2d');
     if (context) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -121,11 +232,11 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     const bstr = atob(arr[1]);
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
-    
+
     while (n--) {
       u8arr[n] = bstr.charCodeAt(n);
     }
-    
+
     return new File([u8arr], filename, { type: mime });
   }
 
@@ -134,88 +245,94 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     if (error?.error?.detail) {
       return error.error.detail;
     }
-    
+
     if (error?.error?.message) {
       return error.error.message;
     }
-    
+
     if (typeof error?.error === 'string') {
       return error.error;
     }
-    
+
     if (error?.message) {
       return error.message;
     }
-    
+
     return 'Ocurrió un error inesperado. Por favor, intente nuevamente.';
   }
 
   async marcar() {
-    // Validaciones previas
-    if (!this.latitude || !this.longitude) {
-      alert('No se pudo obtener su ubicación. Por favor, recargue la página y otorgue los permisos.');
+    // ✅ VALIDACIÓN CRÍTICA: Verificar permiso de ubicación
+    if (!this.hasLocationPermission) {
+      alert('No se puede marcar sin acceso a la ubicación. Por favor, otorgue el permiso de ubicación.');
       return;
     }
-  
+
+    // ✅ VALIDACIÓN CRÍTICA: Verificar que tenemos coordenadas válidas
+    if (!this.latitude || !this.longitude) {
+      alert('No se pudo obtener su ubicación. Por favor, espere a que se actualice la ubicación e intente nuevamente.');
+      return;
+    }
+
     this.isProcessing = true;
     this.errorMessage = '';
     this.successMessage = '';
-    
+
     // CAPTURAR LA FOTO INMEDIATAMENTE
     this.capturedImage = this.capturePhoto();
     console.log('📸 Foto capturada:', this.capturedImage ? 'OK' : 'FALLO');
-    
+
     // Mostrar el card de estado
     this.showStatusCard = true;
-    this.hasError = false; 
-    
+    this.hasError = false;
+
     // Reset estados
     this.statusSteps = {
       uploadingPhoto: 'pending',
       registeringAttendance: 'pending'
     };
-  
+
     // Variables para almacenar IDs de respuestas
     let marcacionResponse: any = null;
     let adjuntoId: number = 0;
-  
+
     // ✅ PASO 1: Subir foto PRIMERO
     try {
       this.statusSteps.uploadingPhoto = 'pending';
-      
+
       if (!this.capturedImage) {
         throw new Error('No se pudo capturar la imagen');
       }
 
       const timestamp = new Date().getTime();
       const archivo = this.base64ToFile(
-        this.capturedImage, 
+        this.capturedImage,
         `marcacion_${timestamp}.jpg`
       );
-      
+
       console.log('📸 Archivo a subir:', {
         name: archivo.name,
         size: archivo.size,
         type: archivo.type,
         modulo: 1
       });
-      
+
       const uploadResponse = await firstValueFrom(
         this.apiService.subirAdjunto(1, archivo)
       );
-      
+
       console.log('✅ Foto subida exitosamente:', uploadResponse);
-      
+
       if (uploadResponse && uploadResponse.id) {
         adjuntoId = uploadResponse.id;
         console.log('✅ ID del adjunto obtenido:', adjuntoId);
       } else {
         throw new Error('No se obtuvo el ID del adjunto de la respuesta');
       }
-      
+
       await this.delay(500);
       this.statusSteps.uploadingPhoto = 'success';
-      
+
     } catch (error: any) {
       console.error('❌ Error al subir foto:', error);
       this.statusSteps.uploadingPhoto = 'error';
@@ -228,7 +345,7 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     // ✅ PASO 2: Registrar asistencia con el adjuntoId
     try {
       this.statusSteps.registeringAttendance = 'pending';
-      
+
       const payload = {
         latitud: this.latitude,
         longitud: this.longitude,
@@ -242,14 +359,14 @@ export class MarcacionComponent implements OnInit, OnDestroy {
       );
 
       console.log('✅ Respuesta de la API (registrar asistencia):', marcacionResponse);
-      
+
       await this.delay(500);
       this.statusSteps.registeringAttendance = 'success';
-      
+
       // ✅ Mensaje de éxito
       this.successMessage = '¡Asistencia registrada correctamente!';
       console.log('🎉 Proceso completado exitosamente');
-      
+
     } catch (error: any) {
       console.error('❌ Error al registrar asistencia:', error);
       this.statusSteps.registeringAttendance = 'error';
@@ -258,10 +375,10 @@ export class MarcacionComponent implements OnInit, OnDestroy {
       this.isProcessing = false;
       return; // Detenemos el proceso si falla el registro de asistencia
     }
-  
+
     this.isProcessing = false;
-    
-    console.log('🏁 Proceso completado');
+
+    console.log('✔ Proceso completado');
     console.log('📊 Estado final:', {
       subirFoto: this.statusSteps.uploadingPhoto,
       registrarAsistencia: this.statusSteps.registeringAttendance,
@@ -275,9 +392,19 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     this.capturedImage = null;
     this.errorMessage = '';
     this.successMessage = '';
-    
+
     // Reiniciar la cámara
     this.initCamera();
+
+    // ✅ REINICIAR LA UBICACIÓN después de marcar
+    console.log('🔄 Reiniciando seguimiento de ubicación...');
+    this.coordinates = '';
+    this.latitude = 0;
+    this.longitude = 0;
+
+    // Detener el watch actual y solicitar nuevamente
+    this.stopLocationWatch();
+    this.requestLocationPermission();
   }
 
   private delay(ms: number): Promise<void> {
