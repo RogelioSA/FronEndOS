@@ -1,25 +1,38 @@
-<div class="flex items-center justify-center min-h-screen bg-gray-50">
+<div class="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+  <form 
+    (ngSubmit)="onLogin()" 
+    [ngClass]="{'was-validated': formSubmitted}" 
+    novalidate
+    class="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg border border-gray-200 transition-all duration-300 transform hover:shadow-2xl"
+  >
+    <!-- Logo -->
+    <div class="flex justify-center">
+      <img src="../../assets/conveyorIcono.jpg" alt="Logo" class="w-28 h-auto md:w-32 animate-fade-in">
+    </div>
 
-  <form (ngSubmit)="onLogin()" [ngClass]="{'was-validated': formSubmitted}" novalidate class="w-full max-w-md p-10 space-y-7 bg-white rounded-lg shadow-xl border border-gray-200">
-
-    <h2 class="text-4xl font-light text-center text-gray-800 tracking-wide">Iniciar Sesión</h2>
-    
+    <!-- Mensaje de error -->
     @if (errorMessage) {
-      <p class="text-sm text-red-600 text-center font-medium">{{ errorMessage }}</p>
+      <p class="text-sm text-red-600 text-center font-medium animate-fade-in">
+        {{ errorMessage }}
+      </p>
     }
 
-    <div>
-      <label for="username" class="block mb-2 text-sm font-medium text-gray-700">Usuario/Doc. Identidad</label>
+    <!-- Campo Usuario / Documento -->
+    <div class="animate-fade-in">
+      <label for="email" class="block mb-2 text-sm font-medium text-gray-700">
+        Usuario / Doc. Identidad
+      </label>
       <input 
-        type="text" 
-        class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition duration-150 ease-in-out" 
-        id="email" 
-        [(ngModel)]="email" 
+        type="text"
+        id="email"
         name="email"
+        [(ngModel)]="email"
         (input)="verificarTipoUsuario()"
-        required 
+        required
         #emailField="ngModel"
-        placeholder="Correo o documento de identidad">
+        placeholder="Correo o documento de identidad"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition duration-150 ease-in-out"
+      >
       @if (emailField.invalid && (emailField.touched || emailField.dirty)) {
         <p class="mt-1 text-xs text-red-600">
           Por favor, ingrese un correo o documento.
@@ -27,18 +40,30 @@
       }
     </div>
 
-    <!-- Campo de contraseña solo visible si NO es login con documento -->
+    <!-- Campo Contraseña -->
     @if (!esLoginConDocumento) {
-      <div>
-        <label for="password" class="block mb-2 text-sm font-medium text-gray-700">Contraseña</label>
-        <input 
-          type="password" 
-          class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition duration-150 ease-in-out" 
-          id="password" 
-          [(ngModel)]="password" 
-          name="password"
-          required 
-          #passwordField="ngModel">
+      <div class="animate-fade-in">
+        <div class="flex justify-between items-center mb-2">
+          <label for="password" class="text-sm font-medium text-gray-700">
+            Contraseña
+          </label>
+        </div>
+        <div class="relative">
+          <input 
+            [type]="mostrarPassword ? 'text' : 'password'"
+            id="password"
+            name="password"
+            [(ngModel)]="password"
+            required
+            #passwordField="ngModel"
+            placeholder="••••••••"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition duration-150 ease-in-out"
+          >
+          <button type="button" (click)="mostrarPassword = !mostrarPassword"
+            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700">
+            <i class="fa" [ngClass]="mostrarPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+          </button>
+        </div>
         @if (passwordField.invalid && (passwordField.touched || passwordField.dirty)) {
           <p class="mt-1 text-xs text-red-600">
             Por favor, ingrese una contraseña.
@@ -47,21 +72,24 @@
       </div>
     }
 
-    <div style="display: flex; justify-content: center; align-items: center;">
+    <!-- Botón Ingresar -->
+    <div class="flex justify-center animate-fade-in">
       <button 
-        type="submit" 
-        style="width: 160px; padding: 10px 16px; font-size: 14px; font-weight: 600; 
-               color: white; background-color: #1d4ed8; border: none; 
-               border-radius: 9px;
-               box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-               cursor: pointer; 
-               transition: all 0.2s ease-in-out;"
-        onmouseover="this.style.backgroundColor='#1e40af'" 
-        onmouseout="this.style.backgroundColor='#1d4ed8'"
+        type="submit"
+        [disabled]="isLoading"
+        class="w-40 py-2 font-semibold text-white rounded-lg shadow-md transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300
+               flex items-center justify-center gap-2
+               bg-blue-700 hover:bg-blue-800 disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        Ingresar
+        <ng-container *ngIf="!isLoading; else loading">
+          Ingresar
+        </ng-container>
+
+        <ng-template #loading>
+          <i class="fas fa-spinner fa-spin"></i>
+          Cargando...
+        </ng-template>
       </button>
     </div>
-
   </form>
 </div>

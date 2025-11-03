@@ -16,8 +16,9 @@ export class LoginComponent {
   errorMessage: string = '';
   mostrarRequerido: boolean = false;
   formSubmitted = false;
-  isLoading: boolean = false;
   esLoginConDocumento: boolean = false;
+  mostrarPassword = false;
+  isLoading = false;
 
   constructor(
     private authService: AuthService, 
@@ -166,4 +167,5 @@ export class LoginComponent {
     console.log('Usuario ID guardado en localStorage:', usuario.id);
     console.log('Datos del usuario guardados correctamente');
   }
+
 }
