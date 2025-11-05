@@ -547,3 +547,35 @@
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
+/* Indicador móvil de permisos */
+.mobile-permission-hint {
+  animation: fadeIn 1s ease-in-out;
+}
+
+.arrow-bounce i {
+  font-size: 1.8rem;
+  animation: bounce 1.5s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

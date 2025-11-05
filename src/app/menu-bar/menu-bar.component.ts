@@ -23,6 +23,7 @@ export class MenuBarComponent {
   claims: any;
   private isInitialLoad = true;
   esUsuarioDocumento: boolean = false; // Nueva propiedad
+  mobileMenuOpen = false;
 
   constructor(
     private router: Router,
@@ -32,6 +33,15 @@ export class MenuBarComponent {
     this.checkIfMobile();
   }
 
+  toggleMobileMenu() {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+  }
+
+  onMenuItemClickMobile(e: any) {
+    this.onMenuItemClick(e);
+    this.mobileMenuOpen = false; // Cerrar menú después de seleccionar
+  }
+  
   async ngOnInit(): Promise<void> {
     this.claims = this.authService.getClaims();
     

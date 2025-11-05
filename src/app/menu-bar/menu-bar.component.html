@@ -1,43 +1,92 @@
 <div class="w-full bg-[#202938] shadow-md">
-  <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3">
     
-    <!-- Logo -->
-    <div class="flex items-center space-x-3">
-      <img src="../../assets/conveyorIcono.jpg" alt="Logo" class="w-24 h-14 object-contain rounded-md shadow-sm">
+    <div class="flex items-center justify-between">
+      
+      <!-- Logo -->
+      <div class="flex items-center">
+        <img src="../../assets/conveyorIcono.jpg" alt="Logo" class="w-20 sm:w-24 h-12 sm:h-14 object-contain rounded-md shadow-sm">
+      </div>
+
+      <!-- Select de Empresas - Desktop -->
+      @if (!esUsuarioDocumento) {
+        <div class="hidden lg:flex items-center mx-4">
+          <dx-select-box
+            [dataSource]="usuariosEmpresas"
+            displayExpr="empresa.nombre"
+            valueExpr="empresaId"
+            [(value)]="empresaSeleccionada"
+            [searchEnabled]="true"
+            placeholder="Seleccionar Empresa"
+            [stylingMode]="'outlined'"
+            [width]="250"
+            (onValueChanged)="onEmpresaChange($event)"
+            class="empresa-select">
+            <dxo-drop-down-options [height]="300"></dxo-drop-down-options>
+          </dx-select-box>
+        </div>
+      }
+
+      <!-- Menú Desktop -->
+      <div 
+        id="menuContainer" 
+        class="hidden lg:flex flex-1 justify-end items-center px-6 py-3 
+               bg-gradient-to-r shadow-lg rounded-xl">
+        <dx-menu
+          [dataSource]="menuBar"
+          displayExpr="cNombre"
+          (onItemClick)="onMenuItemClick($event)"
+          [showFirstSubmenuMode]="{ name: 'onClick', delay: 0 }"
+          orientation="horizontal">
+        </dx-menu>
+      </div>
+
+      <!-- Botón Hamburguesa - Mobile -->
+      <button 
+        (click)="toggleMobileMenu()"
+        class="lg:hidden p-2 rounded-md hover:bg-[#2a3342] transition-colors">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path *ngIf="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          <path *ngIf="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+
     </div>
 
-    <!-- Select de Empresas - Solo visible si NO es usuario tipo U -->
-    @if (!esUsuarioDocumento) {
-      <div class="flex items-center mx-4">
-        <dx-select-box
-          [dataSource]="usuariosEmpresas"
-          displayExpr="empresa.nombre"
-          valueExpr="empresaId"
-          [(value)]="empresaSeleccionada"
-          [searchEnabled]="true"
-          placeholder="Seleccionar Empresa"
-          [stylingMode]="'outlined'"
-          [width]="250"
-          (onValueChanged)="onEmpresaChange($event)"
-          class="empresa-select">
-          <dxo-drop-down-options [height]="300"></dxo-drop-down-options>
-        </dx-select-box>
-      </div>
-    }
-
-    <!-- Menú -->
+    <!-- Menú Mobile Desplegable -->
     <div 
-      id="menuContainer" 
-      class="flex-1 flex justify-end items-center px-6 py-3 
-            bg-gradient-to-r
-            shadow-lg rounded-xl">
-            <dx-menu
-            [dataSource]="menuBar"
-            displayExpr="cNombre"
-            (onItemClick)="onMenuItemClick($event)"
-            [showFirstSubmenuMode]="{ name: 'onClick', delay: 0 }"
-            orientation="horizontal">
-          </dx-menu>
+      *ngIf="mobileMenuOpen"
+      class="lg:hidden mt-4 pb-4 border-t border-[#2a3342]">
+      
+      <!-- Select de Empresas - Mobile -->
+      @if (!esUsuarioDocumento) {
+        <div class="py-3">
+          <dx-select-box
+            [dataSource]="usuariosEmpresas"
+            displayExpr="empresa.nombre"
+            valueExpr="empresaId"
+            [(value)]="empresaSeleccionada"
+            [searchEnabled]="true"
+            placeholder="Seleccionar Empresa"
+            [stylingMode]="'outlined'"
+            [width]="'100%'"
+            (onValueChanged)="onEmpresaChange($event)"
+            class="empresa-select">
+            <dxo-drop-down-options [height]="300"></dxo-drop-down-options>
+          </dx-select-box>
+        </div>
+      }
+
+      <!-- Menú Vertical Mobile -->
+      <div id="menuContainerMobile" class="mt-2">
+        <dx-menu
+          [dataSource]="menuBar"
+          displayExpr="cNombre"
+          (onItemClick)="onMenuItemClickMobile($event)"
+          [showFirstSubmenuMode]="{ name: 'onClick', delay: 0 }"
+          orientation="vertical">
+        </dx-menu>
+      </div>
     </div>
 
   </div>

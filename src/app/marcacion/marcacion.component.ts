@@ -4,6 +4,7 @@ import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { AuthService } from '../services/auth.service';
 import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router'; // ✅ Importar Router
 
 @Component({
   selector: 'app-marcacion',
@@ -50,7 +51,8 @@ export class MarcacionComponent implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private router: Router // ✅ Inyectar Router
   ){
 
   }
@@ -369,6 +371,12 @@ export class MarcacionComponent implements OnInit, OnDestroy {
       this.successMessage = '¡Asistencia registrada correctamente!';
       console.log('🎉 Proceso completado exitosamente');
 
+      // ✅ NUEVO: Logout automático después de 3 segundos
+      console.log('⏳ Esperando 3 segundos antes de cerrar sesión...');
+      await this.delay(3000);
+      
+      this.realizarLogout();
+
     } catch (error: any) {
       console.error('❌ Error al registrar asistencia:', error);
       this.statusSteps.registeringAttendance = 'error';
@@ -387,6 +395,46 @@ export class MarcacionComponent implements OnInit, OnDestroy {
       adjuntoId: adjuntoId,
       marcacionId: marcacionResponse?.id
     });
+  }
+
+  // ✅ NUEVO MÉTODO: Realizar logout completo
+  private realizarLogout() {
+    console.log('🚪 Cerrando sesión...');
+
+    // Limpiar localStorage
+    localStorage.clear();
+    console.log('🗑️ localStorage limpiado');
+
+    // Limpiar sessionStorage
+    sessionStorage.clear();
+    console.log('🗑️ sessionStorage limpiado');
+
+    // Limpiar cookies
+    this.eliminarTodasLasCookies();
+    console.log('🗑️ Cookies eliminadas');
+
+    // Detener cámara y ubicación
+    this.stopCamera();
+    this.stopLocationWatch();
+
+    // Redirigir al login
+    console.log('➡️ Redirigiendo a /login...');
+    this.router.navigate(['/login']);
+  }
+
+  // ✅ NUEVO MÉTODO: Eliminar todas las cookies
+  private eliminarTodasLasCookies() {
+    const cookies = document.cookie.split(';');
+
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i];
+      const eqPos = cookie.indexOf('=');
+      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+      
+      // Eliminar cookie en todos los paths posibles
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}`;
+    }
   }
 
   cerrarStatus() {
@@ -411,7 +459,6 @@ export class MarcacionComponent implements OnInit, OnDestroy {
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
- 
   }
 
   async forceRequestLocationPermission() {

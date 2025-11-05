@@ -262,18 +262,19 @@ export class ApiService{
       );
     }
 
-    getRegistroAsistenciaPersonal(personalId: number, fechaInicio: string, fechaFin: string): Observable<any> {
+    getRegistroAsistenciaPersonal(UsuarioId: string, fechaInicio: string, fechaFin: string): Observable<any> {
       return this.https.get(
-        `${this.baseUrl}/rrhh/RegistroAsistencia/personal/${personalId}`,
+        `${this.baseUrl}/rrhh/RegistroAsistenciaOrdenTrabajo/by_currentuser_and_range_date`,
         { 
           headers: this.getHttpHeaders(),
           params: {
+            UsuarioId,
             fechaInicio,
             fechaFin
           }
         }
       );
-    }  
+    } 
     
     //menu
 

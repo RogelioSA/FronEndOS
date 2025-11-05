@@ -35,7 +35,7 @@ export class PersonalMarcacionComponent implements OnInit {
   @BlockUI() blockUI!: NgBlockUI;
 
   registrosAsistencia: RegistroAsistencia[] = [];
-  personalId: number = 0;
+  usuarioId: string = '';
   fechaInicio: string = '';
   fechaFin: string = '';
   mesActual: string = '';
@@ -66,12 +66,12 @@ export class PersonalMarcacionComponent implements OnInit {
   constructor(private apiService: ApiService) {}
 
   async ngOnInit() {
-    this.obtenerPersonalId();
+    this.obtenerUsuarioId();
     this.calcularFechasMes();
     await this.cargarRegistros();
   }
 
-  obtenerPersonalId() {
+  obtenerUsuarioId() { // Renombrado y simplificado
     const userId = localStorage.getItem('user_id');
     
     if (!userId) {
@@ -80,15 +80,8 @@ export class PersonalMarcacionComponent implements OnInit {
       return;
     }
 
-    this.personalId = parseInt(userId, 10);
-    
-    if (isNaN(this.personalId)) {
-      console.error('❌ user_id no es un número válido');
-      alert('ID de usuario inválido');
-      return;
-    }
-
-    console.log('✅ Personal ID obtenido:', this.personalId);
+    this.usuarioId = userId; // Ya no se parsea a número
+    console.log('✅ Usuario ID obtenido:', this.usuarioId);
   }
 
   calcularFechasMes() {
@@ -113,8 +106,8 @@ export class PersonalMarcacionComponent implements OnInit {
   }
 
   async cargarRegistros() {
-    if (!this.personalId) {
-      console.error('❌ No hay personalId para cargar registros');
+    if (!this.usuarioId) { // Cambiado de personalId
+      console.error('❌ No hay usuarioId para cargar registros');
       return;
     }
 
@@ -123,7 +116,7 @@ export class PersonalMarcacionComponent implements OnInit {
 
       const response = await firstValueFrom(
         this.apiService.getRegistroAsistenciaPersonal(
-          this.personalId,
+          this.usuarioId, // Cambiado de this.personalId
           this.fechaInicio,
           this.fechaFin
         )
@@ -141,7 +134,6 @@ export class PersonalMarcacionComponent implements OnInit {
       alert('Error al cargar los registros de asistencia');
     }
   }
-
   calcularEstadisticas() {
     this.totalRegistros = this.registrosAsistencia.length;
     

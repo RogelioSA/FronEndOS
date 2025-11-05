@@ -1,83 +1,88 @@
-<div class="container-fluid">
-    <div class="row g-1 mt-2 mb-4">
-      <div class="col-12">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h3>
-            <i class="bi bi-clock-history me-2"></i>
-            Mis Registros de Asistencia
-          </h3>
+<div class="container-fluid px-2 px-md-3">
+  <div class="row g-1 mt-2 mb-4">
+    <div class="col-12">
+      <!-- Header -->
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-3">
+        <h3 class="mb-0">
+          <i class="bi bi-clock-history me-2"></i>
+          <span class="d-none d-md-inline">Mis Registros de Asistencia</span>
+          <span class="d-inline d-md-none">Asistencia</span>
+        </h3>
+        
+        <!-- Navegación de mes -->
+        <div class="d-flex align-items-center gap-2 gap-md-3 w-100 w-md-auto justify-content-between">
+          <button 
+            class="btn btn-outline-primary btn-sm" 
+            (click)="cambiarMes(-1)"
+          >
+            <i class="bi bi-chevron-left"></i>
+            <span class="d-none d-sm-inline"> Anterior</span>
+          </button>
           
-          <!-- Navegación de mes -->
-          <div class="d-flex align-items-center gap-3">
-            <button 
-              class="btn btn-outline-primary btn-sm" 
-              (click)="cambiarMes(-1)"
-            >
-              <i class="bi bi-chevron-left"></i> Anterior
-            </button>
-            
-            <h5 class="mb-0 text-capitalize fw-bold">{{ mesActual }}</h5>
-            
-            <button 
-              class="btn btn-outline-primary btn-sm" 
-              (click)="cambiarMes(1)"
-            >
-              Siguiente <i class="bi bi-chevron-right"></i>
-            </button>
-          </div>
+          <h5 class="mb-0 text-capitalize fw-bold fs-6 fs-md-5">{{ mesActual }}</h5>
+          
+          <button 
+            class="btn btn-outline-primary btn-sm" 
+            (click)="cambiarMes(1)"
+          >
+            <span class="d-none d-sm-inline">Siguiente </span>
+            <i class="bi bi-chevron-right"></i>
+          </button>
         </div>
-  
-        <!-- Tarjetas de estadísticas -->
-        <div class="row mb-4">
-          <div class="col-md-3">
-            <div class="card shadow-sm">
-              <div class="card-body text-center">
-                <i class="bi bi-list-check fs-1 text-primary mb-2"></i>
-                <h6 class="card-title text-muted">Total de Registros</h6>
-                <h2 class="text-primary mb-0">{{ totalRegistros }}</h2>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card shadow-sm">
-              <div class="card-body text-center">
-                <i class="bi bi-box-arrow-in-right fs-1 text-success mb-2"></i>
-                <h6 class="card-title text-muted">Entradas</h6>
-                <h2 class="text-success mb-0">{{ registrosEntrada }}</h2>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card shadow-sm">
-              <div class="card-body text-center">
-                <i class="bi bi-box-arrow-right fs-1 text-danger mb-2"></i>
-                <h6 class="card-title text-muted">Salidas</h6>
-                <h2 class="text-danger mb-0">{{ registrosSalida }}</h2>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card shadow-sm border-warning">
-              <div class="card-body text-center">
-                <i class="bi bi-exclamation-triangle fs-1 text-warning mb-2"></i>
-                <h6 class="card-title text-muted">Tardanzas</h6>
-                <h2 class="text-warning mb-0">{{ totalTardanzas }}</h2>
-                <small class="text-muted">{{ minutosAcumulados }} min</small>
-              </div>
+      </div>
+
+      <!-- Tarjetas de estadísticas -->
+      <div class="row g-2 g-md-3 mb-3 mb-md-4">
+        <div class="col-6 col-lg-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body text-center p-2 p-md-3">
+              <i class="bi bi-list-check fs-3 fs-md-1 text-primary mb-1 mb-md-2"></i>
+              <h6 class="card-title text-muted small mb-1">Total</h6>
+              <h3 class="h4 h2-md text-primary mb-0">{{ totalRegistros }}</h3>
             </div>
           </div>
         </div>
-  
-        <!-- Tabla de registros -->
-        <div class="card shadow-sm">
-          <div class="card-header bg-white">
-            <h5 class="mb-0">
-              <i class="bi bi-table me-2"></i>
-              Detalle de Marcaciones
-            </h5>
+        <div class="col-6 col-lg-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body text-center p-2 p-md-3">
+              <i class="bi bi-box-arrow-in-right fs-3 fs-md-1 text-success mb-1 mb-md-2"></i>
+              <h6 class="card-title text-muted small mb-1">Entradas</h6>
+              <h3 class="h4 h2-md text-success mb-0">{{ registrosEntrada }}</h3>
+            </div>
           </div>
-          <div class="card-body p-0">
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body text-center p-2 p-md-3">
+              <i class="bi bi-box-arrow-right fs-3 fs-md-1 text-danger mb-1 mb-md-2"></i>
+              <h6 class="card-title text-muted small mb-1">Salidas</h6>
+              <h3 class="h4 h2-md text-danger mb-0">{{ registrosSalida }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card shadow-sm border-warning h-100">
+            <div class="card-body text-center p-2 p-md-3">
+              <i class="bi bi-exclamation-triangle fs-3 fs-md-1 text-warning mb-1 mb-md-2"></i>
+              <h6 class="card-title text-muted small mb-1">Tardanzas</h6>
+              <h3 class="h4 h2-md text-warning mb-0">{{ totalTardanzas }}</h3>
+              <small class="text-muted d-block" style="font-size: 0.7rem;">{{ minutosAcumulados }} min</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de registros -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white p-2 p-md-3">
+          <h5 class="mb-0 fs-6 fs-md-5">
+            <i class="bi bi-table me-2"></i>
+            <span class="d-none d-md-inline">Detalle de Marcaciones</span>
+            <span class="d-inline d-md-none">Marcaciones</span>
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
             <dx-data-grid
               id="gridContainer"
               [dataSource]="registrosAsistencia"
@@ -97,125 +102,137 @@
                 [allowedPageSizes]="[15, 25, 50, 100]"
                 [showInfo]="true"
               ></dxo-pager>
-  
+
               <dxo-filter-row [visible]="true"></dxo-filter-row>
               <dxo-header-filter [visible]="true"></dxo-header-filter>
               <dxo-search-panel [visible]="true" placeholder="Buscar..."></dxo-search-panel>
-  
+
               <dxi-column 
                 dataField="fecha" 
-                caption="Fecha/Hora Marcación"
+                caption="Fecha/Hora"
                 [customizeText]="formatearFechaHora"
                 sortOrder="desc"
+                [hidingPriority]="8"
               ></dxi-column>
-  
+
               <dxi-column 
                 dataField="fechaJornal" 
                 caption="Fecha Jornal"
                 [customizeText]="formatearSoloFecha"
+                [hidingPriority]="2"
               ></dxi-column>
-  
+
               <dxi-column 
                 dataField="tipoEvento" 
-                caption="Tipo Evento"
+                caption="Tipo"
                 alignment="center"
                 [calculateCellValue]="calcularCellValue"
                 cellTemplate="tipoEventoTemplate"
+                [hidingPriority]="7"
               ></dxi-column>
-  
+
               <dxi-column 
-                caption="Hora Programada"
+                caption="Hora Prog."
                 alignment="center"
                 [calculateCellValue]="calcularHoraProgramada"
+                [hidingPriority]="3"
               ></dxi-column>
-  
+
               <dxi-column 
                 dataField="esTardanza" 
                 caption="Tardanza"
                 dataType="boolean"
                 alignment="center"
                 cellTemplate="tardanzaTemplate"
+                [hidingPriority]="5"
               ></dxi-column>
-  
+
               <dxi-column 
                 dataField="diferenciaMinutos" 
-                caption="Diferencia (min)"
+                caption="Dif. (min)"
                 alignment="center"
                 cellTemplate="diferenciaTemplate"
+                [hidingPriority]="4"
               ></dxi-column>
-  
+
               <dxi-column 
                 type="buttons" 
-                [width]="80" 
-                caption="Ubicación"
+                [width]="60" 
+                caption="Mapa"
                 [fixed]="true"
                 fixedPosition="right"
+                [hidingPriority]="9"
               >
                 <dxi-button
                   icon="map"
-                  hint="Ver ubicación en el mapa"
+                  hint="Ver ubicación"
                   [onClick]="mostrarMapa"
                 ></dxi-button>
               </dxi-column>
-  
+
               <!-- Templates -->
               <div *dxTemplate="let cell of 'tipoEventoTemplate'">
                 <span [class]="'badge bg-' + obtenerColorTipoEvento(cell.data.tipoEvento)">
                   {{ obtenerNombreTipoEvento(cell.data.tipoEvento) }}
                 </span>
               </div>
-  
+
               <div *dxTemplate="let cell of 'tardanzaTemplate'">
                 <span *ngIf="cell.data.esTardanza" class="badge bg-warning">
-                  <i class="bi bi-exclamation-triangle"></i> Sí
+                  <i class="bi bi-exclamation-triangle"></i>
+                  <span class="d-none d-sm-inline"> Sí</span>
                 </span>
                 <span *ngIf="!cell.data.esTardanza" class="badge bg-success">
-                  <i class="bi bi-check-circle"></i> No
+                  <i class="bi bi-check-circle"></i>
+                  <span class="d-none d-sm-inline"> No</span>
                 </span>
               </div>
-  
+
               <div *dxTemplate="let cell of 'diferenciaTemplate'">
                 <span 
                   *ngIf="cell.data.diferenciaMinutos > 0" 
                   [class]="'badge ' + (cell.data.esTardanza ? 'bg-danger' : 'bg-info')"
                 >
-                  {{ cell.data.diferenciaMinutos }} min
+                  {{ cell.data.diferenciaMinutos }}
+                  <span class="d-none d-sm-inline"> min</span>
                 </span>
                 <span *ngIf="cell.data.diferenciaMinutos === 0" class="badge bg-success">
-                  A tiempo
+                  <span class="d-none d-sm-inline">A tiempo</span>
+                  <i class="bi bi-check d-inline d-sm-none"></i>
                 </span>
               </div>
             </dx-data-grid>
           </div>
         </div>
-  
-        <!-- Modal del Mapa -->
-        <div *ngIf="mostrarModalMapa" class="modal-backdrop" (click)="cerrarMapa()">
-          <div class="map-card" (click)="$event.stopPropagation()">
-            <div class="map-card-header">
-              <h5>
-                <i class="bi bi-geo-alt-fill me-2"></i>
-                Ubicación de Marcación
-              </h5>
-              <button class="btn-close" (click)="cerrarMapa()">×</button>
-            </div>
-            <div class="map-card-body">
-              <div class="coordinates-info mb-3">
-                <div class="row">
-                  <div class="col-6">
-                    <strong>Latitud:</strong> {{ coordenadasSeleccionadas.latitud || 'N/A' }}
-                  </div>
-                  <div class="col-6">
-                    <strong>Longitud:</strong> {{ coordenadasSeleccionadas.longitud || 'N/A' }}
-                  </div>
+      </div>
+
+      <!-- Modal del Mapa -->
+      <div *ngIf="mostrarModalMapa" class="modal-backdrop" (click)="cerrarMapa()">
+        <div class="map-card" (click)="$event.stopPropagation()">
+          <div class="map-card-header">
+            <h5 class="mb-0 fs-6 fs-md-5">
+              <i class="bi bi-geo-alt-fill me-2"></i>
+              Ubicación
+            </h5>
+            <button class="btn-close" (click)="cerrarMapa()">×</button>
+          </div>
+          <div class="map-card-body">
+            <div class="coordinates-info mb-3">
+              <div class="row g-2">
+                <div class="col-12 col-sm-6">
+                  <strong>Lat:</strong> {{ coordenadasSeleccionadas.latitud || 'N/A' }}
+                </div>
+                <div class="col-12 col-sm-6">
+                  <strong>Lng:</strong> {{ coordenadasSeleccionadas.longitud || 'N/A' }}
                 </div>
               </div>
-              <div id="map" style="height: 400px; width: 100%;"></div>
             </div>
+            <div id="map" class="map-container"></div>
           </div>
         </div>
-  
-        <block-ui></block-ui>
       </div>
+
+      <block-ui></block-ui>
     </div>
   </div>
+</div>

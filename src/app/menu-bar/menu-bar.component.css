@@ -1,75 +1,70 @@
 span {
-    font-family: 'Open Sans', sans-serif !important;
-    color: white;
+  font-family: 'Open Sans', sans-serif !important;
+  color: white;
 }
 
-.navbar {
-    display: flex;
-    /* background-color: #3d6736; */
-    align-items: center;
-    /* padding: 10px; */
-    justify-content: flex-start;
+/* Estilos menú desktop */
+::ng-deep #menuContainer .dx-menu .dx-menu-horizontal ul li .dx-item {
+  color: #F2F2F2;
+  font-family: 'Open Sans', sans-serif !important;
+  font-weight: bold;
+  padding: 10px;
 }
 
-/* Estilo del logo */
-.logo {
-    margin-right: 20px;
+::ng-deep #menuContainer .dx-menu .dx-menu-horizontal ul li .dx-item:hover {
+  color: #343840;
+  font-family: 'Open Sans', sans-serif !important;
 }
 
-::ng-deep    #menuContainer .dx-menu .dx-menu-horizontal ul li .dx-item{
-    color: #F2F2F2;
-    font-family: 'Open Sans', sans-serif !important;
-    font-weight: bold;
+::ng-deep #menuContainer .dx-menu .dx-menu-horizontal ul li .dx-menu-item-expanded {
+  font-family: 'Open Sans', sans-serif !important;
+  color: #343840;
+  font-weight: bold;
 }
 
-::ng-deep    #menuContainer .dx-menu .dx-menu-horizontal ul li .dx-item:hover{
-    color: #343840;
-    font-family: 'Open Sans', sans-serif !important;
+/* Estilos menú mobile */
+::ng-deep #menuContainerMobile .dx-menu .dx-menu-vertical ul li .dx-item {
+  color: #F2F2F2;
+  font-family: 'Open Sans', sans-serif !important;
+  font-weight: bold;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-::ng-deep    #menuContainer .dx-menu .dx-menu-horizontal ul li .dx-item{
-    padding: 10px;
+::ng-deep #menuContainerMobile .dx-menu .dx-menu-vertical ul li .dx-item:hover {
+  color: #94a3b8;
 }
 
-::ng-deep    #menuContainer .dx-menu .dx-menu-horizontal ul li .dx-menu-item-expanded{
-    font-family: 'Open Sans', sans-serif !important;
-    color: #343840;
-    font-weight: bold;
+/* Submenús */
+::ng-deep .dx-submenu .dx-scrollable-wrapper .dx-menu-item-wrapper .dx-menu-item {
+  font-family: 'Open Sans', sans-serif !important;
+  color: #343840;
+  font-weight: bold;
 }
 
-::ng-deep    .dx-submenu .dx-scrollable-wrapper .dx-menu-item-wrapper .dx-menu-item{
-    font-family: 'Open Sans', sans-serif !important;
-    color: #343840;
-    font-weight: bold;
-}
-
-/* --- Cambiar color de texto y placeholder a blanco en el select-box --- */
+/* Select-box estilos */
 ::ng-deep .empresa-select .dx-texteditor-input {
-    color: #ffffff !important; /* Texto blanco */
-    font-family: 'Open Sans', sans-serif !important;
-    font-weight: bold;
-  }
-  
-  /* Cambiar color del placeholder (texto antes de seleccionar) */
-  ::ng-deep .empresa-select .dx-placeholder {
-    color: rgba(255, 255, 255, 0.7) !important; /* Blanco más suave */
-    font-family: 'Open Sans', sans-serif !important;
-  }
-  
-  /* Cambiar el fondo del select-box (opcional, si quieres fondo oscuro) */
-  ::ng-deep .empresa-select .dx-texteditor-container {
-    background-color: transparent !important;
-    border-color: #ffffff !important; /* Borde blanco */
-    border-radius: 6px;
-  }
-  
-  /* Cambiar color de los ítems del dropdown */
-  ::ng-deep .empresa-select .dx-list-item {
-    color: #343840 !important; /* Texto oscuro dentro del dropdown */
-    background-color: #ffffff !important; /* Fondo blanco */
-  }
-  
-  ::ng-deep .empresa-select .dx-list-item.dx-state-hover {
-    background-color: #e6e6e6 !important;
-  }
-  
+  color: #ffffff !important;
+  font-family: 'Open Sans', sans-serif !important;
+  font-weight: bold;
+}
+
+::ng-deep .empresa-select .dx-placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-family: 'Open Sans', sans-serif !important;
+}
+
+::ng-deep .empresa-select .dx-texteditor-container {
+  background-color: transparent !important;
+  border-color: #ffffff !important;
+  border-radius: 6px;
+}
+
+::ng-deep .empresa-select .dx-list-item {
+  color: #343840 !important;
+  background-color: #ffffff !important;
+}
+
+::ng-deep .empresa-select .dx-list-item.dx-state-hover {
+  background-color: #e6e6e6 !important;
+}
