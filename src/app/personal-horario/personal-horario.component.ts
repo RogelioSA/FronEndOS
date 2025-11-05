@@ -30,6 +30,7 @@ export class PersonalHorarioComponent {
   hayDisponiblesSeleccionados = false;
 
   desactivarBotonGuardar = true;
+  cargandoPersonal = false;
   
   // Map para guardar los IDs de OrdenTrabajoPersonal
   ordenTrabajoPersonalIds: Map<number, number> = new Map();
@@ -159,10 +160,10 @@ export class PersonalHorarioComponent {
       return;
     }
   
-    this.blockUI.start('Cargando personal...');
+    // Activar el loading
+    this.cargandoPersonal = true;
     
     try {
-      // IMPORTANTE: Asegurar que los horarios estén cargados
       if (!this.horarios || this.horarios.length === 0) {
         console.log('⚠️ Horarios no cargados, recargando...');
         await this.llenarHorarios();
@@ -179,6 +180,8 @@ export class PersonalHorarioComponent {
       console.error('Error en onBuscar:', error);
       this.showMessage('Error al cargar el personal');
     } finally {
+      // Desactivar el loading
+      this.cargandoPersonal = false;
       this.blockUI.stop();
     }
   }

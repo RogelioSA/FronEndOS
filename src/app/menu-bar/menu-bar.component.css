@@ -42,3 +42,34 @@ span {
     color: #343840;
     font-weight: bold;
 }
+
+/* --- Cambiar color de texto y placeholder a blanco en el select-box --- */
+::ng-deep .empresa-select .dx-texteditor-input {
+    color: #ffffff !important; /* Texto blanco */
+    font-family: 'Open Sans', sans-serif !important;
+    font-weight: bold;
+  }
+  
+  /* Cambiar color del placeholder (texto antes de seleccionar) */
+  ::ng-deep .empresa-select .dx-placeholder {
+    color: rgba(255, 255, 255, 0.7) !important; /* Blanco más suave */
+    font-family: 'Open Sans', sans-serif !important;
+  }
+  
+  /* Cambiar el fondo del select-box (opcional, si quieres fondo oscuro) */
+  ::ng-deep .empresa-select .dx-texteditor-container {
+    background-color: transparent !important;
+    border-color: #ffffff !important; /* Borde blanco */
+    border-radius: 6px;
+  }
+  
+  /* Cambiar color de los ítems del dropdown */
+  ::ng-deep .empresa-select .dx-list-item {
+    color: #343840 !important; /* Texto oscuro dentro del dropdown */
+    background-color: #ffffff !important; /* Fondo blanco */
+  }
+  
+  ::ng-deep .empresa-select .dx-list-item.dx-state-hover {
+    background-color: #e6e6e6 !important;
+  }
+  

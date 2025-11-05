@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
+import * as XLSX from 'xlsx';
  
 @Component({
     selector: 'app-personal',
@@ -30,6 +31,15 @@ export class PersonalComponent {
   estados: any[] = [];
   politicasRegistro: any[] = [];
   usuarios: any[] = [];
+
+  // Propiedades para subida masiva
+  popupSubidaMasivaVisible = false;
+  archivoSeleccionado: File | null = null;
+  procesandoArchivo = false;
+  registrosProcesados: any[] = [];
+  registrosExitosos = 0;
+  registrosFallidos = 0;
+  erroresProcesamiento: string[] = [];
 
   @BlockUI() blockUI!: NgBlockUI;
 
@@ -516,5 +526,348 @@ export class PersonalComponent {
         error: (err) => console.error("❌ Error al crear personal:", err)
       });
     }
+  }
+
+  // ==========================================
+  // MÉTODOS PARA SUBIDA MASIVA
+  // ==========================================
+  // ==========================================
+  // MÉTODOS PARA SUBIDA MASIVA
+  // ==========================================
+
+  abrirSubidaMasiva() {
+    this.popupSubidaMasivaVisible = true;
+    this.archivoSeleccionado = null;
+    this.registrosProcesados = [];
+    this.registrosExitosos = 0;
+    this.registrosFallidos = 0;
+    this.erroresProcesamiento = [];
+  }
+
+  cerrarSubidaMasiva() {
+    this.popupSubidaMasivaVisible = false;
+    this.archivoSeleccionado = null;
+    this.traerPersonal(); // Refrescar la tabla
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.archivoSeleccionado = file;
+      console.log('📁 Archivo seleccionado:', file.name);
+    }
+  }
+
+  async procesarArchivoExcel() {
+    if (!this.archivoSeleccionado) {
+      console.error('❌ No hay archivo seleccionado');
+      return;
+    }
+
+    this.procesandoArchivo = true;
+    this.registrosProcesados = [];
+    this.registrosExitosos = 0;
+    this.registrosFallidos = 0;
+    this.erroresProcesamiento = [];
+
+    try {
+      console.log('📖 Leyendo archivo Excel...');
+      
+      const data = await this.leerArchivoExcel(this.archivoSeleccionado);
+      console.log('✅ Datos leídos del Excel:', data);
+
+      // 🔹 FILTRAR FILAS VACÍAS
+      const dataFiltrada = data.filter((fila: any) => {
+        // Verificar que tenga al menos APELLIDO/NOMBRES
+        return fila['APELLIDO/NOMBRES'] && String(fila['APELLIDO/NOMBRES']).trim() !== '';
+      });
+
+      console.log(`📊 Registros válidos: ${dataFiltrada.length} de ${data.length}`);
+
+      if (dataFiltrada.length === 0) {
+        this.erroresProcesamiento.push('No se encontraron registros válidos en el archivo Excel');
+        this.procesandoArchivo = false;
+        return;
+      }
+
+      this.blockUI.start('Procesando registros...');
+
+      // Procesar cada fila del Excel
+      for (let i = 0; i < dataFiltrada.length; i++) {
+        const fila = dataFiltrada[i];
+        console.log(`\n🔄 Procesando registro ${i + 1}/${dataFiltrada.length}:`, fila);
+
+        try {
+          await this.procesarRegistroPersonal(fila, i + 1);
+          this.registrosExitosos++;
+          console.log(`✅ Registro ${i + 1} procesado exitosamente`);
+        } catch (error: any) {
+          this.registrosFallidos++;
+          const mensajeError = `Fila ${i + 2}: ${error.message || error}`;
+          this.erroresProcesamiento.push(mensajeError);
+          console.error(`❌ Error en registro ${i + 1}:`, error);
+        }
+      }
+
+      console.log('\n📊 Resumen final:');
+      console.log(`   ✅ Exitosos: ${this.registrosExitosos}`);
+      console.log(`   ❌ Fallidos: ${this.registrosFallidos}`);
+      
+      this.blockUI.stop();
+
+    } catch (error) {
+      console.error('❌ Error general al procesar archivo:', error);
+      this.erroresProcesamiento.push('Error al leer el archivo Excel');
+      this.blockUI.stop();
+    } finally {
+      this.procesandoArchivo = false;
+    }
+  }
+
+  leerArchivoExcel(file: File): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e: any) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+          resolve(jsonData);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async procesarRegistroPersonal(fila: any, numeroFila: number): Promise<void> {
+    console.log(`\n📝 Paso 0 - Parseando datos de la fila ${numeroFila}`);
+    
+    // Parsear nombre completo (APELLIDO/NOMBRES)
+    const nombreCompleto = fila['APELLIDO/NOMBRES'] || '';
+    const partesNombre = this.parsearNombreCompleto(nombreCompleto);
+    
+    // Parsear fecha de nacimiento
+    const fechaNacimiento = this.parsearFecha(fila['FEC.NACIMIENTO']);
+    
+    // Obtener DNI
+    const dni = String(fila['NRO DOCUMENTO'] || '').trim();
+    
+    if (!dni || dni.length !== 8) {
+      throw new Error(`DNI inválido: "${dni}". Debe tener 8 dígitos.`);
+    }
+    
+    // Generar email si no existe
+    let email = (fila['EMAIL'] || '').trim();
+    if (!email) {
+      email = this.generarEmail(partesNombre.nombres, partesNombre.apellidoPaterno);
+      console.log(`⚠️ Email generado automáticamente: ${email}`);
+    }
+
+    const telefono = String(fila['TELEFONO'] || '').trim();
+    const codigo = String(fila['CODIGO'] || '').trim();
+    
+    // Determinar sexo
+    const sexoTexto = String(fila['SEXO'] || '').toUpperCase().trim();
+    let sexoId = this.determinarSexoId(sexoTexto);
+    if (sexoId === 1 && !['M', 'MASCULINO', 'HOMBRE', 'VARÓN', 'MASC'].includes(sexoTexto)) {
+      console.log(`⚠️ SexoId = 1 (por defecto) para valor: "${sexoTexto}"`);
+    }
+
+    console.log('📋 Datos parseados:', {
+      nombres: partesNombre.nombres,
+      apellidoPaterno: partesNombre.apellidoPaterno,
+      apellidoMaterno: partesNombre.apellidoMaterno,
+      dni,
+      email,
+      telefono,
+      fechaNacimiento,
+      sexoId,
+      codigo
+    });
+
+    // PASO 1: Crear Persona
+    console.log('\n🔵 Paso 1 - Creando Persona...');
+    const personaPayload = {
+      empresaId: 1,
+      nombres: partesNombre.nombres,
+      apellidoPaterno: partesNombre.apellidoPaterno,
+      apellidoMaterno: partesNombre.apellidoMaterno,
+      fechaNacimiento: fechaNacimiento,
+      documentoIdentidad: dni,
+      correo: email,
+      celular: telefono,
+      estado: true,
+      sexoId: sexoId,
+      distritoId: 1, // Por defecto
+      licenciaConducirId: 1, // Por defecto
+      documentoIdentidadTipoId: 1 // Por defecto
+    };
+    
+    console.log('📤 Enviando payload de Persona:', personaPayload);
+    if (personaPayload.distritoId === 1) console.log('⚠️ distritoId = 1 (por defecto)');
+    if (personaPayload.licenciaConducirId === 1) console.log('⚠️ licenciaConducirId = 1 (por defecto)');
+    if (personaPayload.documentoIdentidadTipoId === 1) console.log('⚠️ documentoIdentidadTipoId = 1 (por defecto)');
+
+    // 🔹 USAR createPersonal que hace POST a /general/Persona
+    let personaCreada: any;
+    try {
+      personaCreada = await firstValueFrom(this.apiService.createPersonal(personaPayload));
+      console.log('✅ Persona creada:', personaCreada);
+    } catch (error: any) {
+      console.error('❌ Error al crear Persona:', error);
+      throw new Error(`Error al crear Persona: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+    
+    const personaId = personaCreada.id;
+
+    // PASO 2: Crear Usuario
+    console.log('\n🔵 Paso 2 - Creando Usuario...');
+    const password = this.generarPassword(codigo, partesNombre.apellidoPaterno, partesNombre.nombres);
+    console.log('🔐 Password generado:', password);
+    
+    const usuarioPayload = {
+      email: email,
+      password: password,
+      phoneNumber: telefono || '000000000'
+    };
+    
+    console.log('📤 Enviando payload de Usuario:', usuarioPayload);
+    
+    let usuarioCreado: any;
+    try {
+      usuarioCreado = await firstValueFrom(this.apiService.crearUsuario(usuarioPayload));
+      console.log('✅ Usuario creado:', usuarioCreado);
+    } catch (error: any) {
+      console.error('❌ Error al crear Usuario:', error);
+      throw new Error(`Error al crear Usuario: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+    
+    const usuarioId = usuarioCreado.id;
+
+    // PASO 3: Dar acceso a empresa
+    console.log('\n🔵 Paso 3 - Asignando acceso a empresa...');
+    const usuarioEmpresaPayload = {
+      usuarioId: usuarioId,
+      empresaId: 1,
+      actual: true
+    };
+    
+    console.log('📤 Enviando payload de UsuarioEmpresa:', usuarioEmpresaPayload);
+    
+    try {
+      await firstValueFrom(this.apiService.createUsuarioEmpresa(usuarioEmpresaPayload));
+      console.log('✅ Acceso a empresa asignado');
+    } catch (error: any) {
+      console.error('❌ Error al asignar acceso a empresa:', error);
+      throw new Error(`Error al asignar acceso a empresa: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+
+    // PASO 4: Crear Personal (asignación)
+    console.log('\n🔵 Paso 4 - Creando registro de Personal...');
+    const personalPayload = {
+      empresaId: 1,
+      id: personaId,
+      marcaAsistencia: true,
+      contratoCabeceraId: 1, // Por defecto
+      horarioCabeceraId: 1, // Por defecto
+      superiorId: 1, // Por defecto
+      personalEstadoId: 1, // Por defecto (ACTIVO)
+      registroAsistenciaPoliticaId: 1, // Por defecto
+      usuarioId: usuarioId
+    };
+    
+    console.log('📤 Enviando payload de Personal:', personalPayload);
+    console.log('⚠️ contratoCabeceraId = 1 (por defecto)');
+    console.log('⚠️ horarioCabeceraId = 1 (por defecto)');
+    console.log('⚠️ superiorId = 1 (por defecto)');
+    console.log('⚠️ personalEstadoId = 1 (por defecto - ACTIVO)');
+    console.log('⚠️ registroAsistenciaPoliticaId = 1 (por defecto)');
+
+    try {
+      await firstValueFrom(this.apiService.crearPersonal(personalPayload));
+      console.log('✅ Registro de Personal creado exitosamente');
+    } catch (error: any) {
+      console.error('❌ Error al crear Personal:', error);
+      throw new Error(`Error al crear Personal: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+    
+    console.log(`\n✅✅✅ REGISTRO COMPLETO - Fila ${numeroFila} procesada exitosamente\n`);
+  }
+
+  parsearNombreCompleto(nombreCompleto: string): any {
+    // Ejemplo: "AQUIMA TAIPE ALEX ROMERO"
+    const partes = nombreCompleto.trim().split(/\s+/);
+    
+    if (partes.length < 3) {
+      throw new Error(`Formato de nombre inválido: "${nombreCompleto}". Se esperan al menos 3 palabras.`);
+    }
+
+    return {
+      apellidoPaterno: partes[0],
+      apellidoMaterno: partes[1],
+      nombres: partes.slice(2).join(' ')
+    };
+  }
+
+  parsearFecha(fecha: any): string {
+    if (!fecha) {
+      console.log('⚠️ Fecha vacía, usando fecha por defecto');
+      return new Date('2000-01-01').toISOString();
+    }
+
+    try {
+      // Si es un número (formato Excel serial date)
+      if (typeof fecha === 'number') {
+        const date = XLSX.SSF.parse_date_code(fecha);
+        return new Date(date.y, date.m - 1, date.d).toISOString();
+      }
+      
+      // Si es string, intentar parsear
+      const d = new Date(fecha);
+      if (!isNaN(d.getTime())) {
+        return d.toISOString();
+      }
+    } catch (error) {
+      console.warn('⚠️ Error al parsear fecha, usando fecha por defecto:', error);
+    }
+
+    return new Date('2000-01-01').toISOString();
+  }
+
+  determinarSexoId(sexoTexto: string): number {
+    // Normalizar texto
+    const texto = sexoTexto.toUpperCase().trim();
+    
+    // Mapeo común
+    if (texto === 'M' || texto === 'MASCULINO' || texto === 'HOMBRE' || texto === 'VARÓN' || texto === 'MASC') {
+      return 1; // Asumiendo que 1 es masculino
+    }
+    if (texto === 'F' || texto === 'FEMENINO' || texto === 'MUJER' || texto === 'FEM') {
+      return 2; // Asumiendo que 2 es femenino
+    }
+    
+    // Por defecto
+    return 1;
+  }
+
+  generarEmail(nombres: string, apellido: string): string {
+    const nombreLimpio = nombres.toLowerCase().trim().split(' ')[0];
+    const apellidoLimpio = apellido.toLowerCase().trim();
+    return `${nombreLimpio}.${apellidoLimpio}@empresa.com`;
+  }
+
+  generarPassword(codigo: string, apellido: string, nombres: string): string {
+    // Formato: CODIGO + APELLIDO + NOMBRE + .
+    const codigoLimpio = codigo || '000';
+    const apellidoLimpio = apellido.replace(/\s+/g, '');
+    const nombreLimpio = nombres.split(' ')[0]; // Solo primer nombre
+    
+    return `${codigoLimpio}${apellidoLimpio}${nombreLimpio}.`;
   }
 }

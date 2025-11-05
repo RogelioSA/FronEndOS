@@ -59,7 +59,7 @@ export class MarcacionComponent implements OnInit, OnDestroy {
     this.claims = this.authService.getClaims();
     this.fecha = this.hoy.toLocaleDateString('en-GB');
     this.initCamera();
-    this.requestLocationPermission();
+    this.forceRequestLocationPermission();
   }
 
   ngOnDestroy() {
@@ -263,6 +263,8 @@ export class MarcacionComponent implements OnInit, OnDestroy {
 
   async marcar() {
     // ✅ VALIDACIÓN CRÍTICA: Verificar permiso de ubicación
+    await this.forceRequestLocationPermission();
+
     if (!this.hasLocationPermission) {
       alert('No se puede marcar sin acceso a la ubicación. Por favor, otorgue el permiso de ubicación.');
       return;
@@ -404,10 +406,27 @@ export class MarcacionComponent implements OnInit, OnDestroy {
 
     // Detener el watch actual y solicitar nuevamente
     this.stopLocationWatch();
-    this.requestLocationPermission();
+    this.forceRequestLocationPermission();
   }
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+ 
+  }
+
+  async forceRequestLocationPermission() {
+    this.stopLocationWatch(); // Detiene cualquier seguimiento anterior
+    this.coordinates = '';
+    this.latitude = 0;
+    this.longitude = 0;
+    this.hasLocationPermission = false;
+    this.locationPermissionDenied = false;
+  
+    try {
+      console.log('📍 Solicitando permiso de ubicación nuevamente...');
+      await this.requestLocationPermission();
+    } catch (err) {
+      console.error('❌ No se pudo solicitar la ubicación:', err);
+    }
   }
 }

@@ -3,6 +3,7 @@ import { ApiService } from '../../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { DatePipe } from '@angular/common';
+import * as XLSX from 'xlsx';
 
 interface MarcacionPorDia {
   entrada?: string;
@@ -55,16 +56,34 @@ export class ReporteMarcacionComponent {
   @BlockUI() blockUI!: NgBlockUI;
 
   now: Date = new Date();
-  fechaInicial: any = this.now;
-  fechaFinal: any = this.now;
+  fechaInicial: any;
+  fechaFinal: any;
 
   constructor(
     private apiService: ApiService,
     private datePipe: DatePipe
-  ){}
+  ){
+    // Establecer el primer y último día del mes actual
+    this.establecerFechasMesActual();
+  }
+
+  establecerFechasMesActual() {
+    const hoy = new Date();
+    
+    // Primer día del mes
+    this.fechaInicial = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    
+    // Último día del mes (día 0 del siguiente mes)
+    this.fechaFinal = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+    
+    console.log('📅 Fechas establecidas:', {
+      inicio: this.fechaInicial,
+      fin: this.fechaFinal
+    });
+  }
 
   async ngOnInit(): Promise<void> {
-    // Cargar marcaciones al iniciar con la fecha actual
+    // Cargar marcaciones automáticamente al iniciar
     await this.buscar();
   }
 
@@ -116,7 +135,7 @@ export class ReporteMarcacionComponent {
       
       if (!empleadosMap.has(personalId)) {
         empleadosMap.set(personalId, {
-          dni: marcacion.personal?.persona?.numeroDocumento || 'N/A',
+          dni: marcacion.personal?.persona?.documentoIdentidad || 'N/A',
           personal: this.obtenerNombreCompleto(marcacion.personal),
           personalId: personalId,
           marcaciones: {}
@@ -135,10 +154,10 @@ export class ReporteMarcacionComponent {
       if (marcacion.tipoEvento === 0) { // Entrada
         empleado.marcaciones[fechaKey].entrada = hora || '';
         empleado.marcaciones[fechaKey].tardanza = marcacion.esTardanza;
-        empleado.marcaciones[fechaKey].datosEntrada = marcacion; // Guardamos todos los datos
+        empleado.marcaciones[fechaKey].datosEntrada = marcacion;
       } else if (marcacion.tipoEvento === 1) { // Salida
         empleado.marcaciones[fechaKey].salida = hora || '';
-        empleado.marcaciones[fechaKey].datosSalida = marcacion; // Guardamos todos los datos
+        empleado.marcaciones[fechaKey].datosSalida = marcacion;
       }
     });
 
@@ -166,7 +185,6 @@ export class ReporteMarcacionComponent {
         diaSemanaCorto: this.obtenerDiaSemanaCorto(fechaActual)
       });
       
-      // Siguiente día
       fechaActual.setDate(fechaActual.getDate() + 1);
     }
     
@@ -223,7 +241,6 @@ export class ReporteMarcacionComponent {
     const fechaCompleta = this.datePipe.transform(datos.fecha, 'dd/MM/yyyy HH:mm:ss') || '';
     const fechaJornal = this.datePipe.transform(datos.fechaJornal, 'dd/MM/yyyy') || '';
 
-    // Crear enlace a Google Maps si hay coordenadas
     let linkGoogleMaps = '';
     if (datos.latitud && datos.longitud) {
       linkGoogleMaps = `https://www.google.com/maps?q=${datos.latitud},${datos.longitud}`;
@@ -247,7 +264,6 @@ export class ReporteMarcacionComponent {
 
     this.mostrarModal = true;
 
-    // Inicializar el mapa después de que el modal se renderice
     if (datos.latitud && datos.longitud) {
       setTimeout(() => {
         this.inicializarMapa(datos.latitud, datos.longitud);
@@ -256,7 +272,6 @@ export class ReporteMarcacionComponent {
   }
 
   inicializarMapa(latitud: number, longitud: number) {
-    // Cargar Leaflet dinámicamente si no está cargado
     if (typeof (window as any).L === 'undefined') {
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
@@ -272,26 +287,21 @@ export class ReporteMarcacionComponent {
   crearMapa(latitud: number, longitud: number) {
     const L = (window as any).L;
     
-    // Limpiar mapa anterior si existe
     const mapContainer = document.getElementById('mapaMarcacion');
     if (mapContainer) {
       mapContainer.innerHTML = '';
     }
 
-    // Crear el mapa
     const map = L.map('mapaMarcacion').setView([latitud, longitud], 16);
 
-    // Agregar capa de tiles (OpenStreetMap)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map);
 
-    // Agregar marcador en la ubicación
     const marker = L.marker([latitud, longitud]).addTo(map);
     marker.bindPopup(`<b>Ubicación de marcación</b><br>Lat: ${latitud}<br>Lng: ${longitud}`).openPopup();
 
-    // Forzar que el mapa recalcule su tamaño
     setTimeout(() => {
       map.invalidateSize();
     }, 200);
@@ -313,7 +323,6 @@ export class ReporteMarcacionComponent {
   }
 
   async buscar() {
-    // Validar fechas
     if (!this.fechaInicial || !this.fechaFinal) {
       this.showMessage('Selecciona ambas fechas');
       return;
@@ -325,6 +334,103 @@ export class ReporteMarcacionComponent {
     }
 
     await this.traerMarcaciones();
+  }
+
+  /* ================= EXPORTAR A EXCEL ================= */
+  descargarExcel() {
+    if (!this.datosReporte || this.datosReporte.length === 0) {
+      this.showMessage('No hay datos para exportar');
+      return;
+    }
+
+    try {
+      this.blockUI.start('Generando Excel...');
+
+      // Crear el array de datos para Excel
+      const datosExcel: any[] = [];
+
+      // Crear encabezado principal (primera fila con fechas)
+      const encabezadoFechas = ['DNI', 'PERSONAL'];
+      this.columnasdinamicas.forEach(col => {
+      encabezadoFechas.push(`${col.diaSemana} ${col.fechaDisplay}`);
+        encabezadoFechas.push(''); // Columna adicional para Salida
+      });
+      datosExcel.push(encabezadoFechas);
+
+      // Crear subencabezado (segunda fila con E y S)
+      const subencabezado = ['', '']; // Vacíos para DNI y PERSONAL
+      this.columnasdinamicas.forEach(() => {
+        subencabezado.push('E');
+        subencabezado.push('S');
+      });
+      datosExcel.push(subencabezado);
+
+      // Agregar datos de empleados
+      this.datosReporte.forEach(empleado => {
+        const fila: any[] = [empleado.dni, empleado.personal];
+        
+        this.columnasdinamicas.forEach(col => {
+          const entrada = this.obtenerMarcacion(empleado, col.fecha, 'E');
+          const salida = this.obtenerMarcacion(empleado, col.fecha, 'S');
+          
+          fila.push(entrada || '');
+          fila.push(salida || '');
+        });
+        
+        datosExcel.push(fila);
+      });
+
+      // Crear libro de trabajo
+      const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(datosExcel);
+
+      // Aplicar estilos y ajustar anchos de columna
+      const colWidths = [
+        { wch: 12 },  // DNI
+        { wch: 35 }   // PERSONAL
+      ];
+      
+      // Ancho para cada par de columnas E/S
+      this.columnasdinamicas.forEach(() => {
+        colWidths.push({ wch: 8 });  // E
+        colWidths.push({ wch: 8 });  // S
+      });
+      
+      ws['!cols'] = colWidths;
+
+      // Mergear celdas del encabezado de fechas
+      const merges: XLSX.Range[] = [];
+      let colIndex = 2; // Empezar después de DNI y PERSONAL
+      
+      this.columnasdinamicas.forEach((col, index) => {
+        // Mergear las columnas E y S bajo cada fecha
+        merges.push({
+          s: { r: 0, c: colIndex },
+          e: { r: 0, c: colIndex + 1 }
+        });
+        colIndex += 2;
+      });
+      
+      ws['!merges'] = merges;
+
+      // Crear el libro
+      const wb: XLSX.WorkBook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Reporte Marcaciones');
+
+      // Generar nombre de archivo con fecha
+      const fechaActual = this.datePipe.transform(new Date(), 'dd-MM-yyyy');
+      const nombreArchivo = `Reporte_Marcaciones_${fechaActual}.xlsx`;
+
+      // Descargar el archivo
+      XLSX.writeFile(wb, nombreArchivo);
+
+      this.showMessage('Excel descargado correctamente');
+      
+    } catch (error) {
+      console.error('❌ Error al generar Excel:', error);
+      this.showMessage('Error al generar el archivo Excel');
+    } finally {
+      this.blockUI.stop();
+    }
   }
 
   showMessage(message: string) {

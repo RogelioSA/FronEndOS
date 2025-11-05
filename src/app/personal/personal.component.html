@@ -9,6 +9,16 @@
         </div>
       </div>
 
+      <!-- Botón Subida Masiva -->
+      <div class="mb-3">
+        <button 
+          class="btn btn-success btn-sm" 
+          (click)="abrirSubidaMasiva()"
+        >
+          <i class="fas fa-file-excel me-2"></i>Subida Masiva
+        </button>
+      </div>
+
       <!-- Grid Container -->
       <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
@@ -373,6 +383,98 @@
         (click)="guardarAsignacion()"
       >
         <i class="fas fa-check me-1"></i>Guardar Cambios
+      </button>
+    </div>
+  </div>
+</dx-popup>
+
+<!-- Popup Subida Masiva -->
+<dx-popup
+  [(visible)]="popupSubidaMasivaVisible"
+  [width]="600"
+  [height]="'auto'"
+  [showTitle]="true"
+  title="Subida Masiva de Personal"
+  [dragEnabled]="true"
+  [closeOnOutsideClick]="false"
+  [showCloseButton]="true"
+>
+  <div class="p-4">
+    <div class="alert alert-info border-0 mb-4 py-2">
+      <small>
+        <i class="fas fa-info-circle me-1"></i>
+        Sube un archivo Excel (.xlsx) con los datos del personal. 
+        Los campos requeridos son: APELLIDO/NOMBRES, NRO DOCUMENTO, SEXO, EMAIL, TELEFONO, FEC.NACIMIENTO
+      </small>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label fw-medium small mb-2">
+        Seleccionar Archivo Excel
+        <span class="text-danger">*</span>
+      </label>
+      <input 
+        type="file" 
+        class="form-control" 
+        accept=".xlsx,.xls"
+        (change)="onFileSelected($event)"
+        #fileInput
+      >
+      <small class="text-muted d-block mt-1">
+        <i class="fas fa-file-excel me-1"></i>
+        Formatos permitidos: .xlsx, .xls
+      </small>
+    </div>
+
+    <div *ngIf="archivoSeleccionado" class="alert alert-success py-2 mb-3">
+      <small>
+        <i class="fas fa-check-circle me-1"></i>
+        Archivo seleccionado: <strong>{{ archivoSeleccionado.name }}</strong>
+      </small>
+    </div>
+
+    <div *ngIf="registrosProcesados.length > 0" class="mb-3">
+      <h6 class="fw-semibold mb-2">Resumen de procesamiento:</h6>
+      <div class="alert alert-light border py-2">
+        <div class="d-flex justify-content-between mb-1">
+          <small>Total registros:</small>
+          <strong>{{ registrosProcesados.length }}</strong>
+        </div>
+        <div class="d-flex justify-content-between mb-1 text-success">
+          <small>Exitosos:</small>
+          <strong>{{ registrosExitosos }}</strong>
+        </div>
+        <div class="d-flex justify-content-between text-danger">
+          <small>Fallidos:</small>
+          <strong>{{ registrosFallidos }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="erroresProcesamiento.length > 0" class="mb-3" style="max-height: 200px; overflow-y: auto;">
+      <h6 class="fw-semibold mb-2 text-danger">
+        <i class="fas fa-exclamation-triangle me-1"></i>Errores encontrados:
+      </h6>
+      <div class="alert alert-danger py-1 mb-1" *ngFor="let error of erroresProcesamiento">
+        <small>{{ error }}</small>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+      <button 
+        class="btn btn-secondary btn-sm px-4" 
+        (click)="cerrarSubidaMasiva()"
+        [disabled]="procesandoArchivo"
+      >
+        <i class="fas fa-times me-1"></i>Cancelar
+      </button>
+      <button 
+        class="btn btn-primary btn-sm px-4" 
+        (click)="procesarArchivoExcel()"
+        [disabled]="!archivoSeleccionado || procesandoArchivo"
+      >
+        <i class="fas fa-upload me-1"></i>
+        {{ procesandoArchivo ? 'Procesando...' : 'Procesar Archivo' }}
       </button>
     </div>
   </div>
