@@ -35,7 +35,7 @@ export class PersonalMarcacionComponent implements OnInit {
   @BlockUI() blockUI!: NgBlockUI;
 
   registrosAsistencia: RegistroAsistencia[] = [];
-  usuarioId: string = '';
+  usuarioId: string = '0';
   fechaInicio: string = '';
   fechaFin: string = '';
   mesActual: string = '';
@@ -66,7 +66,6 @@ export class PersonalMarcacionComponent implements OnInit {
   constructor(private apiService: ApiService) {}
 
   async ngOnInit() {
-    this.obtenerUsuarioId();
     this.calcularFechasMes();
     await this.cargarRegistros();
   }
