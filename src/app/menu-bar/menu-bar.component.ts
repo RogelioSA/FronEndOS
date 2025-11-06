@@ -38,17 +38,20 @@ export class MenuBarComponent {
   }
 
   onMenuItemClickMobile(e: any) {
+    // Solo cerrar el menú si el item NO tiene subitems
+    if (!e.itemData.items || e.itemData.items.length === 0) {
+      this.mobileMenuOpen = false;
+    }
     this.onMenuItemClick(e);
-    this.mobileMenuOpen = false; // Cerrar menú después de seleccionar
   }
-  
+
   async ngOnInit(): Promise<void> {
     this.claims = this.authService.getClaims();
-    
+
     // Verificar si es usuario logueado con documento
     this.esUsuarioDocumento = localStorage.getItem('tipo') === 'U';
     console.log('Es usuario con documento (tipo U):', this.esUsuarioDocumento);
-    
+
     await this.traerUsuariosEmpresas();
     this.crearMenusEstaticos();
   }
@@ -103,7 +106,7 @@ export class MenuBarComponent {
           ]
         }
       ];
-      
+
       console.log('MenuBar reducido para usuario tipo U creado:', this.menuBar);
     } else {
       // Menú completo para usuarios normales
@@ -315,81 +318,81 @@ export class MenuBarComponent {
       console.log('No hay valor seleccionado');
       return;
     }
-  
+
     console.log('Empresa cambiada - Nuevo valor:', event.value);
-    
+
     this.blockUI.start('Cambiando empresa...');
-    
+
     try {
       const empresaSeleccionadaObj = this.usuariosEmpresas.find(ue => ue.empresaId === event.value);
-      
+
       if (!empresaSeleccionadaObj) {
         console.error('No se encontró la empresa seleccionada');
         this.mostrarError('No se encontró la empresa seleccionada');
         this.blockUI.stop();
         return;
       }
-  
+
       console.log('Cambiando a empresa:', empresaSeleccionadaObj.empresa.nombre);
-  
+
       localStorage.setItem('empresa_id', event.value.toString());
       console.log('Empresa ID guardado en localStorage:', event.value);
-  
-      const email = empresaSeleccionadaObj.usuario?.email || 
-                    localStorage.getItem('user_email') || 
-                    this.claims.email || 
+
+      const email = empresaSeleccionadaObj.usuario?.email ||
+                    localStorage.getItem('user_email') ||
+                    this.claims.email ||
                     this.claims.cEmail;
-  
+
       if (!email) {
         console.error('No se pudo obtener el email del usuario');
         this.mostrarError('No se pudo obtener el email del usuario');
         this.blockUI.stop();
         return;
       }
-  
+
       const body = {
         email: email,
         empresaId: event.value
       };
-  
+
       console.log('Enviando body al API changeTenant:', body);
-  
+
       const result = await firstValueFrom(this.apiService.changeTenant(body));
-  
+
       console.log('Respuesta del API changeTenant:', result);
-  
+
       if (result && result.accessToken) {
         localStorage.setItem('auth_token', result.accessToken);
-        
+
         console.log('Token actualizado correctamente');
         console.log('Nueva empresa:', empresaSeleccionadaObj.empresa.nombre);
-  
+
         this.empresaSeleccionada = event.value;
-  
+
         this.mostrarMensaje(
-          `Cambiando a empresa: ${empresaSeleccionadaObj.empresa.nombre}`, 
+          `Cambiando a empresa: ${empresaSeleccionadaObj.empresa.nombre}`,
           'success'
         );
-  
+
         setTimeout(() => {
           window.location.reload();
         }, 800);
-  
+
       } else {
         console.error('No se recibió un token válido del API');
         this.mostrarError('No se recibió un token válido del servidor');
         this.empresaSeleccionada = null;
         localStorage.removeItem('empresa_id');
       }
-  
+
     } catch (error: any) {
       console.error('Error al cambiar de empresa:', error);
-      
-      const mensajeError = error?.error?.message || 
-                          error?.message || 
+
+      const mensajeError = error?.error?.message ||
+                          error?.message ||
                           'Error desconocido al cambiar de empresa';
       this.mostrarError(mensajeError);
-      
+
       this.empresaSeleccionada = null;
       localStorage.removeItem('empresa_id');
     } finally {
