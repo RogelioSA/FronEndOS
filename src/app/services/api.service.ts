@@ -1846,5 +1846,13 @@ export class ApiService{
     );
   }
 
-
+  actualizarOrdenTrabajoHorario(id: number, payload: any): Observable<any> {
+    const headers = this.getHttpHeaders();
+  
+    return this.https.put(
+      `https://7p4yx3l258.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario/${id}`,
+      payload,
+      { headers }
+    );
+  }
 }
