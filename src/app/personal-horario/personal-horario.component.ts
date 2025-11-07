@@ -271,12 +271,12 @@ export class PersonalHorarioComponent {
       for (const horario of response) {
         const personalId = horario.personalId;
         const fecha = new Date(horario.fecha);
-        const field = 'd' + formatDate(fecha, 'yyyyMMdd', 'en-US');
+        const field = 'd' + formatDate(fecha, 'yyyyMMdd', 'en-US', '+0000');
 
         // Guardar el ID del registro para futuros PUT
         const key = `${personalId}_${formatDate(fecha, 'yyyy-MM-dd', 'en-US')}`;
         this.ordenTrabajoHorarioIds.set(key, horario.id);
-
+        console.log(field);
         const persona = this.personalHorarios.find(p => p.nEmpleado === personalId);
         if (persona && persona.hasOwnProperty(field)) {
           persona[field] = horario.horarioCabeceraId;
@@ -284,7 +284,7 @@ export class PersonalHorarioComponent {
       }
 
       this.personalHorarios = [...this.personalHorarios];
-
+      console.log(this.personalHorarios);
       console.log('✅ Horarios aplicados al grid');
 
     } catch (error) {
@@ -425,86 +425,78 @@ export class PersonalHorarioComponent {
   }
 
   async onCellValueChanged(e: any) {
-    console.log('🔄 onCellValueChanged DISPARADO');
-    console.log('📝 Evento completo:', e);
-
-    if (!e || !e.changes || e.changes.length === 0) {
-      console.log('⚠️ No hay cambios para procesar');
+    console.log('🔄 onCellValueChanged (onRowUpdating) DISPARADO');
+    console.log('📝 e.newData:', e.newData);
+    console.log('📝 e.oldData:', e.oldData);
+    console.log('📝 e.key:', e.key);
+  
+  
+    if (!e.newData || Object.keys(e.newData).length === 0) {
+      console.log('❌ No hay cambios en newData');
       return;
     }
-
-    // Procesar cada cambio
-    for (const change of e.changes) {
-      console.log('🔄 Procesando cambio:', change);
-      console.log('🔑 change.key:', change.key);
-      console.log('📝 change.data:', change.data);
-      console.log('🔧 change.type:', change.type);
-
-      if (change.type !== 'update') {
-        console.log('⚠️ Tipo de cambio no es update, saltando');
-        continue;
-      }
-
-      const personalId = change.key;
-      const cambios = change.data;
-
-      console.log('👤 PersonalId extraído:', personalId);
-      console.log('🔄 Cambios extraídos:', cambios);
-
-      if (!cambios || Object.keys(cambios).length === 0) {
-        console.log('❌ No hay cambios en los datos');
-        continue;
-      }
-
-      // Filtrar solo los cambios en columnas de fecha
-      const camposValidos = Object.keys(cambios).filter(key => key.startsWith('d') && key.length === 9);
-
-      console.log('📝 Campos válidos (fechas):', camposValidos);
-
-      if (camposValidos.length === 0) {
-        console.log('⚠️ No hay cambios en columnas de fecha, saltando');
-        continue;
-      }
-
-      // Procesar cada campo de fecha modificado
-      //for (const field of camposValidos) {
-        const field = camposValidos[0]
-        const nuevoHorarioId = cambios[field];
-
-        console.log('📅 Field:', field);
-        console.log('⏰ Nuevo horarioId:', nuevoHorarioId);
-
-        // Validar que el field tenga el formato correcto (d20250107)
-        if (!field || !field.startsWith('d') || field.length !== 9) {
-          console.log('⚠️ Field no tiene formato de fecha válido, saltando');
-          continue;
-        }
-
-        // Extraer la fecha del field (formato: d20250107)
-        const fechaStr = field.substring(1); // Quitar la 'd'
-        const year = parseInt(fechaStr.substring(0, 4));
-        const month = parseInt(fechaStr.substring(4, 6)) - 1; // Mes base 0
-        const day = parseInt(fechaStr.substring(6, 8));
-
-        console.log('📅 Fecha extraída - Year:', year, 'Month:', month, 'Day:', day);
-
-        const fecha = new Date(year, month, day);
-
-        // Validar que la fecha sea válida
-        if (isNaN(fecha.getTime())) {
-          console.log('❌ Fecha inválida generada, saltando');
-          continue;
-        }
-
-        console.log('🔄 Celda editada:', { personalId, fecha: formatDate(fecha, 'yyyy-MM-dd', 'en-US'), nuevoHorarioId });
-
-        // Guardar solo esta celda específica (POST o PUT según corresponda)
-        await this.guardarHorarioIndividual(personalId, fecha, nuevoHorarioId);
-      //} // Cierre del for de camposValidos
-    } // Cierre del for de changes
-
+  
+  
+    const personalId = e.key;
+    const cambios = e.newData;
+  
+  
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('👤 PersonalId:', personalId);
+    console.log('🔄 Cambios detectados:', cambios);
+  
+  
+    // Filtrar solo los campos de fecha (d20250107)
+    const camposValidos = Object.keys(cambios).filter(key => key.startsWith('d') && key.length === 9);
+  
+  
+    console.log('📝 Campos de fecha modificados:', camposValidos);
+  
+  
+    if (camposValidos.length === 0) {
+      console.log('⚠️ No hay cambios en columnas de fecha');
+      return;
+    }
+  
+  
+    const field = camposValidos[0];
+    const nuevoHorarioId = cambios[field];
+  
+  
+    console.log('📅 Field detectado:', field);
+    console.log('⏰ Nuevo horarioId:', nuevoHorarioId);
+  
+  
+    // Buscar la columna correspondiente
+    const columna = this.columnasFechas.find(col => col.field === field);
+   
+    if (!columna) {
+      console.log('❌ No se encontró la columna para el field:', field);
+      return;
+    }
+  
+  
+    console.log('✅ Columna encontrada:', {
+      field: columna.field,
+      caption: columna.caption,
+      date: columna.date.toISOString(),
+      year: columna.date.getFullYear(),
+      month: columna.date.getMonth() + 1,
+      day: columna.date.getDate()
+    });
+  
+  
+    const fecha = columna.date;
+  
+  
+    // Guardar solo esta celda específica
+    await this.guardarHorarioIndividual(personalId, fecha, nuevoHorarioId);
+   
     console.log('✅ onCellValueChanged COMPLETADO');
   }
+  
+
+
 
   async guardarHorarioIndividual(personalId: number, fecha: Date, horarioCabeceraId: number | null) {
     console.log('💾 guardarHorarioIndividual - INICIO');

@@ -196,18 +196,19 @@
 
               <!-- Grid Principal con celdas editables -->
               <dx-data-grid
-                *ngIf="!cargandoPersonal && columnasFechas.length > 0"
-                [dataSource]="personalHorarios"
-                keyExpr="nEmpleado"
-                [showBorders]="false"
-                [allowColumnResizing]="true"
-                [columnAutoWidth]="true"
-                [selection]="{ mode: 'multiple' }"
-                (onSelectionChanged)="onMainGridSelectionChanged($event)"
-                (onSaved)="onCellValueChanged($event)"
-                [hoverStateEnabled]="true"
-                [rowAlternationEnabled]="true"
-              >
+              *ngIf="!cargandoPersonal && columnasFechas.length > 0"
+              [dataSource]="personalHorarios"
+              keyExpr="nEmpleado"
+              [showBorders]="false"
+              [allowColumnResizing]="true"
+              [columnAutoWidth]="true"
+              [selection]="{ mode: 'multiple' }"
+              (onSelectionChanged)="onMainGridSelectionChanged($event)"
+              (onRowUpdating)="onCellValueChanged($event)"
+              [hoverStateEnabled]="true"
+              [rowAlternationEnabled]="true"
+            >
+
                 <dxo-scrolling mode="standard"></dxo-scrolling>
                 <dxo-editing
                   mode="cell"
