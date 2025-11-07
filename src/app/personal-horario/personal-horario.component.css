@@ -1,142 +1,142 @@
 ::ng-deep .dx-dropdowneditor-active{
-    background-color: #ffcc00; 
-    color: #ffffff; 
+  background-color: #ffcc00;
+  color: #ffffff;
 }
 
 /* Estilo para el encabezado de la columna "Nombres" - fondo azul */
 ::ng-deep .dx-datagrid-headers .dx-header-row > td:first-child {
-    background-color: #0d6efd !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
+  background-color: #0d6efd !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
 }
 
 /* Asegurar que la columna fija también tenga el estilo */
 ::ng-deep .dx-datagrid-headers .dx-fixed-columns .dx-header-row > td:first-child {
-    background-color: #0d6efd !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
+  background-color: #0d6efd !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
 }
 
 /* Estilo para las celdas de la columna "Nombres" - opcional para dar continuidad */
 ::ng-deep .dx-datagrid-rowsview .dx-row > td:first-child {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    color: #212529;
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #212529;
 }
 
 /* Hover en las celdas de nombres */
 ::ng-deep .dx-datagrid-rowsview .dx-row:hover > td:first-child {
-    background-color: #e9ecef;
+  background-color: #e9ecef;
 }
 
 /* Animaciones */
 @keyframes slideIn {
-    from {
-      transform: translateX(400px);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes slideOut {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(400px);
-      opacity: 0;
-    }
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
 }
 
 /* Loading spinner personalizado */
 .spinner-border {
-    width: 3rem;
-    height: 3rem;
-    border-width: 0.3em;
+  width: 3rem;
+  height: 3rem;
+  border-width: 0.3em;
 }
 
 /* Mejora visual de las cards */
 .card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.08) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08) !important;
 }
 
 /* Badge animado */
 .badge {
-    animation: pulse 2s infinite;
+  animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
-    }
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* Botones deshabilitados más claros */
 .dx-button.dx-state-disabled {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 
 /* Mejora del grid - headers generales */
 ::ng-deep .dx-datagrid-headers {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    color: #6c757d;
+  background-color: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #6c757d;
 }
 
 /* Headers de las columnas de fecha - azul claro */
 ::ng-deep .dx-datagrid-headers .dx-header-row > td:not(:first-child):not(.dx-command-select) {
-    background-color: #cfe2ff;
-    color: #084298;
-    font-weight: 600;
+  background-color: #cfe2ff;
+  color: #084298;
+  font-weight: 600;
 }
 
 /* Empty state icon animation */
 .fa-users-slash {
-    animation: fadeIn 0.5s ease-in;
+  animation: fadeIn 0.5s ease-in;
 }
 
 @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: scale(0.8);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Mejora visual de filas alternadas */
 ::ng-deep .dx-row-alt {
-    background-color: #fafbfc;
+  background-color: #fafbfc;
 }
 
 /* Mejora del hover en filas */
 ::ng-deep .dx-datagrid-rowsview .dx-row:hover {
-    background-color: #f1f3f5;
+  background-color: #f1f3f5;
 }
 
 /* Estilo para las celdas de selección */
 ::ng-deep .dx-command-select {
-    background-color: #f8f9fa !important;
+  background-color: #f8f9fa !important;
 }
 
 /* Borde derecho para separar columna de nombres */
 ::ng-deep .dx-datagrid-rowsview .dx-row > td:first-child,
 ::ng-deep .dx-datagrid-headers .dx-header-row > td:first-child {
-    border-right: 2px solid #dee2e6 !important;
+  border-right: 2px solid #dee2e6 !important;
 }

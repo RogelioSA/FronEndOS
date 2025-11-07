@@ -27,10 +27,10 @@
 
             <div class="col-md-2">
               <label class="form-label fw-medium small mb-1">Fecha Desde</label>
-              <dx-date-box 
-                placeholder="Fecha Desde" 
+              <dx-date-box
+                placeholder="Fecha Desde"
                 [(value)]="fechaDesde"
-                displayFormat="dd/MM/yyyy" 
+                displayFormat="dd/MM/yyyy"
                 type="date"
                 [readOnly]="true"
               ></dx-date-box>
@@ -38,19 +38,19 @@
 
             <div class="col-md-2">
               <label class="form-label fw-medium small mb-1">Fecha Hasta</label>
-              <dx-date-box 
-                placeholder="Fecha Hasta" 
+              <dx-date-box
+                placeholder="Fecha Hasta"
                 [(value)]="fechaHasta"
-                displayFormat="dd/MM/yyyy" 
+                displayFormat="dd/MM/yyyy"
                 type="date"
                 [readOnly]="true"
               ></dx-date-box>
             </div>
 
             <div class="col-md-4 text-end">
-              <dx-button 
-                text="Buscar Personal" 
-                stylingMode="contained" 
+              <dx-button
+                text="Buscar Personal"
+                stylingMode="contained"
                 type="default"
                 icon="search"
                 [width]="150"
@@ -62,7 +62,7 @@
       </div>
 
       <!-- Info Alert cuando no hay orden seleccionada -->
-      <div *ngIf="!ordenCombo || !fechaDesde || !fechaHasta" 
+      <div *ngIf="!ordenCombo || !fechaDesde || !fechaHasta"
            class="alert alert-info border-0 text-center py-4 mb-0">
         <i class="fas fa-info-circle fs-5 mb-2 d-block"></i>
         <p class="mb-0 fw-medium">Selecciona una orden de trabajo y presiona <strong>Buscar Personal</strong> para comenzar</p>
@@ -70,7 +70,7 @@
 
       <!-- Contenido Principal -->
       <div *ngIf="ordenCombo && fechaDesde && fechaHasta" class="row g-3">
-        
+
         <!-- Personal Disponible -->
         <div class="col-lg-3">
           <div class="card border-0 shadow-sm h-100">
@@ -82,42 +82,41 @@
               </div>
             </div>
 
-            <!-- En Personal Disponible -->
-<div class="card-body p-0">
-  <!-- Loading State -->
-  <div *ngIf="cargandoPersonal" class="text-center py-5">
-    <div class="spinner-border text-primary mb-3" role="status">
-      <span class="visually-hidden">Cargando...</span>
-    </div>
-    <p class="text-muted small">Cargando personal disponible...</p>
-  </div>
+            <div class="card-body p-0">
+              <!-- Loading State -->
+              <div *ngIf="cargandoPersonal" class="text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="text-muted small">Cargando personal disponible...</p>
+              </div>
 
-  <!-- Empty State cuando no se ha buscado -->
-  <div *ngIf="!cargandoPersonal && columnasFechas.length === 0" class="text-center py-5">
-    <i class="fas fa-search text-muted fs-1 mb-3 d-block"></i>
-    <p class="text-muted mb-0">Presiona <strong>Buscar Personal</strong></p>
-    <small class="text-muted">para cargar el personal disponible</small>
-  </div>
+              <!-- Empty State cuando no se ha buscado -->
+              <div *ngIf="!cargandoPersonal && columnasFechas.length === 0" class="text-center py-5">
+                <i class="fas fa-search text-muted fs-1 mb-3 d-block"></i>
+                <p class="text-muted mb-0">Presiona <strong>Buscar Personal</strong></p>
+                <small class="text-muted">para cargar el personal disponible</small>
+              </div>
 
-  <!-- Grid Disponible -->
-  <dx-data-grid 
-    *ngIf="!cargandoPersonal && columnasFechas.length > 0"
-    [dataSource]="personalDisponibles"
-    keyExpr="nEmpleado"
-    [showBorders]="false"
-    [selection]="{ mode: 'multiple' }"
-    (onSelectionChanged)="onDisponiblesSelectionChanged($event)"
-    [hoverStateEnabled]="true"
-    [rowAlternationEnabled]="true"
-  >
-    <dxo-scrolling mode="virtual"></dxo-scrolling>
-    <dxi-column type="selection" [width]="50"></dxi-column>
-    <dxi-column dataField="cEmpleado" caption="Nombre"></dxi-column>
-  </dx-data-grid>
-</div>
+              <!-- Grid Disponible -->
+              <dx-data-grid
+                *ngIf="!cargandoPersonal && columnasFechas.length > 0"
+                [dataSource]="personalDisponibles"
+                keyExpr="nEmpleado"
+                [showBorders]="false"
+                [selection]="{ mode: 'multiple' }"
+                (onSelectionChanged)="onDisponiblesSelectionChanged($event)"
+                [hoverStateEnabled]="true"
+                [rowAlternationEnabled]="true"
+              >
+                <dxo-scrolling mode="virtual"></dxo-scrolling>
+                <dxi-column type="selection" [width]="50"></dxi-column>
+                <dxi-column dataField="cEmpleado" caption="Nombre"></dxi-column>
+              </dx-data-grid>
+            </div>
 
             <div class="card-footer bg-white border-top py-3" *ngIf="columnasFechas.length > 0">
-              <dx-button 
+              <dx-button
                 text="Asignar Seleccionados"
                 stylingMode="contained"
                 type="success"
@@ -141,11 +140,33 @@
                 <div>
                   <h6 class="mb-0 fw-semibold">
                     Personal Asignado
-                  </h6>                
+                  </h6>
                 </div>
-                
-                <div class="d-flex gap-2">
-                  <dx-button 
+
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                  <!-- Selector de horario para asignación masiva -->
+                  <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0 small fw-medium">Horario:</label>
+                    <dx-select-box
+                      [dataSource]="horarios"
+                      displayExpr="cNombre"
+                      valueExpr="nCodigo"
+                      [(value)]="horarioSeleccionadoMasivo"
+                      placeholder="Selecciona horario"
+                      [width]="200"
+                    ></dx-select-box>
+
+                    <dx-button
+                      text="Asignar horario a seleccionados"
+                      stylingMode="contained"
+                      type="success"
+                      icon="clock"
+                      [disabled]="!horarioSeleccionadoMasivo || seleccionadosMain.length === 0"
+                      (onClick)="asignarHorarioMasivo()"
+                    ></dx-button>
+                  </div>
+
+                  <dx-button
                     text="Desasignar"
                     stylingMode="outlined"
                     type="danger"
@@ -153,52 +174,81 @@
                     [disabled]="seleccionadosMain.length === 0"
                     (onClick)="desasignarSeleccionados()"
                   ></dx-button>
-
                 </div>
               </div>
             </div>
 
-            <!-- En Personal Asignado -->
-<div class="card-body p-0">
-  <!-- Loading State -->
-  <div *ngIf="cargandoPersonal" class="text-center py-5">
-    <div class="spinner-border text-primary mb-3" role="status">
-      <span class="visually-hidden">Cargando...</span>
-    </div>
-    <p class="text-muted small">Preparando calendario de asignaciones...</p>
-  </div>
+            <div class="card-body p-0">
+              <!-- Loading State -->
+              <div *ngIf="cargandoPersonal" class="text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="text-muted small">Preparando calendario de asignaciones...</p>
+              </div>
 
-  <!-- Empty State cuando no se ha buscado -->
-  <div *ngIf="!cargandoPersonal && columnasFechas.length === 0" class="text-center py-5">
-    <i class="fas fa-search text-muted fs-1 mb-3 d-block"></i>
-    <p class="text-muted mb-0">Presiona <strong>Buscar Personal</strong></p>
-    <small class="text-muted">para ver el calendario de asignaciones</small>
-  </div>
+              <!-- Empty State cuando no se ha buscado -->
+              <div *ngIf="!cargandoPersonal && columnasFechas.length === 0" class="text-center py-5">
+                <i class="fas fa-search text-muted fs-1 mb-3 d-block"></i>
+                <p class="text-muted mb-0">Presiona <strong>Buscar Personal</strong></p>
+                <small class="text-muted">para ver el calendario de asignaciones</small>
+              </div>
 
-  <!-- Grid Principal -->
-  <dx-data-grid 
-    *ngIf="!cargandoPersonal && columnasFechas.length > 0"
-    [dataSource]="personalHorarios"
-    keyExpr="nEmpleado"
-    [showBorders]="false"
-    [allowColumnResizing]="true"
-    [columnAutoWidth]="true"
-    [selection]="{ mode: 'multiple' }"
-    (onSelectionChanged)="onMainGridSelectionChanged($event)"
-    [hoverStateEnabled]="true"
-    [rowAlternationEnabled]="true"
-  >
-    <!-- ... resto del grid ... -->
-  </dx-data-grid>
+              <!-- Grid Principal con celdas editables -->
+              <dx-data-grid
+                *ngIf="!cargandoPersonal && columnasFechas.length > 0"
+                [dataSource]="personalHorarios"
+                keyExpr="nEmpleado"
+                [showBorders]="false"
+                [allowColumnResizing]="true"
+                [columnAutoWidth]="true"
+                [selection]="{ mode: 'multiple' }"
+                (onSelectionChanged)="onMainGridSelectionChanged($event)"
+                (onSaved)="onCellValueChanged($event)"
+                [hoverStateEnabled]="true"
+                [rowAlternationEnabled]="true"
+              >
+                <dxo-scrolling mode="standard"></dxo-scrolling>
+                <dxo-editing
+                  mode="cell"
+                  [allowUpdating]="true"
+                ></dxo-editing>
 
-  <!-- Empty State cuando ya hay columnas pero no hay personal -->
-  <div *ngIf="!cargandoPersonal && columnasFechas.length > 0 && personalHorarios.length === 0" 
-       class="text-center py-5">
-    <i class="fas fa-users-slash text-muted fs-1 mb-3 d-block"></i>
-    <p class="text-muted mb-0">No hay personal asignado aún</p>
-    <small class="text-muted">Selecciona personal de la lista disponible</small>
-  </div>
-</div>
+                <dxi-column type="selection" [width]="50" [fixed]="true"></dxi-column>
+
+                <dxi-column
+                  dataField="cEmpleado"
+                  caption="Nombres"
+                  [width]="200"
+                  [fixed]="true"
+                  [allowEditing]="false"
+                ></dxi-column>
+
+                <!-- Columnas dinámicas de fechas con lookup editable -->
+                <dxi-column
+                  *ngFor="let col of columnasFechas"
+                  [dataField]="col.field"
+                  [caption]="col.caption"
+                  [width]="130"
+                  alignment="center"
+                  [allowEditing]="true"
+                >
+                  <dxo-lookup
+                    [dataSource]="horarios"
+                    displayExpr="cNombre"
+                    valueExpr="nCodigo"
+                  ></dxo-lookup>
+                </dxi-column>
+              </dx-data-grid>
+
+              <!-- Empty State cuando ya hay columnas pero no hay personal -->
+              <div *ngIf="!cargandoPersonal && columnasFechas.length > 0 && personalHorarios.length === 0"
+                   class="text-center py-5">
+                <i class="fas fa-users-slash text-muted fs-1 mb-3 d-block"></i>
+                <p class="text-muted mb-0">No hay personal asignado aún</p>
+                <small class="text-muted">Selecciona personal de la lista disponible</small>
+              </div>
+            </div>
 
             <!-- Footer con información -->
             <div class="card-footer bg-light border-top py-2" *ngIf="columnasFechas.length > 0 && personalHorarios.length > 0">
@@ -224,15 +274,15 @@
 </div>
 
 <!-- Toast Message personalizado -->
-<div id="messageBox" 
-     style="display:none; 
-            position:fixed; 
-            right:20px; 
-            bottom:20px; 
-            background:#d1e7dd; 
-            color:#0f5132; 
-            padding:16px 20px; 
-            border-radius:8px; 
+<div id="messageBox"
+     style="display:none;
+            position:fixed;
+            right:20px;
+            bottom:20px;
+            background:#d1e7dd;
+            color:#0f5132;
+            padding:16px 20px;
+            border-radius:8px;
             font-weight:500;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             border-left: 4px solid #198754;

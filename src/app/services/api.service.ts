@@ -13,11 +13,11 @@ export class ApiService{
     private getToken(): string | null {
       return localStorage.getItem('auth_token'); // ya lo guardas así en login()
     }
-    
+
     getHttpHeaders(): HttpHeaders {
       const token = localStorage.getItem('auth_token');
-      return token 
-        ? new HttpHeaders().set('Authorization', `Bearer ${token}`) 
+      return token
+        ? new HttpHeaders().set('Authorization', `Bearer ${token}`)
         : new HttpHeaders();
     }
 
@@ -42,7 +42,7 @@ export class ApiService{
         headers: this.getHttpHeaders()
       });
     }
-    
+
     actualizarRol(roleId: number, data: any): Observable<any> {
       return this.https.put(`${this.baseUrl}/security/Rol/${roleId}`, data, {
         headers: this.getHttpHeaders()
@@ -54,7 +54,7 @@ export class ApiService{
         headers: this.getHttpHeaders()
       });
     }
-    
+
     sincronizarDepartamento(departamento: any ): Observable<any> {
         return this.https.get(`${this.baseUrl}/Maestro/SincronizarDepartamento`, {
           headers: this.getHeaders(),
@@ -182,7 +182,7 @@ export class ApiService{
           params: personal
         });
     }
-    
+
     updatePersonal(id: number, data: any): Observable<any> {
       return this.https.put(
         `${this.baseUrl}/general/Persona/${id}`,
@@ -194,7 +194,7 @@ export class ApiService{
     deletePersonal(id: number): Observable<any> {
       const headers = this.getHttpHeaders();
       const body = { id: id.toString() };
-    
+
       return this.https.request('DELETE', `${this.baseUrl}/general/Persona/${id}`, {
         headers,
         body
@@ -215,7 +215,7 @@ export class ApiService{
         { headers: this.getHttpHeaders() }
       );
     }
-    
+
     // 🔹 Editar (actualizar) personal existente
     editarPersonal(id: number, data: any): Observable<any> {
       return this.https.put(
@@ -265,7 +265,7 @@ export class ApiService{
     getRegistroAsistenciaPersonal(UsuarioId: string, fechaInicio: string, fechaFin: string): Observable<any> {
       return this.https.get(
         `${this.baseUrl}/rrhh/RegistroAsistenciaOrdenTrabajo/by_currentuser_and_range_date`,
-        { 
+        {
           headers: this.getHttpHeaders(),
           params: {
             UsuarioId,
@@ -274,8 +274,8 @@ export class ApiService{
           }
         }
       );
-    } 
-    
+    }
+
     //menu
 
     sincronizarMenu(menu: any ): Observable<any> {
@@ -298,7 +298,7 @@ export class ApiService{
             menus: menus
           };
         const headers = this.getHeaders();
-        
+
         return this.https.get<any>(url, { headers: headers, params: params });
     }
 
@@ -308,7 +308,7 @@ export class ApiService{
             nRol: rol
           };
         const headers = this.getHeaders();
-        
+
         return this.https.get<any>(url, { headers: headers, params: params });
     }
 
@@ -319,7 +319,7 @@ export class ApiService{
             usuarios: usuarios
           };
         const headers = this.getHeaders();
-        
+
         return this.https.get<any>(url, { headers: headers, params: params });
     }
 
@@ -339,7 +339,7 @@ export class ApiService{
     sincronizarTipoServicioEditar(tipoServicio: any): Observable<any> {
       // Clonar el objeto sin 'id'
       const { id, ...body } = tipoServicio;
-    
+
       return this.https.put(
         `${this.baseUrl}/mantto/MantenimientoTipo/${id}`, // ✅ id en la ruta
         body, // ✅ body sin el id
@@ -382,7 +382,7 @@ export class ApiService{
             nHorario: horario
           };
         const headers = this.getHeaders();
-        
+
         return this.https.get<any>(url, { headers: headers, params: params });
     }
 
@@ -400,7 +400,7 @@ export class ApiService{
             nSemana: semana
           };
         const headers = this.getHeaders();
-        
+
         return this.https.get<any>(url, { headers: headers, params: params });
     }
 
@@ -413,7 +413,7 @@ export class ApiService{
             nSemana: semana
           };
         const headers = this.getHeaders();
-        
+
         return this.https.post<any>(url, personalHorarios, { headers: headers, params: params });
     }
 
@@ -424,7 +424,7 @@ export class ApiService{
             dFechaFinal: fechaFinal
           };
         const headers = this.getHeaders();
-        
+
         return this.https.get<any>(url, { headers: headers, params: params });
     }
 
@@ -459,7 +459,7 @@ export class ApiService{
             nTipoActivo: tipoActivo
           };
         const headers = this.getHeaders();
-        
+
         return this.https.get<any>(url, { headers: headers, params: params });
     }
 
@@ -488,7 +488,7 @@ export class ApiService{
             nMarcaActivo: marcaActivo
           };
         const headers = this.getHeaders();
-        
+
         return this.https.get<any>(url, { headers: headers, params: params });
     }
 
@@ -523,16 +523,16 @@ export class ApiService{
       if (activo.nModelo !== undefined) params.nModelo = activo.nModelo;
       if (activo.nClientePropietario !== undefined) params.nClientePropietario = activo.nClientePropietario;
       if (activo.cTipo !== undefined) params.cTipo = activo.cTipo;
-      
+
       const headers = this.getHeaders();
-      
+
       return this.https.post<any>(url, parametros, { headers: headers, params: params });
     }
 
     getActivoPorCodigo(id: number): Observable<any> {
       const url = `${this.baseUrl}/patrimonial/Activo/${id}`;
       const headers = this.getHeaders();
-    
+
       return this.https.get<any>(url, { headers });
     }
 
@@ -545,14 +545,14 @@ export class ApiService{
     updateActivo(id: number, body: any): Observable<any> {
       const url = `${this.baseUrl}/patrimonial/Activo/${id}`;
       const headers = this.getHeaders();
-    
+
       return this.https.put<any>(url, body, { headers });
     }
 
     createActivo(body: any): Observable<any> {
       const url = `${this.baseUrl}/patrimonial/Activo`;
       const headers = this.getHeaders();
-    
+
       return this.https.post<any>(url, body, { headers });
     }
 
@@ -861,7 +861,7 @@ export class ApiService{
     const headers = this.getHeaders();
     return this.https.get<any>(url, { headers });
   }
-  
+
   registrarOrdenServicioMantenimientoExterno(data: {
     cabecera: {
       empresaId: number;
@@ -966,7 +966,7 @@ export class ApiService{
     const headers = this.getHeaders();
     return this.https.delete<any>(url, { headers });
   }
-  
+
   // grupo trabajo
 
   getGruposTrabajo(): Observable<any> {
@@ -1020,8 +1020,8 @@ export class ApiService{
     const url = `${this.baseUrl}/rrhh/GrupoTrabajo/${id}`;
     const headers = this.getHeaders();
     return this.https.delete<any>(url, { headers });
-  }  
-  
+  }
+
   //orden trabajo
   getOrdenesTrabajoMantenimientoExterno(): Observable<any> {
     const url = `${this.baseUrl}/mantto/OrdenTrabajo/MantenimientoExterno`;
@@ -1196,7 +1196,7 @@ export class ApiService{
     const headers = this.getHeaders();
     return this.https.delete<any>(url, { headers });
   }
-  
+
   //cuenta corriente
   listarCuentasCorrientesActivas(): Observable<any> {
     const url = `${this.baseUrl}/finanzas/CuentaCorriente/activos`;
@@ -1248,7 +1248,7 @@ export class ApiService{
   }
 
   //financiero
- 
+
   //mantenimiento tipo
   listarMantenimientosActivos(): Observable<any> {
     const url = `${this.baseUrl}/mantto/MantenimientoTipo/activos`;
@@ -1273,7 +1273,7 @@ export class ApiService{
     const headers = this.getHeaders();
     return this.https.delete<any>(url, { headers });
   }
-  
+
   //almacen
   listarAlmacenesActivos(): Observable<any> {
     const url = `${this.baseUrl}/logistica/Almacen/activos`;
@@ -1645,13 +1645,13 @@ export class ApiService{
       headers: this.getHttpHeaders()
     });
   }
-  
+
   actualizarMenu(id: number, data: any): Observable<any> {
     return this.https.put(`${this.baseUrl}/security/Formulario/${id}`, data, {
       headers: this.getHttpHeaders()
     });
   }
-  
+
   eliminarMenu(id: number): Observable<any> {
     return this.https.delete(`${this.baseUrl}/security/Formulario/${id}`, {
       headers: this.getHttpHeaders()
@@ -1683,7 +1683,7 @@ export class ApiService{
     const headers = this.getHeaders();
     return this.https.delete(`${this.baseUrl}/corporativo/EstructuraOrganizacionalTipo/${id}`, { headers });
   }
-  
+
   //contrato personal
   listarContratoPersonal(): Observable<any> {
     const headers = this.getHeaders();
@@ -1696,7 +1696,7 @@ export class ApiService{
     const headers = this.getHeaders();
     return this.https.get(`${this.baseUrl}/security/Usuario`, { headers });
   }
-  
+
 
   //usuarioempresa
   listarUsuarioEmpresaPorUsuario(usuarioId: number): Observable<any> {
@@ -1704,7 +1704,7 @@ export class ApiService{
     const url = `${this.baseUrl}/security/UsuarioEmpresa/usuario/${usuarioId}`;
     return this.https.get<any>(url, { headers });
   }
-  
+
   //orden servicio cabecera
   listarOrdenServicioCabecera(): Observable<any> {
     const headers = this.getHeaders();
@@ -1748,7 +1748,7 @@ export class ApiService{
     const url = `${this.baseUrl}/mantto/OrdenTrabajoCabecera/${id}`;
     return this.https.put<any>(url, data, { headers });
   }
-  
+
   eliminarOrdenTrabajoCabecera(id: number): Observable<any> {
     const headers = this.getHeaders();
     const url = `${this.baseUrl}/mantto/OrdenTrabajoCabecera/${id}`;
@@ -1764,7 +1764,7 @@ export class ApiService{
   eliminarOrdenTrabajoPersonal(id: number): Observable<any> {
     const headers = this.getHeaders();
     const url = `${this.baseUrl}/mantto/OrdenTrabajoPersonal/${id}`;
-    return this.https.delete<any>(url, { headers }); 
+    return this.https.delete<any>(url, { headers });
   }
 
   //registroasistencia
@@ -1779,19 +1779,19 @@ export class ApiService{
 
   subirAdjunto(modulo: number, archivo: File): Observable<any> {
     const url = `${this.baseUrl}/general/Adjunto/${modulo}`;
-  
+
     const formData = new FormData();
     formData.append('Archivo', archivo);
-  
+
     const token = this.getToken();
     let headers = new HttpHeaders();
     if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
     }
-  
+
     return this.https.post<any>(url, formData, { headers });
   }
-  
+
 
   crearPersonaAdjuntosUseCase(data: any): Observable<any> {
     const url = `${this.baseUrl}/general/PersonaAdjuntosUseCase`;
@@ -1818,6 +1818,31 @@ export class ApiService{
     return this.https.get(
       `${this.baseUrl}/security/Usuario`,
       { headers: this.getHttpHeaders() }
+    );
+  }
+
+  obtenerHorariosPorOrdenYRango(ordenTrabajoCabeceraId: number, inicio: string, fin: string): Observable<any> {
+    const headers = this.getHttpHeaders();
+    const params = {
+      OrdenTrabajoCabeceraId: ordenTrabajoCabeceraId.toString(),
+      Inicio: inicio,
+      Fin: fin
+    };
+
+    return this.https.get(
+      'https://7p4yx3l258.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario/by_ot_and_date_range',
+      { headers, params }
+    );
+  }
+
+// Guardar horario individual (POST)
+  guardarOrdenTrabajoHorario(payload: any): Observable<any> {
+    const headers = this.getHttpHeaders();
+
+    return this.https.post(
+      'https://7p4yx3l258.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario',
+      payload,
+      { headers }
     );
   }
 
