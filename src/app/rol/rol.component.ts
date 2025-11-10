@@ -69,12 +69,17 @@ export class RolComponent implements OnInit {
   }
 
   actualizar(event: any) {
-    // roleId viene del registro antiguo
+    const empresaId = localStorage.getItem('empresa_id');
+    
+    if (!empresaId) {
+      console.error('No se encontró empresa_id en localStorage');
+      return;
+    }
+    
     const roleId = event.oldData.nCodigo;  
   
-    // armamos el body en el formato que la API espera
     const registro = {
-      empresaId: 0,                        // O dinámico si lo tienes
+      empresaId: parseInt(empresaId),
       name: event.newData.cNombre || event.oldData.cNombre
     };
   
@@ -93,9 +98,11 @@ export class RolComponent implements OnInit {
   
 
   insertar(event: any) {
+    const empresaId = localStorage.getItem('empresa_id');
+    
     let registro = {
-      empresaId: 0,                        // O el id real de la empresa si lo tienes dinámico
-      name: event.data.cNombre             // Aquí mapeas el campo del grid a "name"
+      empresaId: empresaId ? parseInt(empresaId) : 0,
+      name: event.data.cNombre
     };
   
     this.apiService.sincronizarRol(registro).subscribe(

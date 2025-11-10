@@ -103,48 +103,45 @@ export class RolMenuComponent {
     }
 
     try {
-      // Obtener los IDs que están seleccionados actualmente
       const idsSeleccionados = seleccionMenu;
       
       console.log('Guardando menús seleccionados:', idsSeleccionados);
 
-      // Actualizar cada menú seleccionado usando actualizarMenu
-      const promises = idsSeleccionados.map(async (menuId: number) => {
-        // Buscar el menú completo en la lista
-        const menuCompleto: any = this.menus.find((m: any) => m.nCodigo === menuId);
-        
-        if (menuCompleto && menuCompleto.datosCompletos) {
-          const datos = menuCompleto.datosCompletos;
+      // Filtrar promesas válidas (cuando menuCompleto existe)
+      const promises = idsSeleccionados
+        .map((menuId: number) => {
+          const menuCompleto: any = this.menus.find((m: any) => m.nCodigo === menuId);
           
-          // Preparar el objeto con el formato requerido por la API
-          const data = {
-            parentId: datos.parentId || 0,
-            moduloId: datos.moduloId || 0,
-            nombre: datos.nombre || '',
-            nombreCorto: datos.nombreCorto || '',
-            descripcion: datos.descripcion || '',
-            controlador: datos.controlador || '',
-            action: datos.action || '',
-            icono: datos.icono || '',
-            claimType: datos.claimType || '',
-            orden: datos.orden || 0,
-            estado: datos.estado ?? true
-          };
+          if (menuCompleto && menuCompleto.datosCompletos) {
+            const datos = menuCompleto.datosCompletos;
+            
+            const data = {
+              id: menuId, // AGREGADO: id es requerido en el body
+              parentId: datos.parentId || 0,
+              moduloId: datos.moduloId || 0,
+              nombre: datos.nombre || '',
+              nombreCorto: datos.nombreCorto || '',
+              descripcion: datos.descripcion || '',
+              controlador: datos.controlador || '',
+              action: datos.action || '',
+              icono: datos.icono || '',
+              claimType: datos.claimType || '',
+              orden: datos.orden || 0,
+              estado: datos.estado ?? true
+            };
 
-          // Llamar a actualizarMenu para cada menú
-          const obser = this.apiService.actualizarMenu(menuId, data);
-          return firstValueFrom(obser);
-        }
-      });
+            return firstValueFrom(this.apiService.actualizarMenu(menuId, data));
+          }
+          return null; // Retornar null si no hay datos
+        })
+        .filter(p => p !== null); // Filtrar nulls
 
-      // Esperar a que todas las actualizaciones terminen
       await Promise.all(promises);
       
       this.mensajeToast = 'Cambios guardados exitosamente';
       this.tipoToast = 'success';
       this.visibleToast = true;
       
-      // Recargar los datos
       await this.traerRolMenu(seleccionRol[0].toString());
 
     } catch (error) {
