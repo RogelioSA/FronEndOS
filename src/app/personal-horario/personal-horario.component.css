@@ -140,3 +140,32 @@
 ::ng-deep .dx-datagrid-headers .dx-header-row > td:first-child {
   border-right: 2px solid #dee2e6 !important;
 }
+
+/* Reducir fuente general del grid */
+::ng-deep .dx-datagrid {
+  font-size: 0.625rem !important; /* ≈ 10px */
+  line-height: 1.1 !important;
+}
+
+/* Encabezados */
+::ng-deep .dx-datagrid-headers .dx-header-row > td {
+  font-size: 0.625rem !important;
+  padding: 3px 5px !important;
+}
+
+/* Filas del grid */
+::ng-deep .dx-datagrid-rowsview .dx-row > td {
+  font-size: 0.625rem !important;
+  padding: 3px 5px !important;
+}
+
+/* Inputs y lookups dentro del grid */
+::ng-deep .dx-editor-cell .dx-texteditor-input {
+  font-size: 0.625rem !important;
+  padding: 2px 4px !important;
+}
+
+/* Altura de fila ajustada para mantener proporción */
+::ng-deep .dx-datagrid-rowsview .dx-row {
+  height: 24px !important;
+}

@@ -35,14 +35,15 @@ export class HorarioComponent {
 
   tiposEvento = [
     { id: 0, nombre: 'Entrada' },
-    { id: 1, nombre: 'Entrada' },
-    { id: 2, nombre: 'Salida' }
+    { id: 1, nombre: 'Salida' },
+    { id: 2, nombre: 'Ing. Refrig' },
+    { id: 3, nombre: 'Sal. Refrig' }
   ];
 
   // Función para manejar el cambio de días de trabajo
   onDiasTrabajoChanged = (newData: any, value: any, currentRowData: any) => {
     newData.nDiasTrabajo = value;
-    
+
     // Si es una nueva fila o se está editando
     if (value && value > 0 && value <= 7) {
       // Aquí podrías generar automáticamente los días si lo deseas
@@ -59,11 +60,11 @@ export class HorarioComponent {
   async traerHorarios() {
     this.blockUI.start('Cargando...');
     console.log("📅 Trayendo horarios...");
-  
+
     try {
       const obser = this.apiService.getHorarios();
       const result = await firstValueFrom(obser);
-  
+
       this.horarios = result.map((h: any) => ({
         nCodigo: h.id,
         cNombre: h.nombre,
@@ -71,7 +72,7 @@ export class HorarioComponent {
         nDiasTrabajo: h.horarioDetalles?.length || 0,
         horarioDetalles: h.horarioDetalles
       }));
-  
+
       console.log("✅ Horarios cargados:", this.horarios);
     } catch (error) {
       console.error('❌ Error trayendo los horarios:', error);
@@ -82,18 +83,18 @@ export class HorarioComponent {
 
   mostrarDetalleHorario(e: any) {
     const filaSeleccionada = e.selectedRowsData?.[0];
-    
+
     if (!filaSeleccionada) {
       this.detallesEventos = [];
       this.idHorarioActual = null;
       return;
     }
-  
+
     this.idHorarioActual = filaSeleccionada.nCodigo;
     console.log("🕓 Horario seleccionado:", this.idHorarioActual);
-  
+
     const horario = this.horarios.find(h => h.nCodigo === this.idHorarioActual);
-    
+
     if (!horario || !horario.horarioDetalles) {
       this.detallesEventos = [];
       return;
@@ -103,7 +104,7 @@ export class HorarioComponent {
     this.detallesEventos = [];
     horario.horarioDetalles.forEach((detalle: any) => {
       const eventos = detalle.horarioDetalleEventos || [];
-      
+
       eventos.forEach((evento: any) => {
         this.detallesEventos.push({
           keyUnico: `${detalle.id}-${evento.id}`, // Key único para el grid
@@ -111,7 +112,7 @@ export class HorarioComponent {
           eventoId: evento.id,
           diaSemana: detalle.diaSemana,
           nombreDia: this.obtenerNombreDia(detalle.diaSemana),
-          tipoEvento: (evento.tipoEvento === 0 || evento.tipoEvento === 1) ? 1 : 2,         
+          tipoEvento: (evento.tipoEvento === 0 || evento.tipoEvento === 1) ? 1 : 2,
           hora: this.formatearHora(evento.hora),
           diferenciaDia: evento.diferenciaDia || 0,
           ventanaMin: evento.ventanaMin || 75,
@@ -131,10 +132,10 @@ export class HorarioComponent {
   actualizar(event: any) {
     const idHorario = event.oldData.nCodigo;
     const nuevosDatos = event.newData;
-  
+
     // Si se cambió el número de días, generar días automáticamente
     let detallesParaEnviar = this.construirDetallesDesdeHorario(idHorario);
-    
+
     if (nuevosDatos.nDiasTrabajo && nuevosDatos.nDiasTrabajo !== event.oldData.nDiasTrabajo) {
       detallesParaEnviar = this.generarDiasAutomaticos(nuevosDatos.nDiasTrabajo);
     }
@@ -147,14 +148,14 @@ export class HorarioComponent {
       activo: true,
       detalles: detallesParaEnviar
     };
-  
+
     this.apiService.updateHorario(idHorario, datos).subscribe(
       (response: any) => {
         console.log('✅ Horario actualizado correctamente:', response);
         this.traerHorarios().then(() => {
           // Reseleccionar el horario
-          this.mostrarDetalleHorario({ 
-            selectedRowsData: [{ nCodigo: idHorario }] 
+          this.mostrarDetalleHorario({
+            selectedRowsData: [{ nCodigo: idHorario }]
           });
         });
       },
@@ -166,7 +167,7 @@ export class HorarioComponent {
 
   insertar(event: any) {
     const numDias = event.data.nDiasTrabajo || 5; // Por defecto 5 días
-    
+
     const datos = {
       empresaId: this.empresaId,
       nombre: event.data.cNombre,
@@ -174,7 +175,7 @@ export class HorarioComponent {
       activo: true,
       detalles: this.generarDiasAutomaticos(numDias)
     };
-  
+
     this.apiService.createHorario(datos).subscribe(
       (response: any) => {
         console.log('✅ Horario insertado correctamente:', response);
@@ -188,7 +189,7 @@ export class HorarioComponent {
 
   eliminar(event: any) {
     const id = event.data.nCodigo;
-  
+
     this.apiService.sincronizarHorario(id).subscribe(
       (response: any) => {
         console.log('✅ Horario eliminado correctamente:', response);
@@ -205,7 +206,7 @@ export class HorarioComponent {
   // Generar días automáticamente según el número indicado
   generarDiasAutomaticos(numDias: number): any[] {
     const detalles = [];
-    
+
     for (let i = 1; i <= numDias; i++) {
       detalles.push({
         id: 0,
@@ -236,7 +237,7 @@ export class HorarioComponent {
         ]
       });
     }
-    
+
     return detalles;
   }
 
@@ -264,28 +265,28 @@ export class HorarioComponent {
     // Intentar con event.key primero, si no existe usar event.oldData.keyUnico
     const keyBuscado = event.key || event.oldData?.keyUnico;
     console.log('🔍 Buscando key:', keyBuscado);
-    
+
     const index = this.detallesEventos.findIndex(e => e.keyUnico === keyBuscado);
     console.log('🔍 Index encontrado:', index);
-    
+
     if (index !== -1) {
       // Fusionar los datos antiguos con los nuevos
       const eventoActualizado = {
         ...this.detallesEventos[index],
         ...event.newData
       };
-      
+
       // Asegurarse de formatear la hora si viene en newData
       if (event.newData.hora !== undefined) {
         eventoActualizado.hora = this.formatearHora(event.newData.hora);
         console.log('🕐 Hora formateada:', eventoActualizado.hora);
       }
-      
+
       // Actualizar nombre del día si cambió
       if (event.newData.diaSemana !== undefined) {
         eventoActualizado.nombreDia = this.obtenerNombreDia(event.newData.diaSemana);
       }
-      
+
       this.detallesEventos[index] = eventoActualizado;
       console.log('✅ Evento actualizado en array:', this.detallesEventos[index]);
     } else {
@@ -313,8 +314,8 @@ export class HorarioComponent {
       (response: any) => {
         console.log('✅ Evento actualizado correctamente:', response);
         this.traerHorarios().then(() => {
-          this.mostrarDetalleHorario({ 
-            selectedRowsData: [{ nCodigo: this.idHorarioActual }] 
+          this.mostrarDetalleHorario({
+            selectedRowsData: [{ nCodigo: this.idHorarioActual }]
           });
         });
       },
@@ -365,8 +366,8 @@ export class HorarioComponent {
       (response: any) => {
         console.log('✅ Evento insertado correctamente:', response);
         this.traerHorarios().then(() => {
-          this.mostrarDetalleHorario({ 
-            selectedRowsData: [{ nCodigo: this.idHorarioActual }] 
+          this.mostrarDetalleHorario({
+            selectedRowsData: [{ nCodigo: this.idHorarioActual }]
           });
         });
       },
@@ -408,8 +409,8 @@ export class HorarioComponent {
       (response: any) => {
         console.log('✅ Evento eliminado correctamente:', response);
         this.traerHorarios().then(() => {
-          this.mostrarDetalleHorario({ 
-            selectedRowsData: [{ nCodigo: this.idHorarioActual }] 
+          this.mostrarDetalleHorario({
+            selectedRowsData: [{ nCodigo: this.idHorarioActual }]
           });
         });
       },
@@ -423,7 +424,7 @@ export class HorarioComponent {
   reconstruirDetallesDesdeEventos(): any[] {
     // Agrupar eventos por día
     const eventosPorDia = new Map<number, any[]>();
-    
+
     this.detallesEventos.forEach(evento => {
       if (!eventosPorDia.has(evento.diaSemana)) {
         eventosPorDia.set(evento.diaSemana, []);
@@ -433,11 +434,11 @@ export class HorarioComponent {
 
     // Convertir a estructura de detalles
     const detalles: any[] = [];
-    
+
     eventosPorDia.forEach((eventos, diaSemana) => {
       // Buscar si ya existe un detalleId para este día
       const detalleId = eventos.find(e => e.detalleId > 0)?.detalleId || 0;
-      
+
       const detalle = {
         id: detalleId,
         empresaId: this.empresaId,
@@ -454,7 +455,7 @@ export class HorarioComponent {
           ventanaMax: e.ventanaMax || 75
         }))
       };
-      
+
       detalles.push(detalle);
     });
 
@@ -467,22 +468,22 @@ export class HorarioComponent {
 
   formatearHora(hora: any): string {
     if (!hora) return '08:00:00';
-    
+
     if (typeof hora === 'string' && hora.match(/^\d{2}:\d{2}:\d{2}$/)) {
       return hora;
     }
-    
+
     if (hora instanceof Date) {
       const horas = String(hora.getHours()).padStart(2, '0');
       const minutos = String(hora.getMinutes()).padStart(2, '0');
       const segundos = String(hora.getSeconds()).padStart(2, '0');
       return `${horas}:${minutos}:${segundos}`;
     }
-    
+
     if (typeof hora === 'string') {
       return hora.includes(':') ? hora : '08:00:00';
     }
-    
+
     return '08:00:00';
   }
 

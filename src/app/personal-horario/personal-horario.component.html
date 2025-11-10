@@ -200,6 +200,7 @@
               [dataSource]="personalHorarios"
               keyExpr="nEmpleado"
               [showBorders]="false"
+              [paging]="{ pageSize: 50 }"
               [allowColumnResizing]="true"
               [columnAutoWidth]="true"
               [selection]="{ mode: 'multiple' }"
@@ -230,7 +231,7 @@
                   *ngFor="let col of columnasFechas"
                   [dataField]="col.field"
                   [caption]="col.caption"
-                  [width]="130"
+                  [width]="80"
                   alignment="center"
                   [allowEditing]="true"
                 >

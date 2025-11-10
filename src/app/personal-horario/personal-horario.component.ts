@@ -203,7 +203,7 @@ export class PersonalHorarioComponent {
   }
 
   getNombreDia(d: Date) {
-    const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const dias = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
     return dias[d.getDay()];
   }
 
@@ -520,7 +520,7 @@ export class PersonalHorarioComponent {
         horarioCabeceraId: horarioCabeceraId
       };
 
-      console.log('📤 Payload:', payload);
+      console.log('📤 Payload:', JSON.stringify(payload, null, 2));
 
       let response;
 
