@@ -270,7 +270,8 @@ export class PersonalHorarioComponent {
       // Mapear los horarios a las celdas correspondientes
       for (const horario of response) {
         const personalId = horario.personalId;
-        const fecha = new Date(horario.fecha);
+        const [year, month, day] = horario.fecha.split('-').map(Number);
+        const fecha = new Date(year, month - 1, day); // esto usa la hora local sin desplazamiento UTC
         const field = 'd' + formatDate(fecha, 'yyyyMMdd', 'en-US', '+0000');
 
         // Guardar el ID del registro para futuros PUT
@@ -429,53 +430,53 @@ export class PersonalHorarioComponent {
     console.log('📝 e.newData:', e.newData);
     console.log('📝 e.oldData:', e.oldData);
     console.log('📝 e.key:', e.key);
-  
-  
+
+
     if (!e.newData || Object.keys(e.newData).length === 0) {
       console.log('❌ No hay cambios en newData');
       return;
     }
-  
-  
+
+
     const personalId = e.key;
     const cambios = e.newData;
-  
-  
+
+
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('👤 PersonalId:', personalId);
     console.log('🔄 Cambios detectados:', cambios);
-  
-  
+
+
     // Filtrar solo los campos de fecha (d20250107)
     const camposValidos = Object.keys(cambios).filter(key => key.startsWith('d') && key.length === 9);
-  
-  
+
+
     console.log('📝 Campos de fecha modificados:', camposValidos);
-  
-  
+
+
     if (camposValidos.length === 0) {
       console.log('⚠️ No hay cambios en columnas de fecha');
       return;
     }
-  
-  
+
+
     const field = camposValidos[0];
     const nuevoHorarioId = cambios[field];
-  
-  
+
+
     console.log('📅 Field detectado:', field);
     console.log('⏰ Nuevo horarioId:', nuevoHorarioId);
-  
-  
+
+
     // Buscar la columna correspondiente
     const columna = this.columnasFechas.find(col => col.field === field);
-   
+
     if (!columna) {
       console.log('❌ No se encontró la columna para el field:', field);
       return;
     }
-  
-  
+
+
     console.log('✅ Columna encontrada:', {
       field: columna.field,
       caption: columna.caption,
@@ -484,17 +485,17 @@ export class PersonalHorarioComponent {
       month: columna.date.getMonth() + 1,
       day: columna.date.getDate()
     });
-  
-  
+
+
     const fecha = columna.date;
-  
-  
+
+
     // Guardar solo esta celda específica
     await this.guardarHorarioIndividual(personalId, fecha, nuevoHorarioId);
-   
+
     console.log('✅ onCellValueChanged COMPLETADO');
   }
-  
+
 
 
 
@@ -522,7 +523,7 @@ export class PersonalHorarioComponent {
       console.log('📤 Payload:', payload);
 
       let response;
-      
+
       if (horarioId) {
         // Ya existe un registro, hacer PUT
         console.log('🔄 Actualizando registro existente con PUT. ID:', horarioId);
@@ -536,12 +537,12 @@ export class PersonalHorarioComponent {
         response = await firstValueFrom(
           this.apiService.guardarOrdenTrabajoHorario(payload)
         );
-        
+
         // Guardar el ID del nuevo registro
         if (response && response.id) {
           this.ordenTrabajoHorarioIds.set(key, response.id);
         }
-        
+
         console.log('✅ Horario guardado correctamente. Response:', response);
       }
 
