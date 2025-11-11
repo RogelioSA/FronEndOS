@@ -150,12 +150,65 @@ export class LoginComponent {
       // Paso 4: Guardar datos del usuario en localStorage
       this.guardarDatosUsuario(usuarioEncontrado);
       
-      // Paso 5: Redirigir a la página de inicio
+      // Paso 5: Seleccionar automáticamente la primera empresa
+      await this.seleccionarPrimeraEmpresa(usuarioEncontrado.id);
+      
+      // Paso 6: Redirigir a la página de inicio
       this.router.navigate(['/inicio']);
     } else {
       console.error('No se encontró el usuario en la lista');
       this.errorMessage = 'Error al obtener información del usuario';
       this.isLoading = false;
+    }
+  }
+
+  async seleccionarPrimeraEmpresa(userId: number): Promise<void> {
+    try {
+      console.log('Obteniendo empresas del usuario:', userId);
+      
+      // Obtener las empresas del usuario
+      const usuariosEmpresas = await firstValueFrom(
+        this.apiService.listarUsuarioEmpresaPorUsuario(userId)
+      );
+
+      console.log('Empresas obtenidas:', usuariosEmpresas);
+
+      if (usuariosEmpresas && usuariosEmpresas.length > 0) {
+        const primeraEmpresa = usuariosEmpresas[0];
+        const empresaId = primeraEmpresa.empresaId;
+
+        console.log('Seleccionando primera empresa:', primeraEmpresa.empresa?.nombre, 'ID:', empresaId);
+
+        // Guardar empresa ID en localStorage
+        localStorage.setItem('empresa_id', empresaId.toString());
+
+        // Realizar el cambio de tenant
+        const body = {
+          email: this.email,
+          empresaId: empresaId
+        };
+
+        console.log('Cambiando tenant con body:', body);
+
+        const result = await firstValueFrom(
+          this.apiService.changeTenant(body)
+        );
+
+        console.log('Resultado del cambio de tenant:', result);
+
+        if (result && result.accessToken) {
+          // Actualizar el token con el de la empresa seleccionada
+          localStorage.setItem('auth_token', result.accessToken);
+          console.log('Token actualizado correctamente con empresa:', primeraEmpresa.empresa?.nombre);
+        } else {
+          console.warn('No se recibió token en el cambio de tenant');
+        }
+      } else {
+        console.log('No hay empresas asociadas al usuario');
+      }
+    } catch (error) {
+      console.error('Error al seleccionar la primera empresa:', error);
+      // No lanzamos el error para que el login continúe
     }
   }
 
