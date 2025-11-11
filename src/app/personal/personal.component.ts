@@ -531,9 +531,6 @@ export class PersonalComponent {
   // ==========================================
   // MÉTODOS PARA SUBIDA MASIVA
   // ==========================================
-  // ==========================================
-  // MÉTODOS PARA SUBIDA MASIVA
-  // ==========================================
 
   abrirSubidaMasiva() {
     this.popupSubidaMasivaVisible = true;
@@ -768,8 +765,23 @@ export class PersonalComponent {
       throw new Error(`Error al asignar acceso a empresa: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
     }
 
-    // PASO 4: Crear Personal (asignación)
-    console.log('\n🔵 Paso 4 - Creando registro de Personal...');
+    // PASO 4: Asignar rol al usuario
+    console.log('\n🔵 Paso 4 - Asignando rol al usuario...');
+    const roleName = 'MARCACION'; // Rol por defecto para personal
+    const usuariosIds = [usuarioId];
+
+    console.log('📤 Asignando rol:', { roleName, usuariosIds });
+
+    try {
+      await firstValueFrom(this.apiService.asignarRolUsuario(roleName, usuariosIds));
+      console.log('✅ Rol asignado al usuario');
+    } catch (error: any) {
+      console.error('❌ Error al asignar rol:', error);
+      throw new Error(`Error al asignar rol: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+
+    // PASO 5: Crear Personal (asignación)
+    console.log('\n🔵 Paso 5 - Creando registro de Personal...');
     const personalPayload = {
       empresaId: 1,
       id: personaId,

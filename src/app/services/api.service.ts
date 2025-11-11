@@ -52,7 +52,7 @@ export class ApiService{
         }
       );
     }
-    
+
     actualizarRol(roleId: number, data: any): Observable<any> {
       return this.https.put(`${this.baseUrl}/security/Rol/${roleId}`, data, {
         headers: this.getHttpHeaders()
@@ -63,6 +63,16 @@ export class ApiService{
       return this.https.delete(`${this.baseUrl}/security/Rol/${roleId}`, {
         headers: this.getHttpHeaders()
       });
+    }
+
+    asignarRolUsuario(roleName: string, data: string[]): Observable<any> {
+      return this.https.post(
+        `${this.baseUrl}/security/RolUsuario/${roleName}`,
+        data,
+        {
+          headers: this.getHttpHeaders()
+        }
+      );
     }
 
     sincronizarDepartamento(departamento: any ): Observable<any> {
