@@ -21,7 +21,7 @@
               [showPageSizeSelector]="true"
               [allowedPageSizes]="[15, 25, 50, 100]"
             ></dxo-pager>
-            
+
             <dxo-editing
               mode="row"
               [allowUpdating]="false"
@@ -31,38 +31,38 @@
               [useIcons]="true"
             >
             </dxo-editing>
-        
-            <dxi-column 
-              dataField="id" 
-              caption="ID" 
-              [width]="70" 
-              [allowEditing]="false" 
+
+            <dxi-column
+              dataField="id"
+              caption="ID"
+              [width]="70"
+              [allowEditing]="false"
               alignment="center"
             ></dxi-column>
-            
-            <dxi-column 
-              dataField="email" 
+
+            <dxi-column
+              dataField="userName"
               caption="Correo Electrónico"
               [width]="350"
             >
-              <dxi-validation-rule 
-                type="required" 
+              <dxi-validation-rule
+                type="required"
                 message="El correo electrónico es requerido"
               ></dxi-validation-rule>
-              <dxi-validation-rule 
-                type="email" 
+              <dxi-validation-rule
+                type="email"
                 message="Ingrese un correo electrónico válido"
               ></dxi-validation-rule>
             </dxi-column>
-  
-            <dxi-column 
-  dataField="password" 
+
+            <dxi-column
+  dataField="password"
   caption="Contraseña"
   [width]="250"
   cellTemplate="passwordTemplate"
 >
-  <dxi-validation-rule 
-    type="required" 
+  <dxi-validation-rule
+    type="required"
     message="La contraseña es requerida"
   ></dxi-validation-rule>
 </dxi-column>
@@ -70,19 +70,19 @@
 <div *dxTemplate="let data of 'passwordTemplate'">
   {{ data.value || '-' }}
 </div>
-  
+
             <dxi-column type="buttons" [width]="110" [fixed]="true" fixedPosition="right">
               <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
               <dxi-button name="save" icon="save" hint="Guardar"></dxi-button>
               <dxi-button name="cancel" icon="revert" hint="Cancelar"></dxi-button>
             </dxi-column>
           </dx-data-grid>
-  
-          <div 
-            id="messageBox" 
+
+          <div
+            id="messageBox"
             style="display: none; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;"
           ></div>
-          
+
           <block-ui></block-ui>
         </div>
       </div>
