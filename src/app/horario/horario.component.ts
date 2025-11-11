@@ -112,7 +112,7 @@ export class HorarioComponent {
           eventoId: evento.id,
           diaSemana: detalle.diaSemana,
           nombreDia: this.obtenerNombreDia(detalle.diaSemana),
-          tipoEvento: (evento.tipoEvento === 0 || evento.tipoEvento === 1) ? 1 : 2,
+          tipoEvento: evento.tipoEvento,//(evento.tipoEvento === 0 || evento.tipoEvento === 1) ? 1 : 2,
           hora: this.formatearHora(evento.hora),
           diferenciaDia: evento.diferenciaDia || 0,
           ventanaMin: evento.ventanaMin || 75,
@@ -218,7 +218,7 @@ export class HorarioComponent {
             id: 0,
             empresaId: this.empresaId,
             horarioDetalleId: 0,
-            tipoEvento: 1, // Entrada
+            tipoEvento: 0, // Entrada
             hora: '08:00:00',
             diferenciaDia: 0,
             ventanaMin: 75,
@@ -228,7 +228,7 @@ export class HorarioComponent {
             id: 0,
             empresaId: this.empresaId,
             horarioDetalleId: 0,
-            tipoEvento: 2, // Salida
+            tipoEvento: 1, // Salida
             hora: '17:00:00',
             diferenciaDia: 0,
             ventanaMin: 75,
