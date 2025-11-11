@@ -8,9 +8,15 @@ import * as XLSX from 'xlsx';
 interface MarcacionPorDia {
   entrada?: string;
   salida?: string;
+  salidaRefrigerio?: string;
+  entradaRefrigerio?: string;
+  desconocido?: string;
   tardanza?: boolean;
   datosEntrada?: any;
   datosSalida?: any;
+  datosSalidaRefrigerio?: any;
+  datosEntradaRefrigerio?: any;
+  datosDesconocido?: any;
 }
 
 interface EmpleadoReporte {
@@ -52,6 +58,9 @@ export class ReporteMarcacionComponent {
   // Propiedades para el modal
   mostrarModal: boolean = false;
   detalleMarcacion: DetalleMarcacion | null = null;
+  
+  // Nueva propiedad para el checkbox
+  verTodo: boolean = false;
   
   @BlockUI() blockUI!: NgBlockUI;
 
@@ -150,14 +159,31 @@ export class ReporteMarcacionComponent {
       }
 
       const hora = this.datePipe.transform(marcacion.fecha, 'HH:mm');
+      const tipoEvento = marcacion.tipoEvento ?? 99; // Si es null/undefined, considerarlo como desconocido
       
-      if (marcacion.tipoEvento === 0) { // Entrada
-        empleado.marcaciones[fechaKey].entrada = hora || '';
-        empleado.marcaciones[fechaKey].tardanza = marcacion.esTardanza;
-        empleado.marcaciones[fechaKey].datosEntrada = marcacion;
-      } else if (marcacion.tipoEvento === 1) { // Salida
-        empleado.marcaciones[fechaKey].salida = hora || '';
-        empleado.marcaciones[fechaKey].datosSalida = marcacion;
+      // Mapear cada tipo de evento
+      switch(tipoEvento) {
+        case 0: // Entrada
+          empleado.marcaciones[fechaKey].entrada = hora || '';
+          empleado.marcaciones[fechaKey].tardanza = marcacion.esTardanza;
+          empleado.marcaciones[fechaKey].datosEntrada = marcacion;
+          break;
+        case 1: // Salida
+          empleado.marcaciones[fechaKey].salida = hora || '';
+          empleado.marcaciones[fechaKey].datosSalida = marcacion;
+          break;
+        case 2: // Salida Refrigerio (Inicio Almuerzo)
+          empleado.marcaciones[fechaKey].salidaRefrigerio = hora || '';
+          empleado.marcaciones[fechaKey].datosSalidaRefrigerio = marcacion;
+          break;
+        case 3: // Entrada Refrigerio (Fin Almuerzo)
+          empleado.marcaciones[fechaKey].entradaRefrigerio = hora || '';
+          empleado.marcaciones[fechaKey].datosEntradaRefrigerio = marcacion;
+          break;
+        default: // Desconocido (99 u otros)
+          empleado.marcaciones[fechaKey].desconocido = hora || '';
+          empleado.marcaciones[fechaKey].datosDesconocido = marcacion;
+          break;
       }
     });
 
@@ -213,6 +239,7 @@ export class ReporteMarcacionComponent {
     return `${apellidoPaterno} ${apellidoMaterno}, ${nombres}`.trim() || "Sin nombre";
   }
 
+  // Método antiguo (mantener por compatibilidad)
   obtenerMarcacion(empleado: EmpleadoReporte, fecha: string, tipo: 'E' | 'S'): string {
     const marcacion = empleado.marcaciones[fecha];
     if (!marcacion) return '';
@@ -224,19 +251,70 @@ export class ReporteMarcacionComponent {
     }
   }
 
-  esTardanza(empleado: EmpleadoReporte, fecha: string): boolean {
+  // Nuevo método para obtener marcación por tipo de evento
+  obtenerMarcacionPorTipo(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): string {
     const marcacion = empleado.marcaciones[fecha];
+    if (!marcacion) return '';
+    
+    switch(tipoEvento) {
+      case 0: // Entrada
+        return marcacion.entrada || '';
+      case 1: // Salida
+        return marcacion.salida || '';
+      case 2: // Salida Refrigerio
+        return marcacion.salidaRefrigerio || '';
+      case 3: // Entrada Refrigerio
+        return marcacion.entradaRefrigerio || '';
+      case 99: // Desconocido
+        return marcacion.desconocido || '';
+      default:
+        return '';
+    }
+  }
+
+  // Actualizar método esTardanza para aceptar tipo de evento
+  esTardanza(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): boolean {
+    const marcacion = empleado.marcaciones[fecha];
+    // Solo las entradas (tipo 0) pueden tener tardanza
+    if (tipoEvento !== 0) return false;
     return marcacion?.tardanza || false;
   }
 
+  // Método antiguo (mantener por compatibilidad)
   abrirDetalleMarcacion(empleado: EmpleadoReporte, fecha: string, tipo: 'E' | 'S') {
+    const tipoEvento = tipo === 'E' ? 0 : 1;
+    this.abrirDetalleMarcacionTipo(empleado, fecha, tipoEvento);
+  }
+
+  // Nuevo método para abrir detalle por tipo de evento
+  abrirDetalleMarcacionTipo(empleado: EmpleadoReporte, fecha: string, tipoEvento: number) {
     const marcacion = empleado.marcaciones[fecha];
     if (!marcacion) return;
 
-    const datos = tipo === 'E' ? marcacion.datosEntrada : marcacion.datosSalida;
+    let datos: any;
+    switch(tipoEvento) {
+      case 0:
+        datos = marcacion.datosEntrada;
+        break;
+      case 1:
+        datos = marcacion.datosSalida;
+        break;
+      case 2:
+        datos = marcacion.datosSalidaRefrigerio;
+        break;
+      case 3:
+        datos = marcacion.datosEntradaRefrigerio;
+        break;
+      case 99:
+        datos = marcacion.datosDesconocido;
+        break;
+      default:
+        return;
+    }
+
     if (!datos) return;
 
-    const tipoEventoTexto = this.obtenerTipoEventoTexto(datos.tipoEvento);
+    const tipoEventoTexto = this.obtenerTipoEventoTexto(datos.tipoEvento ?? 99);
     const hora = this.datePipe.transform(datos.fecha, 'HH:mm:ss') || '';
     const fechaCompleta = this.datePipe.transform(datos.fecha, 'dd/MM/yyyy HH:mm:ss') || '';
     const fechaJornal = this.datePipe.transform(datos.fechaJornal, 'dd/MM/yyyy') || '';
@@ -316,8 +394,9 @@ export class ReporteMarcacionComponent {
     switch(tipoEvento) {
       case 0: return "Entrada";
       case 1: return "Salida";
-      case 2: return "Inicio Refrigerio";
-      case 3: return "Fin Refrigerio";
+      case 2: return "Salida Refrigerio";
+      case 3: return "Entrada Refrigerio";
+      case 99: return "Desconocido";
       default: return `Tipo ${tipoEvento}`;
     }
   }
@@ -336,6 +415,19 @@ export class ReporteMarcacionComponent {
     await this.traerMarcaciones();
   }
 
+  // Evento cuando cambia el checkbox
+  onVerTodoChanged() {
+    console.log('👁️ Ver todo:', this.verTodo);
+    // No es necesario recargar datos, solo cambia la vista
+  }
+
+  // Calcular colspan dinámico para el mensaje de "no hay datos"
+  calcularColspan(): number {
+    const baseColumns = 2; // DNI y PERSONAL
+    const eventColumns = this.verTodo ? 5 : 2; // E, SR, ER, S, D : E, S
+    return baseColumns + (this.columnasdinamicas.length * eventColumns);
+  }
+
   /* ================= EXPORTAR A EXCEL ================= */
   descargarExcel() {
     if (!this.datosReporte || this.datosReporte.length === 0) {
@@ -352,16 +444,28 @@ export class ReporteMarcacionComponent {
       // Crear encabezado principal (primera fila con fechas)
       const encabezadoFechas = ['DNI', 'PERSONAL'];
       this.columnasdinamicas.forEach(col => {
-      encabezadoFechas.push(`${col.diaSemana} ${col.fechaDisplay}`);
-        encabezadoFechas.push(''); // Columna adicional para Salida
+        encabezadoFechas.push(`${col.diaSemana} ${col.fechaDisplay}`);
+        if (this.verTodo) {
+          // Agregar columnas vacías para SR, ER, S, D
+          encabezadoFechas.push('');
+          encabezadoFechas.push('');
+          encabezadoFechas.push('');
+          encabezadoFechas.push('');
+        } else {
+          // Solo agregar una columna vacía para S
+          encabezadoFechas.push('');
+        }
       });
       datosExcel.push(encabezadoFechas);
 
-      // Crear subencabezado (segunda fila con E y S)
+      // Crear subencabezado (segunda fila con E, S, etc.)
       const subencabezado = ['', '']; // Vacíos para DNI y PERSONAL
       this.columnasdinamicas.forEach(() => {
-        subencabezado.push('E');
-        subencabezado.push('S');
+        if (this.verTodo) {
+          subencabezado.push('E', 'SR', 'ER', 'S', 'D');
+        } else {
+          subencabezado.push('E', 'S');
+        }
       });
       datosExcel.push(subencabezado);
 
@@ -370,11 +474,20 @@ export class ReporteMarcacionComponent {
         const fila: any[] = [empleado.dni, empleado.personal];
         
         this.columnasdinamicas.forEach(col => {
-          const entrada = this.obtenerMarcacion(empleado, col.fecha, 'E');
-          const salida = this.obtenerMarcacion(empleado, col.fecha, 'S');
-          
-          fila.push(entrada || '');
-          fila.push(salida || '');
+          if (this.verTodo) {
+            fila.push(
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 0) || '',  // E
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 2) || '',  // SR
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 3) || '',  // ER
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 1) || '',  // S
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 99) || ''  // D
+            );
+          } else {
+            fila.push(
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 0) || '',  // E
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 1) || ''   // S
+            );
+          }
         });
         
         datosExcel.push(fila);
@@ -389,10 +502,18 @@ export class ReporteMarcacionComponent {
         { wch: 35 }   // PERSONAL
       ];
       
-      // Ancho para cada par de columnas E/S
+      // Ancho para cada par/grupo de columnas
       this.columnasdinamicas.forEach(() => {
-        colWidths.push({ wch: 8 });  // E
-        colWidths.push({ wch: 8 });  // S
+        if (this.verTodo) {
+          colWidths.push({ wch: 6 });  // E
+          colWidths.push({ wch: 6 });  // SR
+          colWidths.push({ wch: 6 });  // ER
+          colWidths.push({ wch: 6 });  // S
+          colWidths.push({ wch: 6 });  // D
+        } else {
+          colWidths.push({ wch: 8 });  // E
+          colWidths.push({ wch: 8 });  // S
+        }
       });
       
       ws['!cols'] = colWidths;
@@ -401,13 +522,22 @@ export class ReporteMarcacionComponent {
       const merges: XLSX.Range[] = [];
       let colIndex = 2; // Empezar después de DNI y PERSONAL
       
-      this.columnasdinamicas.forEach((col, index) => {
-        // Mergear las columnas E y S bajo cada fecha
-        merges.push({
-          s: { r: 0, c: colIndex },
-          e: { r: 0, c: colIndex + 1 }
-        });
-        colIndex += 2;
+      this.columnasdinamicas.forEach(() => {
+        if (this.verTodo) {
+          // Mergear 5 columnas (E, SR, ER, S, D)
+          merges.push({
+            s: { r: 0, c: colIndex },
+            e: { r: 0, c: colIndex + 4 }
+          });
+          colIndex += 5;
+        } else {
+          // Mergear 2 columnas (E, S)
+          merges.push({
+            s: { r: 0, c: colIndex },
+            e: { r: 0, c: colIndex + 1 }
+          });
+          colIndex += 2;
+        }
       });
       
       ws['!merges'] = merges;
@@ -418,7 +548,8 @@ export class ReporteMarcacionComponent {
 
       // Generar nombre de archivo con fecha
       const fechaActual = this.datePipe.transform(new Date(), 'dd-MM-yyyy');
-      const nombreArchivo = `Reporte_Marcaciones_${fechaActual}.xlsx`;
+      const modoVista = this.verTodo ? 'Completo' : 'Resumido';
+      const nombreArchivo = `Reporte_Marcaciones_${modoVista}_${fechaActual}.xlsx`;
 
       // Descargar el archivo
       XLSX.writeFile(wb, nombreArchivo);

@@ -3,7 +3,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <div class="row g-1 mt-2 justify-content-md-center mb-4">
-        <div class="col-4">
+        <div class="col-3">
             <div class="dx-field-label">Fecha Inicial</div>
             <div class="dx-field-value">
                 <dx-date-box type="date" [value]="now" [(ngModel)]="fechaInicial" name="fechaInicial"
@@ -11,7 +11,7 @@
                 </dx-date-box>
             </div>
         </div>
-        <div class="col-4">
+        <div class="col-3">
             <div class="dx-field-label">Fecha Final</div>
             <div class="dx-field-value">
                 <dx-date-box type="date" [value]="now" [(ngModel)]="fechaFinal" name="fechaFinal"
@@ -19,7 +19,20 @@
                 </dx-date-box>
             </div>
         </div>
-        <div class="col-4 pt-2 text-end">
+        <div class="col-2 pt-4">
+            <div class="form-check">
+                <input 
+                    class="form-check-input" 
+                    type="checkbox" 
+                    id="verTodoCheck"
+                    [(ngModel)]="verTodo"
+                    (change)="onVerTodoChanged()">
+                <label class="form-check-label" for="verTodoCheck">
+                    Ver todo
+                </label>
+            </div>
+        </div>
+        <div class="col-2 pt-2 text-end">
             <dx-button text="Buscar" stylingMode="contained" type="default" [width]="120"
                 icon="fa-solid fa-magnifying-glass" (onClick)="buscar()">
             </dx-button>
@@ -47,17 +60,53 @@
                         <tr>
                             <th rowspan="2" class="align-middle text-center" style="min-width: 100px; position: sticky; left: 0; background-color: #212529; z-index: 11;">DNI</th>
                             <th rowspan="2" class="align-middle text-center" style="min-width: 250px; position: sticky; left: 100px; background-color: #212529; z-index: 11;">PERSONAL</th>
-                            <th *ngFor="let col of columnasdinamicas" colspan="2" class="text-center" 
-                                [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">
-                                <div><strong>{{ col.diaSemana }}</strong> {{ col.fechaDisplay }}</div>
-                            </th>
+                            
+                            <!-- Modo normal: mostrar solo E y S -->
+                            <ng-container *ngIf="!verTodo">
+                                <th *ngFor="let col of columnasdinamicas" colspan="2" class="text-center" 
+                                    [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">
+                                    <div><strong>{{ col.diaSemana }}</strong> {{ col.fechaDisplay }}</div>
+                                </th>
+                            </ng-container>
+                            
+                            <!-- Modo extendido: mostrar E, SR, ER, S, D -->
+                            <ng-container *ngIf="verTodo">
+                                <th *ngFor="let col of columnasdinamicas" colspan="5" class="text-center" 
+                                    [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">
+                                    <div><strong>{{ col.diaSemana }}</strong> {{ col.fechaDisplay }}</div>
+                                </th>
+                            </ng-container>
                         </tr>
                         <tr>
-                            <ng-container *ngFor="let col of columnasdinamicas">
-                                <th class="text-center" style="min-width: 60px;" 
-                                    [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">E</th>
-                                <th class="text-center" style="min-width: 60px;" 
-                                    [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">S</th>
+                            <!-- Modo normal -->
+                            <ng-container *ngIf="!verTodo">
+                                <ng-container *ngFor="let col of columnasdinamicas">
+                                    <th class="text-center" style="min-width: 60px;" 
+                                        [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">E</th>
+                                    <th class="text-center" style="min-width: 60px;" 
+                                        [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">S</th>
+                                </ng-container>
+                            </ng-container>
+                            
+                            <!-- Modo extendido -->
+                            <ng-container *ngIf="verTodo">
+                                <ng-container *ngFor="let col of columnasdinamicas">
+                                    <th class="text-center" style="min-width: 60px;" 
+                                        [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}"
+                                        title="Entrada">E</th>
+                                    <th class="text-center" style="min-width: 60px;" 
+                                        [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}"
+                                        title="Salida Refrigerio">SR</th>
+                                    <th class="text-center" style="min-width: 60px;" 
+                                        [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}"
+                                        title="Entrada Refrigerio">ER</th>
+                                    <th class="text-center" style="min-width: 60px;" 
+                                        [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}"
+                                        title="Salida">S</th>
+                                    <th class="text-center" style="min-width: 60px;" 
+                                        [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}"
+                                        title="Desconocido">D</th>
+                                </ng-container>
                             </ng-container>
                         </tr>
                     </thead>
@@ -69,28 +118,86 @@
                             <td class="align-middle" style="position: sticky; left: 100px; background-color: white; font-weight: 500;">
                                 {{ empleado.personal }}
                             </td>
-                            <ng-container *ngFor="let col of columnasdinamicas">
-                                <td class="text-center align-middle celda-clickeable" 
-                                    [ngClass]="{
-                                        'bg-danger text-white': esTardanza(empleado, col.fecha),
-                                        'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
-                                        'tiene-datos': obtenerMarcacion(empleado, col.fecha, 'E')
-                                    }"
-                                    (click)="obtenerMarcacion(empleado, col.fecha, 'E') && abrirDetalleMarcacion(empleado, col.fecha, 'E')"
-                                    [style.cursor]="obtenerMarcacion(empleado, col.fecha, 'E') ? 'pointer' : 'default'">
-                                    {{ obtenerMarcacion(empleado, col.fecha, 'E') }}
-                                </td>
-                                <td class="text-center align-middle celda-clickeable" 
-                                    [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
-                                                'tiene-datos': obtenerMarcacion(empleado, col.fecha, 'S')}"
-                                    (click)="obtenerMarcacion(empleado, col.fecha, 'S') && abrirDetalleMarcacion(empleado, col.fecha, 'S')"
-                                    [style.cursor]="obtenerMarcacion(empleado, col.fecha, 'S') ? 'pointer' : 'default'">
-                                    {{ obtenerMarcacion(empleado, col.fecha, 'S') }}
-                                </td>
+                            
+                            <!-- Modo normal: E y S -->
+                            <ng-container *ngIf="!verTodo">
+                                <ng-container *ngFor="let col of columnasdinamicas">
+                                    <td class="text-center align-middle celda-clickeable" 
+                                        [ngClass]="{
+                                            'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
+                                            'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                            'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 0)
+                                        }"
+                                        (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 0) && abrirDetalleMarcacionTipo(empleado, col.fecha, 0)"
+                                        [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 0) ? 'pointer' : 'default'">
+                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 0) }}
+                                    </td>
+                                    <td class="text-center align-middle celda-clickeable" 
+                                        [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                                    'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1)}"
+                                        (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 1) && abrirDetalleMarcacionTipo(empleado, col.fecha, 1)"
+                                        [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 1) ? 'pointer' : 'default'">
+                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 1) }}
+                                    </td>
+                                </ng-container>
+                            </ng-container>
+                            
+                            <!-- Modo extendido: E, SR, ER, S, D -->
+                            <ng-container *ngIf="verTodo">
+                                <ng-container *ngFor="let col of columnasdinamicas">
+                                    <!-- Entrada (0) -->
+                                    <td class="text-center align-middle celda-clickeable" 
+                                        [ngClass]="{
+                                            'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
+                                            'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                            'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 0)
+                                        }"
+                                        (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 0) && abrirDetalleMarcacionTipo(empleado, col.fecha, 0)"
+                                        [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 0) ? 'pointer' : 'default'">
+                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 0) }}
+                                    </td>
+                                    
+                                    <!-- Salida Refrigerio (2) -->
+                                    <td class="text-center align-middle celda-clickeable" 
+                                        [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                                    'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 2)}"
+                                        (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 2) && abrirDetalleMarcacionTipo(empleado, col.fecha, 2)"
+                                        [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 2) ? 'pointer' : 'default'">
+                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 2) }}
+                                    </td>
+                                    
+                                    <!-- Entrada Refrigerio (3) -->
+                                    <td class="text-center align-middle celda-clickeable" 
+                                        [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                                    'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 3)}"
+                                        (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 3) && abrirDetalleMarcacionTipo(empleado, col.fecha, 3)"
+                                        [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 3) ? 'pointer' : 'default'">
+                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 3) }}
+                                    </td>
+                                    
+                                    <!-- Salida (1) -->
+                                    <td class="text-center align-middle celda-clickeable" 
+                                        [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                                    'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1)}"
+                                        (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 1) && abrirDetalleMarcacionTipo(empleado, col.fecha, 1)"
+                                        [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 1) ? 'pointer' : 'default'">
+                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 1) }}
+                                    </td>
+                                    
+                                    <!-- Desconocido (99) -->
+                                    <td class="text-center align-middle celda-clickeable" 
+                                        [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                                    'bg-warning': obtenerMarcacionPorTipo(empleado, col.fecha, 99),
+                                                    'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 99)}"
+                                        (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 99) && abrirDetalleMarcacionTipo(empleado, col.fecha, 99)"
+                                        [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 99) ? 'pointer' : 'default'">
+                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 99) }}
+                                    </td>
+                                </ng-container>
                             </ng-container>
                         </tr>
                         <tr *ngIf="datosReporte.length === 0">
-                            <td [attr.colspan]="2 + (columnasdinamicas.length * 2)" class="text-center text-muted">
+                            <td [attr.colspan]="calcularColspan()" class="text-center text-muted">
                                 No hay datos para mostrar en el rango de fechas seleccionado
                             </td>
                         </tr>

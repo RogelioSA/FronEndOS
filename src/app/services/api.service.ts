@@ -43,6 +43,16 @@ export class ApiService{
       });
     }
 
+    sincronizarRolClaim(roleId: string, data: any[]): Observable<any> {
+      return this.https.post(
+        `${this.baseUrl}/security/RolClaim/${roleId}`,
+        data,
+        {
+          headers: this.getHttpHeaders()
+        }
+      );
+    }
+    
     actualizarRol(roleId: number, data: any): Observable<any> {
       return this.https.put(`${this.baseUrl}/security/Rol/${roleId}`, data, {
         headers: this.getHttpHeaders()

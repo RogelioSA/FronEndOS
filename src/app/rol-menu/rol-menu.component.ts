@@ -17,6 +17,7 @@ export class RolMenuComponent {
   rolMenus : [] = [];
   filasSeleccionadasMenu : any[] = [];
   filasSeleccionadasRol : any;
+  rolSeleccionadoId: string | null = null; // Nueva propiedad para guardar el rol actual
 
   visibleToast : boolean = false;
   mensajeToast : string = "";
@@ -75,6 +76,9 @@ export class RolMenuComponent {
   async traerRolMenu(rolId: string) {
     console.log("traer rolMenus para rol:", rolId);
     
+    // Guardar el rol actual
+    this.rolSeleccionadoId = rolId;
+    
     try {
       const obser = this.apiService.obtenerFormulariosPorRol(rolId);
       const result = await firstValueFrom(obser);
@@ -89,69 +93,7 @@ export class RolMenuComponent {
   }
 
   async guardarCambios() {
-    this.blockUI.start('Guardando...');
-
-    let seleccionMenu = this.treeList.instance.getSelectedRowKeys('all');
-    let seleccionRol = this.filasSeleccionadasRol;
-
-    if (seleccionMenu.length === 0 || seleccionRol === undefined) {
-      this.mensajeToast = 'Se debe seleccionar opciones para configurar';
-      this.tipoToast = 'error';
-      this.visibleToast = true;
-      this.blockUI.stop();
-      return;
-    }
-
-    try {
-      const idsSeleccionados = seleccionMenu;
-      
-      console.log('Guardando menús seleccionados:', idsSeleccionados);
-
-      // Filtrar promesas válidas (cuando menuCompleto existe)
-      const promises = idsSeleccionados
-        .map((menuId: number) => {
-          const menuCompleto: any = this.menus.find((m: any) => m.nCodigo === menuId);
-          
-          if (menuCompleto && menuCompleto.datosCompletos) {
-            const datos = menuCompleto.datosCompletos;
-            
-            const data = {
-              id: menuId, // AGREGADO: id es requerido en el body
-              parentId: datos.parentId || 0,
-              moduloId: datos.moduloId || 0,
-              nombre: datos.nombre || '',
-              nombreCorto: datos.nombreCorto || '',
-              descripcion: datos.descripcion || '',
-              controlador: datos.controlador || '',
-              action: datos.action || '',
-              icono: datos.icono || '',
-              claimType: datos.claimType || '',
-              orden: datos.orden || 0,
-              estado: datos.estado ?? true
-            };
-
-            return firstValueFrom(this.apiService.actualizarMenu(menuId, data));
-          }
-          return null; // Retornar null si no hay datos
-        })
-        .filter(p => p !== null); // Filtrar nulls
-
-      await Promise.all(promises);
-      
-      this.mensajeToast = 'Cambios guardados exitosamente';
-      this.tipoToast = 'success';
-      this.visibleToast = true;
-      
-      await this.traerRolMenu(seleccionRol[0].toString());
-
-    } catch (error) {
-      console.log('Error guardando cambios.', error);
-      this.mensajeToast = 'Error al guardar los cambios';
-      this.tipoToast = 'error';
-      this.visibleToast = true;
-    } finally { 
-      this.blockUI.stop();
-    }
+    await this.sincronizarPermisos();
   }
 
   async onSelectionChangedGrid(event: any) {
@@ -160,10 +102,72 @@ export class RolMenuComponent {
       await this.traerRolMenu(rolId);
     } else {
       this.filasSeleccionadasMenu = [];
+      this.rolSeleccionadoId = null; // Limpiar rol seleccionado
     }
   }
   
-  onSelectionChangedTree(event: any) {
+  async onSelectionChangedTree(event: any) {
+    console.log("🔄 Cambio en selección del árbol");
     console.log("Selección actual del árbol:", this.filasSeleccionadasMenu);
+    
+    // Solo actualizar el estado local, NO sincronizar con el servidor
+    // La sincronización se hará cuando el usuario presione "Guardar"
+  }
+
+  async sincronizarPermisos() {
+    // Usar el rolSeleccionadoId guardado
+    if (!this.rolSeleccionadoId) {
+      this.mensajeToast = 'Debe seleccionar un rol';
+      this.tipoToast = 'error';
+      this.visibleToast = true;
+      return;
+    }
+
+    try {
+      this.blockUI.start('Sincronizando permisos...');
+      
+      const roleId = this.rolSeleccionadoId;
+      const seleccionMenu = this.treeList.instance.getSelectedRowKeys('all');
+      
+      console.log('🔐 Sincronizando permisos para rol:', roleId);
+      console.log('📋 Menús seleccionados:', seleccionMenu);
+
+      // Crear el array de claims con todos los menús
+      const claims = this.menus.map((menu: any) => {
+        const claimType = menu.datosCompletos?.claimType || `menu_${menu.nCodigo}`;
+        const estaSeleccionado = seleccionMenu.includes(menu.nCodigo);
+        
+        return {
+          type: claimType,
+          value: estaSeleccionado // true si está seleccionado, false si no
+        };
+      });
+
+      console.log('📤 Enviando claims al servidor:', claims);
+
+      // Enviar la sincronización al servidor
+      await firstValueFrom(
+        this.apiService.sincronizarRolClaim(roleId, claims)
+      );
+      
+      this.mensajeToast = 'Permisos sincronizados correctamente';
+      this.tipoToast = 'success';
+      this.visibleToast = true;
+
+      console.log('✅ Sincronización completada');
+
+    } catch (error: any) {
+      console.error('❌ Error sincronizando permisos:', error);
+      
+      const mensajeError = error?.error?.message || 
+                          error?.message || 
+                          'Error al sincronizar los permisos';
+      
+      this.mensajeToast = mensajeError;
+      this.tipoToast = 'error';
+      this.visibleToast = true;
+    } finally { 
+      this.blockUI.stop();
+    }
   }
 }
