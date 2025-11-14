@@ -115,14 +115,13 @@ export class RolMenuComponent {
   }
 
   async sincronizarPermisos() {
-    // Usar el rolSeleccionadoId guardado
     if (!this.rolSeleccionadoId) {
       this.mensajeToast = 'Debe seleccionar un rol';
       this.tipoToast = 'error';
       this.visibleToast = true;
       return;
     }
-
+  
     try {
       this.blockUI.start('Sincronizando permisos...');
       
@@ -131,21 +130,19 @@ export class RolMenuComponent {
       
       console.log('🔐 Sincronizando permisos para rol:', roleId);
       console.log('📋 Menús seleccionados:', seleccionMenu);
-
-      // Crear el array de claims con todos los menús
-      const claims = this.menus.map((menu: any) => {
-        const claimType = menu.datosCompletos?.claimType || `menu_${menu.nCodigo}`;
-        const estaSeleccionado = seleccionMenu.includes(menu.nCodigo);
+  
+      const claims = seleccionMenu.map((menuId: any) => {
+        const menu = (this.menus as any[]).find((m: any) => m.nCodigo === menuId);
+        const claimType = menu?.datosCompletos?.claimType || `menu_${menuId}`;
         
         return {
           type: claimType,
-          value: estaSeleccionado // true si está seleccionado, false si no
+          value: "true" // CAMBIO: string en lugar de boolean
         };
       });
-
+  
       console.log('📤 Enviando claims al servidor:', claims);
-
-      // Enviar la sincronización al servidor
+  
       await firstValueFrom(
         this.apiService.sincronizarRolClaim(roleId, claims)
       );
@@ -153,9 +150,9 @@ export class RolMenuComponent {
       this.mensajeToast = 'Permisos sincronizados correctamente';
       this.tipoToast = 'success';
       this.visibleToast = true;
-
+  
       console.log('✅ Sincronización completada');
-
+  
     } catch (error: any) {
       console.error('❌ Error sincronizando permisos:', error);
       
