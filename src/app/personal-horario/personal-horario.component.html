@@ -1,62 +1,66 @@
 <div class="container-fluid px-4 py-3">
   <div class="row">
     <div class="col-12">
+
       <!-- Header Section -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div>
           <h4 class="mb-1 fw-semibold text-dark">Asignación de Personal</h4>
           <p class="text-muted small mb-0">Gestión de horarios por orden de trabajo</p>
         </div>
-      </div>
 
-      <!-- Filtros Card -->
-      <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body py-3">
-          <div class="row g-3 align-items-end">
-            <div class="col-md-4">
-              <label class="form-label fw-medium small mb-1">Orden de Trabajo</label>
-              <dx-select-box
-                displayExpr="cOrdenInterna"
-                valueExpr="nCodigo"
-                [dataSource]="ordenes"
-                [(value)]="ordenCombo"
-                (onValueChanged)="onOrdenChange($event)"
-                placeholder="Selecciona orden de trabajo"
-              ></dx-select-box>
-            </div>
+        <!-- Filtros -->
+        <div class="d-flex align-items-end gap-3 flex-wrap">
+          <!-- Orden de trabajo -->
+          <div>
+            <label class="form-label fw-medium small mb-1">Orden de Trabajo</label>
+            <dx-select-box
+              displayExpr="cOrdenInterna"
+              valueExpr="nCodigo"
+              [dataSource]="ordenes"
+              [(value)]="ordenCombo"
+              (onValueChanged)="onOrdenChange($event)"
+              placeholder="Selecciona orden de trabajo"
+              [width]="500"
+            ></dx-select-box>
+          </div>
 
-            <div class="col-md-2">
-              <label class="form-label fw-medium small mb-1">Fecha Desde</label>
-              <dx-date-box
-                placeholder="Fecha Desde"
-                [(value)]="fechaDesde"
-                displayFormat="dd/MM/yyyy"
-                type="date"
-                [readOnly]="true"
-              ></dx-date-box>
-            </div>
+          <!-- Fecha Desde -->
+          <div>
+            <label class="form-label fw-medium small mb-1">Fecha Desde</label>
+            <dx-date-box
+              placeholder="Fecha Desde"
+              [(value)]="fechaDesde"
+              displayFormat="dd/MM/yyyy"
+              type="date"
+              [readOnly]="true"
+              [width]="140"
+            ></dx-date-box>
+          </div>
 
-            <div class="col-md-2">
-              <label class="form-label fw-medium small mb-1">Fecha Hasta</label>
-              <dx-date-box
-                placeholder="Fecha Hasta"
-                [(value)]="fechaHasta"
-                displayFormat="dd/MM/yyyy"
-                type="date"
-                [readOnly]="true"
-              ></dx-date-box>
-            </div>
+          <!-- Fecha Hasta -->
+          <div>
+            <label class="form-label fw-medium small mb-1">Fecha Hasta</label>
+            <dx-date-box
+              placeholder="Fecha Hasta"
+              [(value)]="fechaHasta"
+              displayFormat="dd/MM/yyyy"
+              type="date"
+              [readOnly]="true"
+              [width]="140"
+            ></dx-date-box>
+          </div>
 
-            <div class="col-md-4 text-end">
-              <dx-button
-                text="Buscar Personal"
-                stylingMode="contained"
-                type="default"
-                icon="search"
-                [width]="150"
-                (onClick)="onBuscar()"
-              ></dx-button>
-            </div>
+          <!-- Botón Buscar -->
+          <div>
+            <dx-button
+              text="Buscar Personal"
+              stylingMode="contained"
+              type="default"
+              icon="search"
+              [width]="150"
+              (onClick)="onBuscar()"
+            ></dx-button>
           </div>
         </div>
       </div>
@@ -65,7 +69,9 @@
       <div *ngIf="!ordenCombo || !fechaDesde || !fechaHasta"
            class="alert alert-info border-0 text-center py-4 mb-0">
         <i class="fas fa-info-circle fs-5 mb-2 d-block"></i>
-        <p class="mb-0 fw-medium">Selecciona una orden de trabajo y presiona <strong>Buscar Personal</strong> para comenzar</p>
+        <p class="mb-0 fw-medium">
+          Selecciona una orden de trabajo y presiona <strong>Buscar Personal</strong> para comenzar
+        </p>
       </div>
 
       <!-- Contenido Principal -->
@@ -74,13 +80,31 @@
         <!-- Personal Disponible -->
         <div class="col-lg-3">
           <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-3">
-              <div class="d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-semibold">
-                  Personal Disponible
-                </h6>
-              </div>
-            </div>
+<div class="card-header bg-white border-bottom py-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+    <!-- Título -->
+    <h6 class="mb-0 fw-semibold">Disponible</h6>
+
+    <!-- Botón Asignar Seleccionados -->
+    <div class="d-flex align-items-center gap-2">
+      <dx-button
+        text="Asignar"
+        stylingMode="contained"
+        type="success"
+        icon="plus"
+        [disabled]="!hayDisponiblesSeleccionados"
+        (onClick)="agregarSeleccionados()"
+      ></dx-button>
+
+      <small class="text-muted" *ngIf="hayDisponiblesSeleccionados">
+        {{ seleccionDisponibles.length }} seleccionado(s)
+      </small>
+    </div>
+
+  </div>
+</div>
+
 
             <div class="card-body p-0">
               <!-- Loading State -->
@@ -109,25 +133,16 @@
                 [hoverStateEnabled]="true"
                 [rowAlternationEnabled]="true"
               >
+                <dxo-search-panel
+                  [visible]="true"
+                  [width]="200"
+                  placeholder="Buscar..."
+                ></dxo-search-panel>
+
                 <dxo-scrolling mode="virtual"></dxo-scrolling>
                 <dxi-column type="selection" [width]="50"></dxi-column>
                 <dxi-column dataField="cEmpleado" caption="Nombre"></dxi-column>
               </dx-data-grid>
-            </div>
-
-            <div class="card-footer bg-white border-top py-3" *ngIf="columnasFechas.length > 0">
-              <dx-button
-                text="Asignar Seleccionados"
-                stylingMode="contained"
-                type="success"
-                [width]="'100%'"
-                icon="plus"
-                [disabled]="!hayDisponiblesSeleccionados"
-                (onClick)="agregarSeleccionados()"
-              ></dx-button>
-              <small class="text-muted d-block mt-2 text-center" *ngIf="hayDisponiblesSeleccionados">
-                {{ seleccionDisponibles.length }} seleccionado(s)
-              </small>
             </div>
           </div>
         </div>
@@ -135,48 +150,73 @@
         <!-- Personal Asignado -->
         <div class="col-lg-9">
           <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom py-3">
-              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
-                  <h6 class="mb-0 fw-semibold">
-                    Personal Asignado
-                  </h6>
+        <div class="card-header bg-white border-bottom py-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+              <!-- Título -->
+              <h6 class="mb-0 fw-semibold">
+                Personal Asignado
+              </h6>
+
+              <!-- Controles alineados con el título -->
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+
+                <!-- Selector de horario -->
+                <div class="d-flex align-items-center gap-2">
+                  <label class="form-label mb-0 small fw-medium">Horario:</label>
+
+                  <dx-select-box
+                    [dataSource]="horarios"
+                    displayExpr="cNombre"
+                    valueExpr="nCodigo"
+                    [(value)]="horarioSeleccionadoMasivo"
+                    placeholder="Selecciona horario"
+                    [width]="200"
+                  ></dx-select-box>
                 </div>
 
-                <div class="d-flex gap-2 align-items-center flex-wrap">
-                  <!-- Selector de horario para asignación masiva -->
-                  <div class="d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 small fw-medium">Horario:</label>
-                    <dx-select-box
-                      [dataSource]="horarios"
-                      displayExpr="cNombre"
-                      valueExpr="nCodigo"
-                      [(value)]="horarioSeleccionadoMasivo"
-                      placeholder="Selecciona horario"
-                      [width]="200"
-                    ></dx-select-box>
+                <!-- Botón asignar horario masivo -->
+                <dx-button
+                  text="Asignar horario"
+                  stylingMode="contained"
+                  type="success"
+                  icon="clock"
+                  [disabled]="!horarioSeleccionadoMasivo || seleccionadosMain.length === 0"
+                  (onClick)="asignarHorarioMasivo()"
+                ></dx-button>
 
-                    <dx-button
-                      text="Asignar horario a seleccionados"
-                      stylingMode="contained"
-                      type="success"
-                      icon="clock"
-                      [disabled]="!horarioSeleccionadoMasivo || seleccionadosMain.length === 0"
-                      (onClick)="asignarHorarioMasivo()"
-                    ></dx-button>
-                  </div>
+                <!-- Botón desasignar -->
+                <dx-button
+                  text="Desasignar"
+                  stylingMode="outlined"
+                  type="danger"
+                  icon="close"
+                  [disabled]="seleccionadosMain.length === 0"
+                  (onClick)="desasignarSeleccionados()"
+                ></dx-button>
 
-                  <dx-button
-                    text="Desasignar"
-                    stylingMode="outlined"
-                    type="danger"
-                    icon="close"
-                    [disabled]="seleccionadosMain.length === 0"
-                    (onClick)="desasignarSeleccionados()"
-                  ></dx-button>
-                </div>
+                <!-- Botón Excel -->
+                <dx-button
+                  text="Asignación masiva (Excel)"
+                  stylingMode="outlined"
+                  type="default"
+                  icon="upload"
+                  (onClick)="btnExcelMasivoClick()"
+                ></dx-button>
+
+                <!-- Input oculto -->
+                <input
+                  type="file"
+                  #fileExcelMasivo
+                  accept=".xlsx,.xls"
+                  (change)="onExcelAsignacionChange($event)"
+                  style="display: none;"
+                />
+
               </div>
             </div>
+          </div>
+
 
             <div class="card-body p-0">
               <!-- Loading State -->
@@ -196,19 +236,24 @@
 
               <!-- Grid Principal con celdas editables -->
               <dx-data-grid
-              *ngIf="!cargandoPersonal && columnasFechas.length > 0"
-              [dataSource]="personalHorarios"
-              keyExpr="nEmpleado"
-              [showBorders]="false"
-              [paging]="{ pageSize: 50 }"
-              [allowColumnResizing]="true"
-              [columnAutoWidth]="true"
-              [selection]="{ mode: 'multiple' }"
-              (onSelectionChanged)="onMainGridSelectionChanged($event)"
-              (onRowUpdating)="onCellValueChanged($event)"
-              [hoverStateEnabled]="true"
-              [rowAlternationEnabled]="true"
-            >
+                *ngIf="!cargandoPersonal && columnasFechas.length > 0"
+                [dataSource]="personalHorarios"
+                keyExpr="nEmpleado"
+                [showBorders]="false"
+                [paging]="{ pageSize: 50 }"
+                [allowColumnResizing]="true"
+                [columnAutoWidth]="true"
+                [selection]="{ mode: 'multiple' }"
+                (onSelectionChanged)="onMainGridSelectionChanged($event)"
+                (onRowUpdating)="onCellValueChanged($event)"
+                [hoverStateEnabled]="true"
+                [rowAlternationEnabled]="true"
+              >
+                <dxo-search-panel
+                  [visible]="true"
+                  [width]="200"
+                  placeholder="Buscar..."
+                ></dxo-search-panel>
 
                 <dxo-scrolling mode="standard"></dxo-scrolling>
                 <dxo-editing
@@ -253,7 +298,8 @@
             </div>
 
             <!-- Footer con información -->
-            <div class="card-footer bg-light border-top py-2" *ngIf="columnasFechas.length > 0 && personalHorarios.length > 0">
+            <div class="card-footer bg-light border-top py-2"
+                 *ngIf="columnasFechas.length > 0 && personalHorarios.length > 0">
               <div class="d-flex justify-content-between align-items-center">
                 <small class="text-muted">
                   <i class="fas fa-info-circle me-1"></i>

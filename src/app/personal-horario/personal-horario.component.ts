@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild, ElementRef } from '@angular/core';
 import { formatDate } from '@angular/common';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-personal-horario',
@@ -62,7 +63,11 @@ export class PersonalHorarioComponent {
       this.empresaId = parseInt(empresaSeleccionada, 10);
     }
   }
-
+  private normalizarDni(valor: any): string {
+    if (valor == null) return '';
+    // Convierte a string y deja solo dígitos
+    return String(valor).replace(/\D/g, '').trim();
+  }
   async cargarOrdenesTrabajo(): Promise<void> {
     try {
       this.blockUI.start('Cargando órdenes de trabajo...');
@@ -303,7 +308,8 @@ export class PersonalHorarioComponent {
         .filter(p => !asignadosIds.includes(p.id))
         .map(p => ({
           nEmpleado: p.id,
-          cEmpleado: p.nombreCompleto || `${p.nombre} ${p.apellidoPaterno || ''}`.trim()
+          cEmpleado: p.nombreCompleto || `${p.nombre} ${p.apellidoPaterno || ''}`.trim(),
+          documentoIdentidad: p.documentoIdentidad   // 👈 DNI guardado aquí
         }));
 
       console.log('✅ Personal disponible cargado:', this.personalDisponibles);
@@ -312,6 +318,7 @@ export class PersonalHorarioComponent {
       console.error('❌ Error al cargar personal disponible:', error);
     }
   }
+
 
   onDisponiblesSelectionChanged(e: any) {
     this.seleccionDisponibles = e.selectedRowsData;
@@ -649,4 +656,124 @@ export class PersonalHorarioComponent {
       box.style.display = 'none';
     }, 3000);
   }
+  async onExcelAsignacionChange(event: any) {
+  const file: File = event.target.files?.[0];
+  if (!file) {
+    return;
+  }
+
+  // Validación básica
+  if (this.personalDisponibles.length === 0) {
+    this.showMessage('No hay personal disponible cargado para asignar.');
+    return;
+  }
+
+  this.blockUI.start('Procesando Excel...');
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+
+    // Tomamos la primera hoja (ajusta si necesitas otra)
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+
+    // Leemos como matriz (array de filas) porque tu encabezado "DNI" está en la F, fila 2
+    const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+
+    if (!rows || rows.length < 3) {
+      this.showMessage('El Excel no tiene filas suficientes para procesar.');
+      return;
+    }
+
+    // Fila de encabezados es la segunda fila → índice 1
+    const headerRow = rows[1];
+    if (!headerRow) {
+      this.showMessage('No se encontró la fila de encabezados (fila 2).');
+      return;
+    }
+
+    // Buscar la columna cuyo encabezado sea "DNI"
+    const dniColIndex = headerRow.findIndex((v: any) =>
+      String(v ?? '').trim().toUpperCase() === 'DNI'
+    );
+
+    if (dniColIndex === -1) {
+      this.showMessage('No se encontró la columna DNI en la fila 2 del Excel.');
+      return;
+    }
+
+    // Las filas de datos empiezan desde la fila 3 → índice 2
+    const dniListaExcel: string[] = rows
+      .slice(2)
+      .map(row => this.normalizarDni(row[dniColIndex]))
+      .filter(d => d.length > 0);
+
+    if (dniListaExcel.length === 0) {
+      this.showMessage('No se encontraron DNIs válidos en el Excel.');
+      return;
+    }
+
+    console.log('📄 DNIs encontrados en Excel:', dniListaExcel);
+
+    // Mapa DNI → persona disponible
+    const mapaDisponiblesPorDni = new Map<string, any>();
+    for (const p of this.personalDisponibles) {
+      const dni = this.normalizarDni(p.documentoIdentidad);
+      if (dni) {
+        // Si hay duplicados, se queda el primero (o podrías manejar colisiones)
+        if (!mapaDisponiblesPorDni.has(dni)) {
+          mapaDisponiblesPorDni.set(dni, p);
+        }
+      }
+    }
+
+    const seleccionDesdeExcel: any[] = [];
+    const noEncontrados: string[] = [];
+
+    for (const dni of dniListaExcel) {
+      const persona = mapaDisponiblesPorDni.get(dni);
+      if (persona) {
+        seleccionDesdeExcel.push(persona);
+      } else {
+        noEncontrados.push(dni);
+      }
+    }
+
+    if (seleccionDesdeExcel.length === 0) {
+      this.showMessage('Ningún DNI del Excel coincide con el personal disponible.');
+      console.warn('DNIs no encontrados:', noEncontrados);
+      return;
+    }
+
+    // Actualizamos la selección como si se hubiera hecho manualmente desde la grilla
+    this.seleccionDisponibles = seleccionDesdeExcel;
+    this.hayDisponiblesSeleccionados = this.seleccionDisponibles.length > 0;
+
+    console.log('✅ Personas seleccionadas desde Excel:', this.seleccionDisponibles);
+    if (noEncontrados.length > 0) {
+      console.warn('⚠️ DNIs del Excel sin coincidencia en personal disponible:', noEncontrados);
+    }
+
+    // Reutilizamos TU lógica actual de asignación
+    await this.agregarSeleccionados();
+
+  } catch (err) {
+    console.error('❌ Error procesando Excel de asignación masiva:', err);
+    this.showMessage('Error al procesar el archivo Excel.');
+  } finally {
+    this.blockUI.stop();
+    // Opcional: limpiar el input de archivo
+    event.target.value = null;
+  }
+}
+
+@ViewChild('fileExcelMasivo') fileExcelMasivo!: ElementRef<HTMLInputElement>;
+
+btnExcelMasivoClick() {
+  if (this.fileExcelMasivo) {
+    this.fileExcelMasivo.nativeElement.click();
+  }
+}
+
 }
