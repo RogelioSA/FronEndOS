@@ -33,8 +33,9 @@
               [(value)]="fechaDesde"
               displayFormat="dd/MM/yyyy"
               type="date"
-              [readOnly]="true"
               [width]="140"
+              [min]="fechaDesde"
+              [max]="fechaHasta"
             ></dx-date-box>
           </div>
 
@@ -46,8 +47,9 @@
               [(value)]="fechaHasta"
               displayFormat="dd/MM/yyyy"
               type="date"
-              [readOnly]="true"
               [width]="140"
+              [min]="fechaDesde"
+              [max]="fechaHasta"
             ></dx-date-box>
           </div>
 
