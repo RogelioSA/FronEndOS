@@ -52,43 +52,43 @@
 
                 <dxo-selection mode="single"></dxo-selection>
 
-                <dxi-column 
-                  dataField="nCodigo" 
-                  caption="ID" 
-                  [width]="70" 
-                  [allowEditing]="false" 
+                <dxi-column
+                  dataField="nCodigo"
+                  caption="ID"
+                  [width]="70"
+                  [allowEditing]="false"
                   alignment="center"
                 ></dxi-column>
 
-                <dxi-column 
-                  dataField="cNombre" 
-                  caption="Nombre"
+                <dxi-column
+                  dataField="cNombre"
+                  caption="Codigo"
                 >
                   <dxi-validation-rule type="required"></dxi-validation-rule>
                 </dxi-column>
 
-                <dxi-column 
-                  dataField="cDescripcion" 
+                <dxi-column
+                  dataField="cDescripcion"
                   caption="Descripción"
                 ></dxi-column>
 
-                <dxi-column 
-                  dataField="nDiasTrabajo" 
-                  caption="Días" 
+                <dxi-column
+                  dataField="nDiasTrabajo"
+                  caption="Días"
                   dataType="number"
                   [width]="80"
                   alignment="center"
                   [setCellValue]="onDiasTrabajoChanged"
                 >
-                  <dxi-validation-rule 
-                    type="range" 
-                    [min]="1" 
-                    [max]="7" 
+                  <dxi-validation-rule
+                    type="range"
+                    [min]="1"
+                    [max]="7"
                     message="Debe ser entre 1 y 7"
                   ></dxi-validation-rule>
                 </dxi-column>
 
-                <dxi-column 
+                <dxi-column
                   type="buttons"
                   [width]="120"
                   alignment="center"
@@ -143,37 +143,37 @@
                   startEditAction="click"
                 ></dxo-editing>
 
-                <dxi-column 
-                  dataField="diaSemana" 
+                <dxi-column
+                  dataField="diaSemana"
                   caption="Día"
                   [width]="120"
                 >
-                  <dxo-lookup 
-                    [dataSource]="diasSemana" 
-                    displayExpr="nombre" 
+                  <dxo-lookup
+                    [dataSource]="diasSemana"
+                    displayExpr="nombre"
                     valueExpr="id"
                   ></dxo-lookup>
                   <dxi-validation-rule type="required"></dxi-validation-rule>
                 </dxi-column>
 
-                <dxi-column 
-                  dataField="tipoEvento" 
+                <dxi-column
+                  dataField="tipoEvento"
                   caption="Tipo"
                   [width]="100"
                 >
-                  <dxo-lookup 
-                    [dataSource]="tiposEvento" 
-                    displayExpr="nombre" 
+                  <dxo-lookup
+                    [dataSource]="tiposEvento"
+                    displayExpr="nombre"
                     valueExpr="id"
                   ></dxo-lookup>
                   <dxi-validation-rule type="required"></dxi-validation-rule>
                 </dxi-column>
 
-                <dxi-column 
-                  dataField="hora" 
-                  caption="Hora" 
-                  dataType="datetime" 
-                  [editorOptions]="{ type: 'time' }" 
+                <dxi-column
+                  dataField="hora"
+                  caption="Hora"
+                  dataType="datetime"
+                  [editorOptions]="{ type: 'time' }"
                   format="HH:mm:ss"
                   [width]="100"
                   alignment="center"
@@ -181,9 +181,9 @@
                   <dxi-validation-rule type="required"></dxi-validation-rule>
                 </dxi-column>
 
-                <dxi-column 
-                  dataField="ventanaMin" 
-                  caption="Vent. Min" 
+                <dxi-column
+                  dataField="ventanaMin"
+                  caption="Vent. Min"
                   dataType="number"
                   [width]="90"
                   alignment="center"
@@ -191,9 +191,9 @@
                   <dxi-validation-rule type="required"></dxi-validation-rule>
                 </dxi-column>
 
-                <dxi-column 
-                  dataField="ventanaMax" 
-                  caption="Vent. Max" 
+                <dxi-column
+                  dataField="ventanaMax"
+                  caption="Vent. Max"
                   dataType="number"
                   [width]="90"
                   alignment="center"
@@ -201,7 +201,7 @@
                   <dxi-validation-rule type="required"></dxi-validation-rule>
                 </dxi-column>
 
-                <dxi-column 
+                <dxi-column
                   type="buttons"
                   [width]="120"
                   alignment="center"

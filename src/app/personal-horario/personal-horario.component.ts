@@ -244,8 +244,9 @@ export class PersonalHorarioComponent {
 
       return row;
     });
-
-    console.log('✅ Personal asignado cargado:', this.personalHorarios);
+  // 👇 ORDENAR POR NOMBRE
+  this.personalHorarios.sort((a, b) => a.cEmpleado.localeCompare(b.cEmpleado));
+    //console.log('✅ Personal asignado cargado:', this.personalHorarios);
   }
 
   async cargarHorariosAsignados() {
@@ -310,7 +311,7 @@ export class PersonalHorarioComponent {
           nEmpleado: p.id,
           cEmpleado: p.nombreCompleto || `${p.nombre} ${p.apellidoPaterno || ''}`.trim(),
           documentoIdentidad: p.documentoIdentidad   // 👈 DNI guardado aquí
-        }));
+        })).sort((a, b) => a.cEmpleado.localeCompare(b.cEmpleado));  // 👈 ORDENADO
 
       console.log('✅ Personal disponible cargado:', this.personalDisponibles);
 
