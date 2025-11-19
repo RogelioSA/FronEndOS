@@ -12,7 +12,7 @@ import * as XLSX from 'xlsx';
 })
 export class PersonalComponent {
   existeAsignacion: boolean = false;
-  personal : [] = [];
+  personal: any[] = [];
   cargos : [] = [];
   areas : [] = [];
   contratoTipos : [] = [];
@@ -78,6 +78,7 @@ export class PersonalComponent {
     ];
   }
 
+  
   async traerPersonal() {
     console.log("traer personal");
 
@@ -560,40 +561,40 @@ export class PersonalComponent {
       console.error('❌ No hay archivo seleccionado');
       return;
     }
-
+  
     this.procesandoArchivo = true;
     this.registrosProcesados = [];
     this.registrosExitosos = 0;
     this.registrosFallidos = 0;
     this.erroresProcesamiento = [];
-
+  
     try {
       console.log('📖 Leyendo archivo Excel...');
-
+  
       const data = await this.leerArchivoExcel(this.archivoSeleccionado);
       console.log('✅ Datos leídos del Excel:', data);
-
+  
       // 🔹 FILTRAR FILAS VACÍAS
       const dataFiltrada = data.filter((fila: any) => {
         // Verificar que tenga al menos APELLIDO/NOMBRES
         return fila['APELLIDO/NOMBRES'] && String(fila['APELLIDO/NOMBRES']).trim() !== '';
       });
-
+  
       console.log(`📊 Registros válidos: ${dataFiltrada.length} de ${data.length}`);
-
+  
       if (dataFiltrada.length === 0) {
         this.erroresProcesamiento.push('No se encontraron registros válidos en el archivo Excel');
         this.procesandoArchivo = false;
         return;
       }
-
+  
       this.blockUI.start('Procesando registros...');
-
+  
       // Procesar cada fila del Excel
       for (let i = 0; i < dataFiltrada.length; i++) {
         const fila = dataFiltrada[i];
         console.log(`\n🔄 Procesando registro ${i + 1}/${dataFiltrada.length}:`, fila);
-
+  
         try {
           await this.procesarRegistroPersonal(fila, i + 1);
           this.registrosExitosos++;
@@ -605,13 +606,25 @@ export class PersonalComponent {
           console.error(`❌ Error en registro ${i + 1}:`, error);
         }
       }
-
+  
       console.log('\n📊 Resumen final:');
       console.log(`   ✅ Exitosos: ${this.registrosExitosos}`);
       console.log(`   ❌ Fallidos: ${this.registrosFallidos}`);
-
+  
+      // ✅ ACTUALIZAR LA TABLA
+      await this.traerPersonal();
+      console.log('✅ Tabla actualizada con los nuevos registros');
+  
       this.blockUI.stop();
-
+  
+      // ✅ SI TODO FUE EXITOSO, CERRAR EL MODAL AUTOMÁTICAMENTE
+      if (this.registrosFallidos === 0) {
+        console.log('✅ Todos los registros procesados exitosamente, cerrando modal...');
+        setTimeout(() => {
+          this.popupSubidaMasivaVisible = false;
+        }, 2000); // Esperar 2 segundos para que el usuario vea el resumen
+      }
+  
     } catch (error) {
       console.error('❌ Error general al procesar archivo:', error);
       this.erroresProcesamiento.push('Error al leer el archivo Excel');
@@ -644,38 +657,38 @@ export class PersonalComponent {
 
   async procesarRegistroPersonal(fila: any, numeroFila: number): Promise<void> {
     console.log(`\n📝 Paso 0 - Parseando datos de la fila ${numeroFila}`);
-
-    // Parsear nombre completo (APELLIDO/NOMBRES)
+  
+    // Parsear nombre completo
     const nombreCompleto = fila['APELLIDO/NOMBRES'] || '';
     const partesNombre = this.parsearNombreCompleto(nombreCompleto);
-
+  
     // Parsear fecha de nacimiento
     const fechaNacimiento = this.parsearFecha(fila['FEC.NACIMIENTO']);
-
+  
     // Obtener DNI
     const dni = String(fila['NRO DOCUMENTO'] || '').trim();
-
+  
     if (!dni || dni.length !== 8) {
       throw new Error(`DNI inválido: "${dni}". Debe tener 8 dígitos.`);
     }
-
+  
+    // 🔍 VERIFICAR SI EL DNI YA EXISTE EN LA TABLA
+    const personaExistente = this.personal.find((p: any) => p.cDNI === dni);
+  
     // Generar email si no existe
     let email = (fila['EMAIL'] || '').trim();
     if (!email) {
       email = this.generarEmail(partesNombre.nombres, partesNombre.apellidoPaterno);
       console.log(`⚠️ Email generado automáticamente: ${email}`);
     }
-
+  
     const telefono = String(fila['TELEFONO'] || '').trim();
     const codigo = String(fila['CODIGO'] || '').trim();
-
+  
     // Determinar sexo
     const sexoTexto = String(fila['SEXO'] || '').toUpperCase().trim();
     let sexoId = this.determinarSexoId(sexoTexto);
-    if (sexoId === 1 && !['M', 'MASCULINO', 'HOMBRE', 'VARÓN', 'MASC'].includes(sexoTexto)) {
-      console.log(`⚠️ SexoId = 1 (por defecto) para valor: "${sexoTexto}"`);
-    }
-
+  
     console.log('📋 Datos parseados:', {
       nombres: partesNombre.nombres,
       apellidoPaterno: partesNombre.apellidoPaterno,
@@ -687,9 +700,7 @@ export class PersonalComponent {
       sexoId,
       codigo
     });
-
-    // PASO 1: Crear Persona
-    console.log('\n🔵 Paso 1 - Creando Persona...');
+  
     const personaPayload = {
       empresaId: 1,
       nombres: partesNombre.nombres,
@@ -701,41 +712,60 @@ export class PersonalComponent {
       celular: telefono,
       estado: true,
       sexoId: sexoId,
-      distritoId: 1, // Por defecto
-      licenciaConducirId: 1, // Por defecto
-      documentoIdentidadTipoId: 1 // Por defecto
+      distritoId: 1,
+      licenciaConducirId: 1,
+      documentoIdentidadTipoId: 1
     };
-
+  
+    let personaId: number;
+  
+    // 🔄 SI EL DNI YA EXISTE: SOLO ACTUALIZAR Y TERMINAR
+    if (personaExistente) {
+      console.log('\n🔄 DNI encontrado, actualizando Persona existente...');
+      console.log('📋 Datos actuales:', personaExistente);
+      
+      personaId = personaExistente.nCodigo;
+  
+      console.log('📤 Enviando payload de actualización:', personaPayload);
+  
+      try {
+        await firstValueFrom(this.apiService.updatePersonal(personaId, personaPayload));
+        console.log('✅ Persona actualizada correctamente');
+        console.log(`\n✅✅✅ REGISTRO ACTUALIZADO - Fila ${numeroFila} procesada exitosamente\n`);
+        return; // ✅ TERMINAR AQUÍ
+      } catch (error: any) {
+        console.error('❌ Error al actualizar Persona:', error);
+        throw new Error(`Error al actualizar Persona: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+      }
+    }
+  
+    // 🆕 SI EL DNI NO EXISTE: CREAR TODO DESDE CERO
+    console.log('\n🆕 DNI no existe, creando Persona nueva...');
     console.log('📤 Enviando payload de Persona:', personaPayload);
-    if (personaPayload.distritoId === 1) console.log('⚠️ distritoId = 1 (por defecto)');
-    if (personaPayload.licenciaConducirId === 1) console.log('⚠️ licenciaConducirId = 1 (por defecto)');
-    if (personaPayload.documentoIdentidadTipoId === 1) console.log('⚠️ documentoIdentidadTipoId = 1 (por defecto)');
-
-    // 🔹 USAR createPersonal que hace POST a /general/Persona
+  
     let personaCreada: any;
     try {
       personaCreada = await firstValueFrom(this.apiService.createPersonal(personaPayload));
       console.log('✅ Persona creada:', personaCreada);
+      personaId = personaCreada.id;
     } catch (error: any) {
       console.error('❌ Error al crear Persona:', error);
       throw new Error(`Error al crear Persona: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
     }
-
-    const personaId = personaCreada.id;
-
+  
     // PASO 2: Crear Usuario
     console.log('\n🔵 Paso 2 - Creando Usuario...');
     const password = this.generarPassword(codigo, partesNombre.apellidoPaterno, partesNombre.nombres);
     console.log('🔐 Password generado:', password);
-
+  
     const usuarioPayload = {
       email: email,
       password: password,
       phoneNumber: telefono || '000000000'
     };
-
+  
     console.log('📤 Enviando payload de Usuario:', usuarioPayload);
-
+  
     let usuarioCreado: any;
     try {
       usuarioCreado = await firstValueFrom(this.apiService.crearUsuario(usuarioPayload));
@@ -744,9 +774,9 @@ export class PersonalComponent {
       console.error('❌ Error al crear Usuario:', error);
       throw new Error(`Error al crear Usuario: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
     }
-
-    const usuarioId = usuarioCreado.id;
-
+  
+    const usuarioId = Number(usuarioCreado.id);
+  
     // PASO 3: Dar acceso a empresa
     console.log('\n🔵 Paso 3 - Asignando acceso a empresa...');
     const usuarioEmpresaPayload = {
@@ -754,9 +784,9 @@ export class PersonalComponent {
       empresaId: 1,
       actual: true
     };
-
+  
     console.log('📤 Enviando payload de UsuarioEmpresa:', usuarioEmpresaPayload);
-
+  
     try {
       await firstValueFrom(this.apiService.createUsuarioEmpresa(usuarioEmpresaPayload));
       console.log('✅ Acceso a empresa asignado');
@@ -764,14 +794,14 @@ export class PersonalComponent {
       console.error('❌ Error al asignar acceso a empresa:', error);
       throw new Error(`Error al asignar acceso a empresa: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
     }
-
+  
     // PASO 4: Asignar rol al usuario
     console.log('\n🔵 Paso 4 - Asignando rol al usuario...');
-    const roleName = 'MARCACION'; // Rol por defecto para personal
-    const usuariosIds = [usuarioId];
-
+    const roleName = 'MARCACION';
+    const usuariosIds = [String(usuarioId)];
+  
     console.log('📤 Asignando rol:', { roleName, usuariosIds });
-
+  
     try {
       await firstValueFrom(this.apiService.asignarRolUsuario(roleName, usuariosIds));
       console.log('✅ Rol asignado al usuario');
@@ -779,28 +809,23 @@ export class PersonalComponent {
       console.error('❌ Error al asignar rol:', error);
       throw new Error(`Error al asignar rol: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
     }
-
+  
     // PASO 5: Crear Personal (asignación)
     console.log('\n🔵 Paso 5 - Creando registro de Personal...');
     const personalPayload = {
       empresaId: 1,
       id: personaId,
       marcaAsistencia: true,
-      contratoCabeceraId: 1, // Por defecto
-      horarioCabeceraId: 1, // Por defecto
-      superiorId: 1, // Por defecto
-      personalEstadoId: 1, // Por defecto (ACTIVO)
-      registroAsistenciaPoliticaId: 1, // Por defecto
+      contratoCabeceraId: 1,
+      horarioCabeceraId: 1,
+      superiorId: 1,
+      personalEstadoId: 1,
+      registroAsistenciaPoliticaId: 1,
       usuarioId: usuarioId
     };
-
+  
     console.log('📤 Enviando payload de Personal:', personalPayload);
-    console.log('⚠️ contratoCabeceraId = 1 (por defecto)');
-    console.log('⚠️ horarioCabeceraId = 1 (por defecto)');
-    console.log('⚠️ superiorId = 1 (por defecto)');
-    console.log('⚠️ personalEstadoId = 1 (por defecto - ACTIVO)');
-    console.log('⚠️ registroAsistenciaPoliticaId = 1 (por defecto)');
-
+  
     try {
       await firstValueFrom(this.apiService.crearPersonal(personalPayload));
       console.log('✅ Registro de Personal creado exitosamente');
@@ -808,10 +833,97 @@ export class PersonalComponent {
       console.error('❌ Error al crear Personal:', error);
       throw new Error(`Error al crear Personal: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
     }
-
+  
     console.log(`\n✅✅✅ REGISTRO COMPLETO - Fila ${numeroFila} procesada exitosamente\n`);
   }
+  
+  // 🆕 Método auxiliar para crear usuario completo con asignaciones
+  private async crearUsuarioCompleto(
+    email: string, 
+    telefono: string, 
+    codigo: string, 
+    partesNombre: any
+  ): Promise<number> { // ✅ Retorna number
+    console.log('\n🔵 Creando Usuario...');
+    const password = this.generarPassword(codigo, partesNombre.apellidoPaterno, partesNombre.nombres);
+    console.log('🔐 Password generado:', password);
+  
+    const usuarioPayload = {
+      email: email,
+      password: password,
+      phoneNumber: telefono || '000000000'
+    };
+  
+    console.log('📤 Enviando payload de Usuario:', usuarioPayload);
+  
+    let usuarioCreado: any;
+    try {
+      usuarioCreado = await firstValueFrom(this.apiService.crearUsuario(usuarioPayload));
+      console.log('✅ Usuario creado:', usuarioCreado);
+    } catch (error: any) {
+      console.error('❌ Error al crear Usuario:', error);
+      throw new Error(`Error al crear Usuario: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+  
+    const usuarioId = Number(usuarioCreado.id); // ✅ Siempre como number
+  
+    // Asignar acceso a empresa
+    console.log('\n🔵 Asignando acceso a empresa...');
+    const usuarioEmpresaPayload = {
+      usuarioId: usuarioId,
+      empresaId: 1,
+      actual: true
+    };
+  
+    console.log('📤 Enviando payload de UsuarioEmpresa:', usuarioEmpresaPayload);
+  
+    try {
+      await firstValueFrom(this.apiService.createUsuarioEmpresa(usuarioEmpresaPayload));
+      console.log('✅ Acceso a empresa asignado');
+    } catch (error: any) {
+      console.error('❌ Error al asignar acceso a empresa:', error);
+      throw new Error(`Error al asignar acceso a empresa: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+  
+    // Asignar rol
+    console.log('\n🔵 Asignando rol al usuario...');
+    try {
+      await firstValueFrom(this.apiService.asignarRolUsuario('MARCACION', [String(usuarioId)]));
 
+      console.log('✅ Rol asignado al usuario');
+    } catch (error: any) {
+      console.error('❌ Error al asignar rol:', error);
+      throw new Error(`Error al asignar rol: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+  
+    return usuarioId; // ✅ Retorna number
+  }
+  
+  // 🆕 Método auxiliar para crear asignación de personal
+  private async crearAsignacionPersonal(personaId: number, usuarioId: number): Promise<void> {
+    console.log('\n🔵 Creando registro de Personal...');
+    const personalPayload = {
+      empresaId: 1,
+      id: personaId,
+      marcaAsistencia: true,
+      contratoCabeceraId: 1,
+      horarioCabeceraId: 1,
+      superiorId: 1,
+      personalEstadoId: 1,
+      registroAsistenciaPoliticaId: 1,
+      usuarioId: usuarioId
+    };
+  
+    console.log('📤 Enviando payload de Personal:', personalPayload);
+  
+    try {
+      await firstValueFrom(this.apiService.crearPersonal(personalPayload));
+      console.log('✅ Registro de Personal creado exitosamente');
+    } catch (error: any) {
+      console.error('❌ Error al crear Personal:', error);
+      throw new Error(`Error al crear Personal: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+  }
   parsearNombreCompleto(nombreCompleto: string): any {
     // Ejemplo: "AQUIMA TAIPE ALEX ROMERO"
     const partes = nombreCompleto.trim().split(/\s+/);

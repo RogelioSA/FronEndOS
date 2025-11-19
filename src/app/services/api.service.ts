@@ -1717,6 +1717,12 @@ export class ApiService{
     return this.https.get(`${this.baseUrl}/security/Usuario`, { headers });
   }
 
+  editarUsuario(id: string, data: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/security/Usuario/${id}`;
+    return this.https.put<any>(url, data, { headers });
+  }
+  
 
   //usuarioempresa
   listarUsuarioEmpresaPorUsuario(usuarioId: number): Observable<any> {
