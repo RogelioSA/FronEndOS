@@ -421,7 +421,7 @@ export class PersonalHorarioComponent {
 
       this.personalDisponibles = [...this.personalDisponibles];
       this.personalHorarios = [...this.personalHorarios];
-
+      this.actualizarOrdenesConPersonales();
       this.showMessage(`${this.seleccionadosMain.length} persona(s) desasignada(s)`);
       this.seleccionadosMain = [];
 
