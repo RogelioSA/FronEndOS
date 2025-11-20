@@ -70,6 +70,7 @@
                 <dxi-column
                   dataField="cDescripcion"
                   caption="Descripción"
+                  [width]="240"
                 ></dxi-column>
 
                 <dxi-column
@@ -88,20 +89,13 @@
                   ></dxi-validation-rule>
                 </dxi-column>
 
-                <dxi-column
+             <dxi-column
+                  dataField="nRefrigerio"
                   caption="Refrigerio"
-                  [width]="110"
-                  alignment="center"
-                  [allowEditing]="false"
-                  [calculateCellValue]="() => '45 min'"
                 ></dxi-column>
-
-                <dxi-column
+                  <dxi-column
+                  dataField="nTraslado"
                   caption="Traslado"
-                  [width]="100"
-                  alignment="center"
-                  [allowEditing]="false"
-                  [calculateCellValue]="() => 0"
                 ></dxi-column>
 
                 <dxi-column

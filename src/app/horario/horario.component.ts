@@ -70,7 +70,9 @@ export class HorarioComponent {
         cNombre: h.nombre,
         cDescripcion: h.descripcion,
         nDiasTrabajo: h.horarioDetalles?.length || 0,
-        horarioDetalles: h.horarioDetalles
+        horarioDetalles: h.horarioDetalles,
+        nRefrigerio: 45,
+        nTraslado:0
       }));
 
       console.log("✅ Horarios cargados:", this.horarios);
