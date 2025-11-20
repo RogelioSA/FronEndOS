@@ -73,7 +73,7 @@ export class PersonalHorarioComponent {
       this.blockUI.start('Cargando órdenes de trabajo...');
 
       const response = await firstValueFrom(
-        this.apiService.listarOrdenTrabajoCabecera()
+        this.apiService.listarOrdenTrabajoCabeceraSimplificado()
       );
 
       this.ordenes = response.map((ot: any) => ({
@@ -233,7 +233,7 @@ export class PersonalHorarioComponent {
 
       const row: any = {
         nEmpleado: pOT.personaId,
-        cEmpleado: pOT.persona?.nombreCompleto || 'Desconocido',
+        cEmpleado: pOT.nombreCompleto || personaData?.nombreCompleto || 'Desconocido',
         esLider: pOT.esLider
       };
 

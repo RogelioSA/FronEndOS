@@ -1722,7 +1722,7 @@ export class ApiService{
     const url = `${this.baseUrl}/security/Usuario/${id}`;
     return this.https.put<any>(url, data, { headers });
   }
-  
+
 
   //usuarioempresa
   listarUsuarioEmpresaPorUsuario(usuarioId: number): Observable<any> {
@@ -1762,7 +1762,11 @@ export class ApiService{
     const url = `${this.baseUrl}/mantto/OrdenTrabajoCabecera`;
     return this.https.get<any>(url, { headers });
   }
-
+  listarOrdenTrabajoCabeceraSimplificado(): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/mantto/OrdenTrabajoCabecera/simplificado`;
+    return this.https.get<any>(url, { headers });
+  }
   crearOrdenTrabajoCabecera(data: any): Observable<any> {
     const headers = this.getHeaders();
     const url = `${this.baseUrl}/mantto/OrdenTrabajoCabecera`;
@@ -1874,7 +1878,7 @@ export class ApiService{
 
   actualizarOrdenTrabajoHorario(id: number, payload: any): Observable<any> {
     const headers = this.getHttpHeaders();
-  
+
     return this.https.put(
       `https://7p4yx3l258.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario/${id}`,
       payload,
