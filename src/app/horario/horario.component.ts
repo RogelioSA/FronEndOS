@@ -106,6 +106,8 @@ export class HorarioComponent {
       const eventos = detalle.horarioDetalleEventos || [];
 
       eventos.forEach((evento: any) => {
+        const diferenciaDiaCalculada = this.calcularDiferenciaDia(evento, eventos);
+
         this.detallesEventos.push({
           keyUnico: `${detalle.id}-${evento.id}`, // Key único para el grid
           detalleId: detalle.id,
@@ -114,7 +116,7 @@ export class HorarioComponent {
           nombreDia: this.obtenerNombreDia(detalle.diaSemana),
           tipoEvento: evento.tipoEvento,//(evento.tipoEvento === 0 || evento.tipoEvento === 1) ? 1 : 2,
           hora: this.formatearHora(evento.hora),
-          diferenciaDia: evento.diferenciaDia || 0,
+          diferenciaDia: diferenciaDiaCalculada,
           ventanaMin: evento.ventanaMin || 75,
           ventanaMax: evento.ventanaMax || 75
         });
@@ -450,7 +452,7 @@ export class HorarioComponent {
           horarioDetalleId: detalleId,
           tipoEvento: e.tipoEvento,
           hora: this.formatearHora(e.hora),
-          diferenciaDia: e.diferenciaDia || 0,
+          diferenciaDia: this.calcularDiferenciaDia(e, eventos),
           ventanaMin: e.ventanaMin || 75,
           ventanaMax: e.ventanaMax || 75
         }))
@@ -485,6 +487,28 @@ export class HorarioComponent {
     }
 
     return '08:00:00';
+  }
+
+  calcularDiferenciaDia(evento: any, eventosDia: any[]): number {
+    if (evento.tipoEvento !== 1) {
+      return evento.diferenciaDia ?? 0;
+    }
+
+    const entrada = eventosDia.find(e => e.tipoEvento === 0);
+    if (!entrada) {
+      return evento.diferenciaDia ?? 0;
+    }
+
+    const horaSalida = this.convertirHoraANumero(evento.hora);
+    const horaEntrada = this.convertirHoraANumero(entrada.hora);
+
+    return horaSalida < horaEntrada ? 1 : 0;
+  }
+
+  private convertirHoraANumero(hora: any): number {
+    const horaString = this.formatearHora(hora);
+    const [horas, minutos, segundos] = horaString.split(':').map(v => parseInt(v, 10));
+    return horas * 3600 + minutos * 60 + segundos;
   }
 
 }

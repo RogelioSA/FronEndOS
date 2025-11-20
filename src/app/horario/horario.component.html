@@ -135,18 +135,28 @@
                 ></dxo-pager>
 
                 <dxo-editing
-                  mode="row"
+                  mode="form"
                   [allowUpdating]="true"
                   [allowAdding]="true"
                   [allowDeleting]="true"
                   [selectTextOnEditStart]="true"
                   startEditAction="click"
-                ></dxo-editing>
+                >
+                  <dxo-form [colCount]="2">
+                    <dxi-item dataField="diaSemana"></dxi-item>
+                    <dxi-item dataField="tipoEvento"></dxi-item>
+                    <dxi-item dataField="hora"></dxi-item>
+                    <dxi-item dataField="ventanaMin"></dxi-item>
+                    <dxi-item dataField="ventanaMax"></dxi-item>
+                  </dxo-form>
+                </dxo-editing>
 
                 <dxi-column
                   dataField="diaSemana"
                   caption="Día"
                   [width]="120"
+                  [groupIndex]="0"
+                  [showWhenGrouped]="false"
                 >
                   <dxo-lookup
                     [dataSource]="diasSemana"
