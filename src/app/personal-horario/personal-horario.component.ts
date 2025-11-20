@@ -365,7 +365,7 @@ export class PersonalHorarioComponent {
 
         this.personalHorarios.push(row);
       }
-
+      this.actualizarOrdenesConPersonales();
       this.personalDisponibles = this.personalDisponibles.filter(
         d => !this.seleccionDisponibles.some(s => s.nEmpleado === d.nEmpleado)
       );
@@ -768,7 +768,30 @@ export class PersonalHorarioComponent {
     event.target.value = null;
   }
 }
+  private actualizarOrdenesConPersonales() {
+    if (!this.ordenSeleccionadaCompleta) {
+      return;
+    }
 
+    const personalesActualizados = this.personalHorarios.map(p => ({
+      id: this.ordenTrabajoPersonalIds.get(p.nEmpleado) || null,
+      personaId: p.nEmpleado,
+      esLider: p.esLider,
+      nombreCompleto: p.cEmpleado,
+      estado: true
+    }));
+
+    this.ordenSeleccionadaCompleta = {
+      ...this.ordenSeleccionadaCompleta,
+      personales: personalesActualizados
+    };
+
+    this.ordenes = this.ordenes.map(orden =>
+      orden.nCodigo === this.ordenCombo
+        ? { ...orden, datosCompletos: this.ordenSeleccionadaCompleta }
+        : orden
+    );
+  }
 @ViewChild('fileExcelMasivo') fileExcelMasivo!: ElementRef<HTMLInputElement>;
 
 btnExcelMasivoClick() {
