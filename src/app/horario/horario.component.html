@@ -89,6 +89,22 @@
                 </dxi-column>
 
                 <dxi-column
+                  caption="Refrigerio"
+                  [width]="110"
+                  alignment="center"
+                  [allowEditing]="false"
+                  [calculateCellValue]="() => '45 min'"
+                ></dxi-column>
+
+                <dxi-column
+                  caption="Traslado"
+                  [width]="100"
+                  alignment="center"
+                  [allowEditing]="false"
+                  [calculateCellValue]="() => 0"
+                ></dxi-column>
+
+                <dxi-column
                   type="buttons"
                   [width]="120"
                   alignment="center"
