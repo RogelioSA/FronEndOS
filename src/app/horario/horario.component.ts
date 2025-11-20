@@ -123,8 +123,9 @@ export class HorarioComponent {
           ventanaMax: evento.ventanaMax || 75
         });
       });
-    });
 
+    });
+    this.ordenarDetallesEventos();
     console.log("✅ Eventos cargados:", this.detallesEventos);
   }
 
@@ -312,7 +313,7 @@ export class HorarioComponent {
       detalles: detallesActualizados
     };
 
-    console.log('🚀 DATOS COMPLETOS A ENVIAR:', JSON.stringify(datos, null, 2));
+    console.log('A ACTUALIZAR', JSON.stringify(datos, null, 2));
 
     this.apiService.updateHorario(this.idHorarioActual, datos).subscribe(
       (response: any) => {
@@ -341,20 +342,6 @@ export class HorarioComponent {
       return;
     }
 
-    // Agregar el nuevo evento a la lista temporal
-    this.detallesEventos.push({
-      keyUnico: `nuevo-${Date.now()}`,
-      detalleId: 0,
-      eventoId: 0,
-      diaSemana: event.data.diaSemana,
-      nombreDia: this.obtenerNombreDia(event.data.diaSemana),
-      tipoEvento: event.data.tipoEvento,
-      hora: this.formatearHora(event.data.hora),
-      diferenciaDia: 0,
-      ventanaMin: event.data.ventanaMin || 75,
-      ventanaMax: event.data.ventanaMax || 75
-    });
-
     // Reconstruir y enviar
     const detallesActualizados = this.reconstruirDetallesDesdeEventos();
 
@@ -365,6 +352,7 @@ export class HorarioComponent {
       activo: true,
       detalles: detallesActualizados
     };
+    console.log('A INSERTAR', JSON.stringify(datos, null, 2));
 
     this.apiService.updateHorario(this.idHorarioActual, datos).subscribe(
       (response: any) => {
@@ -511,6 +499,16 @@ export class HorarioComponent {
     const horaString = this.formatearHora(hora);
     const [horas, minutos, segundos] = horaString.split(':').map(v => parseInt(v, 10));
     return horas * 3600 + minutos * 60 + segundos;
+  }
+
+    private ordenarDetallesEventos() {
+    this.detallesEventos.sort((a, b) => {
+      if (a.diaSemana !== b.diaSemana) {
+        return a.diaSemana - b.diaSemana;
+      }
+
+      return a.tipoEvento - b.tipoEvento;
+    });
   }
 
 }
