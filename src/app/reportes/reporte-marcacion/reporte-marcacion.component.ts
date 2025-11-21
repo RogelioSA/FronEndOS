@@ -54,6 +54,7 @@ export class ReporteMarcacionComponent {
 
   marcaciones: any[] = [];
   datosReporte: EmpleadoReporte[] = [];
+  datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
   columnasdinamicas: any[] = [];
   
   // Propiedades para el modal
@@ -199,7 +200,24 @@ export class ReporteMarcacionComponent {
     });
 
     this.datosReporte = Array.from(empleadosMap.values());
+    this.agruparDatosPorOrden();
     console.log("✅ Datos procesados para reporte:", this.datosReporte);
+  }
+
+  agruparDatosPorOrden() {
+    const grupos = new Map<string, EmpleadoReporte[]>();
+
+    this.datosReporte.forEach((empleado) => {
+      if (!grupos.has(empleado.orden)) {
+        grupos.set(empleado.orden, []);
+      }
+      grupos.get(empleado.orden)!.push(empleado);
+    });
+
+    this.datosAgrupados = Array.from(grupos.entries()).map(([orden, empleados]) => ({
+      orden,
+      empleados,
+    }));
   }
 
   generarColumnasFechas() {
