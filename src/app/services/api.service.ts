@@ -275,10 +275,13 @@ export class ApiService{
       );
     }
 
-    getRegistroAsistencia(): Observable<any> {
+    getRegistroAsistencia(fechaInicio: string, fechaFin: string): Observable<any> {
       return this.https.get(
-        `${this.baseUrl}/rrhh/RegistroAsistencia`,
-        { headers: this.getHttpHeaders() }
+        `${this.baseUrl}/rrhh/RegistroAsistencia/range_date`,
+        {
+          headers: this.getHttpHeaders(),
+          params: { fechaInicio, fechaFin }
+        }
       );
     }
 

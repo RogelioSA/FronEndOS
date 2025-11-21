@@ -20,10 +20,16 @@ interface MarcacionPorDia {
 }
 
 interface EmpleadoReporte {
+  orden: string;
   dni: string;
   personal: string;
   personalId: number;
   marcaciones: { [fecha: string]: MarcacionPorDia };
+}
+
+interface GrupoOrdenReporte {
+  orden: string;
+  empleados: EmpleadoReporte[];
 }
 
 interface DetalleMarcacion {
@@ -53,6 +59,7 @@ export class ReporteMarcacionComponent {
 
   marcaciones: any[] = [];
   datosReporte: EmpleadoReporte[] = [];
+  gruposReporte: GrupoOrdenReporte[] = [];
   columnasdinamicas: any[] = [];
   
   // Propiedades para el modal
@@ -98,13 +105,20 @@ export class ReporteMarcacionComponent {
 
   async traerMarcaciones() {
     this.blockUI.start('Cargando marcaciones...');
-  
+
     try {
       console.log("📅 Trayendo marcaciones desde API...");
+      const fechaInicio = this.datePipe.transform(this.fechaInicial, 'yyyy-MM-dd');
+      const fechaFin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd');
+
+      if (!fechaInicio || !fechaFin) {
+        throw new Error('Fechas inválidas');
+      }
+
       const result = await firstValueFrom(
-        this.apiService.getRegistroAsistencia()
+        this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)
       );
-  
+
       console.log("✅ Marcaciones recibidas:", result);
 
       this.marcaciones = result;
@@ -119,17 +133,16 @@ export class ReporteMarcacionComponent {
   }
 
   procesarDatosParaReporte() {
-    // Filtrar por rango de fechas
+    // Filtrar por rango de fechas (seguridad adicional)
     const marcacionesFiltradas = this.marcaciones.filter(m => {
       const fechaJornal = new Date(m.fechaJornal);
       const fechaIni = new Date(this.fechaInicial);
       const fechaFin = new Date(this.fechaFinal);
-      
-      // Normalizar las fechas (quitar hora)
+
       fechaJornal.setHours(0, 0, 0, 0);
       fechaIni.setHours(0, 0, 0, 0);
       fechaFin.setHours(0, 0, 0, 0);
-      
+
       return fechaJornal >= fechaIni && fechaJornal <= fechaFin;
     });
 
@@ -141,17 +154,21 @@ export class ReporteMarcacionComponent {
 
     marcacionesFiltradas.forEach(marcacion => {
       const personalId = marcacion.personalId;
-      
+
       if (!empleadosMap.has(personalId)) {
         empleadosMap.set(personalId, {
-          dni: marcacion.personal?.persona?.documentoIdentidad || 'N/A',
-          personal: this.obtenerNombreCompleto(marcacion.personal),
+          orden: this.obtenerOrdenInfo(marcacion),
+          dni: marcacion.persona?.documentoIdentidad || marcacion.personal?.persona?.documentoIdentidad || 'N/A',
+          personal: this.obtenerNombreCompleto(marcacion.personal, marcacion.persona),
           personalId: personalId,
           marcaciones: {}
         });
       }
 
       const empleado = empleadosMap.get(personalId)!;
+      if (empleado.orden === 'Sin orden vinculada') {
+        empleado.orden = this.obtenerOrdenInfo(marcacion);
+      }
       const fechaKey = this.datePipe.transform(marcacion.fechaJornal, 'yyyy-MM-dd')!;
       
       if (!empleado.marcaciones[fechaKey]) {
@@ -188,7 +205,25 @@ export class ReporteMarcacionComponent {
     });
 
     this.datosReporte = Array.from(empleadosMap.values());
+    this.gruposReporte = this.agruparPorOrden(this.datosReporte);
     console.log("✅ Datos procesados para reporte:", this.datosReporte);
+  }
+
+  agruparPorOrden(datos: EmpleadoReporte[]): GrupoOrdenReporte[] {
+    const grupos = new Map<string, EmpleadoReporte[]>();
+
+    datos.forEach((empleado) => {
+      const claveOrden = empleado.orden || 'Sin orden vinculada';
+      if (!grupos.has(claveOrden)) {
+        grupos.set(claveOrden, []);
+      }
+      grupos.get(claveOrden)!.push(empleado);
+    });
+
+    return Array.from(grupos.entries()).map(([orden, empleados]) => ({
+      orden,
+      empleados
+    }));
   }
 
   generarColumnasFechas() {
@@ -227,16 +262,38 @@ export class ReporteMarcacionComponent {
     return dias[fecha.getDay()];
   }
 
-  obtenerNombreCompleto(personal: any): string {
-    if (!personal || !personal.persona) {
+  obtenerNombreCompleto(personal: any, persona?: any): string {
+    const personaInfo = persona || personal?.persona;
+    if (!personaInfo) {
       return "Sin información";
     }
-    
-    const nombres = personal.persona.nombres || "";
-    const apellidoPaterno = personal.persona.apellidoPaterno || "";
-    const apellidoMaterno = personal.persona.apellidoMaterno || "";
-    
+
+    const nombres = personaInfo.nombres || "";
+    const apellidoPaterno = personaInfo.apellidoPaterno || "";
+    const apellidoMaterno = personaInfo.apellidoMaterno || "";
+
+    const nombreCompleto = personaInfo.nombreCompleto || '';
+
+    if (nombreCompleto) {
+      return nombreCompleto;
+    }
+
     return `${apellidoPaterno} ${apellidoMaterno}, ${nombres}`.trim() || "Sin nombre";
+  }
+
+  obtenerOrdenInfo(marcacion: any): string {
+    const codigoOrdenServicio = marcacion.ordenServicio?.codigoOrdenInterna || marcacion.ordenServicio?.codigoReferencial;
+    const nombreOrdenTrabajo = marcacion.ordenTrabajo?.nombre;
+
+    const partes = [];
+    if (codigoOrdenServicio) {
+      partes.push(codigoOrdenServicio);
+    }
+    if (nombreOrdenTrabajo) {
+      partes.push(nombreOrdenTrabajo);
+    }
+
+    return partes.join(' - ') || 'Sin orden vinculada';
   }
 
   // Método antiguo (mantener por compatibilidad)
@@ -335,7 +392,7 @@ export class ReporteMarcacionComponent {
       diferenciaMinutos: datos.diferenciaMinutos,
       latitud: datos.latitud,
       longitud: datos.longitud,
-      politica: datos.registroAsistenciaPolitica?.nombreCorto || 'N/A',
+      politica: datos.registroAsistenciaPolitica?.nombreCorto || datos.registroAsistenciaPolitica?.nombre || 'N/A',
       horaProgramada: datos.horarioDetalleEvento?.hora || 'N/A',
       linkGoogleMaps: linkGoogleMaps
     };
@@ -423,7 +480,7 @@ export class ReporteMarcacionComponent {
 
   // Calcular colspan dinámico para el mensaje de "no hay datos"
   calcularColspan(): number {
-    const baseColumns = 2; // DNI y PERSONAL
+    const baseColumns = 3; // ORDEN, DNI y PERSONAL
     const eventColumns = this.verTodo ? 5 : 2; // E, SR, ER, S, D : E, S
     return baseColumns + (this.columnasdinamicas.length * eventColumns);
   }
@@ -442,7 +499,7 @@ export class ReporteMarcacionComponent {
       const datosExcel: any[] = [];
 
       // Crear encabezado principal (primera fila con fechas)
-      const encabezadoFechas = ['DNI', 'PERSONAL'];
+      const encabezadoFechas = ['ORDEN', 'DNI', 'PERSONAL'];
       this.columnasdinamicas.forEach(col => {
         encabezadoFechas.push(`${col.diaSemana} ${col.fechaDisplay}`);
         if (this.verTodo) {
@@ -459,7 +516,7 @@ export class ReporteMarcacionComponent {
       datosExcel.push(encabezadoFechas);
 
       // Crear subencabezado (segunda fila con E, S, etc.)
-      const subencabezado = ['', '']; // Vacíos para DNI y PERSONAL
+      const subencabezado = ['', '', '']; // Vacíos para ORDEN, DNI y PERSONAL
       this.columnasdinamicas.forEach(() => {
         if (this.verTodo) {
           subencabezado.push('E', 'SR', 'ER', 'S', 'D');
@@ -471,7 +528,7 @@ export class ReporteMarcacionComponent {
 
       // Agregar datos de empleados
       this.datosReporte.forEach(empleado => {
-        const fila: any[] = [empleado.dni, empleado.personal];
+        const fila: any[] = [empleado.orden, empleado.dni, empleado.personal];
         
         this.columnasdinamicas.forEach(col => {
           if (this.verTodo) {
@@ -498,6 +555,7 @@ export class ReporteMarcacionComponent {
 
       // Aplicar estilos y ajustar anchos de columna
       const colWidths = [
+        { wch: 25 },  // ORDEN
         { wch: 12 },  // DNI
         { wch: 35 }   // PERSONAL
       ];
@@ -520,7 +578,7 @@ export class ReporteMarcacionComponent {
 
       // Mergear celdas del encabezado de fechas
       const merges: XLSX.Range[] = [];
-      let colIndex = 2; // Empezar después de DNI y PERSONAL
+      let colIndex = 3; // Empezar después de ORDEN, DNI y PERSONAL
       
       this.columnasdinamicas.forEach(() => {
         if (this.verTodo) {

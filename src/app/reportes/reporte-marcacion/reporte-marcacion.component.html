@@ -58,8 +58,9 @@
                 <table class="table table-bordered table-hover" style="font-size: 12px;">
                     <thead class="table-dark" style="position: sticky; top: 0; z-index: 10;">
                         <tr>
-                            <th rowspan="2" class="align-middle text-center" style="min-width: 100px; position: sticky; left: 0; background-color: #212529; z-index: 11;">DNI</th>
-                            <th rowspan="2" class="align-middle text-center" style="min-width: 250px; position: sticky; left: 100px; background-color: #212529; z-index: 11;">PERSONAL</th>
+                            <th rowspan="2" class="align-middle text-center" style="min-width: 220px; position: sticky; left: 0; background-color: #212529; z-index: 11;">ORDEN</th>
+                            <th rowspan="2" class="align-middle text-center" style="min-width: 100px; position: sticky; left: 220px; background-color: #212529; z-index: 11;">DNI</th>
+                            <th rowspan="2" class="align-middle text-center" style="min-width: 250px; position: sticky; left: 320px; background-color: #212529; z-index: 11;">PERSONAL</th>
                             
                             <!-- Modo normal: mostrar solo E y S -->
                             <ng-container *ngIf="!verTodo">
@@ -111,13 +112,17 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let empleado of datosReporte">
-                            <td class="text-center align-middle" style="position: sticky; left: 0; background-color: white; font-weight: 500;">
-                                {{ empleado.dni }}
-                            </td>
-                            <td class="align-middle" style="position: sticky; left: 100px; background-color: white; font-weight: 500;">
-                                {{ empleado.personal }}
-                            </td>
+                        <ng-container *ngFor="let grupo of gruposReporte">
+                            <tr *ngFor="let empleado of grupo.empleados; let i = index">
+                                <td *ngIf="i === 0" [attr.rowspan]="grupo.empleados.length" class="align-middle" style="position: sticky; left: 0; background-color: white; font-weight: 500;">
+                                    {{ grupo.orden }}
+                                </td>
+                                <td class="text-center align-middle" style="position: sticky; left: 220px; background-color: white; font-weight: 500;">
+                                    {{ empleado.dni }}
+                                </td>
+                                <td class="align-middle" style="position: sticky; left: 320px; background-color: white; font-weight: 500;">
+                                    {{ empleado.personal }}
+                                </td>
                             
                             <!-- Modo normal: E y S -->
                             <ng-container *ngIf="!verTodo">
@@ -196,6 +201,7 @@
                                 </ng-container>
                             </ng-container>
                         </tr>
+                        </ng-container>
                         <tr *ngIf="datosReporte.length === 0">
                             <td [attr.colspan]="calcularColspan()" class="text-center text-muted">
                                 No hay datos para mostrar en el rango de fechas seleccionado
