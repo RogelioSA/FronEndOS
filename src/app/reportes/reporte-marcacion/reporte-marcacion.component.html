@@ -112,16 +112,17 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let empleado of datosReporte">
-                            <td class="align-middle" style="position: sticky; left: 0; background-color: white; font-weight: 500;">
-                                {{ empleado.orden }}
-                            </td>
-                            <td class="text-center align-middle" style="position: sticky; left: 220px; background-color: white; font-weight: 500;">
-                                {{ empleado.dni }}
-                            </td>
-                            <td class="align-middle" style="position: sticky; left: 320px; background-color: white; font-weight: 500;">
-                                {{ empleado.personal }}
-                            </td>
+                        <ng-container *ngFor="let grupo of datosAgrupados">
+                            <tr *ngFor="let empleado of grupo.empleados; let i = index">
+                                <td *ngIf="i === 0" [attr.rowspan]="grupo.empleados.length" class="align-middle fw-semibold" style="position: sticky; left: 0; background-color: #f8f9fa; font-weight: 500;">
+                                    {{ grupo.orden }}
+                                </td>
+                                <td class="text-center align-middle" style="position: sticky; left: 220px; background-color: white; font-weight: 500;">
+                                    {{ empleado.dni }}
+                                </td>
+                                <td class="align-middle" style="position: sticky; left: 320px; background-color: white; font-weight: 500;">
+                                    {{ empleado.personal }}
+                                </td>
                             
                             <!-- Modo normal: E y S -->
                             <ng-container *ngIf="!verTodo">
@@ -200,6 +201,7 @@
                                 </ng-container>
                             </ng-container>
                         </tr>
+                        </ng-container>
                         <tr *ngIf="datosReporte.length === 0">
                             <td [attr.colspan]="calcularColspan()" class="text-center text-muted">
                                 No hay datos para mostrar en el rango de fechas seleccionado
