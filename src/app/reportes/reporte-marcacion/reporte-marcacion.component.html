@@ -58,9 +58,8 @@
                 <table class="table table-bordered table-hover" style="font-size: 12px;">
                     <thead class="table-dark" style="position: sticky; top: 0; z-index: 10;">
                         <tr>
-                            <th rowspan="2" class="align-middle text-center" style="min-width: 220px; position: sticky; left: 0; background-color: #212529; z-index: 11;">ORDEN</th>
-                            <th rowspan="2" class="align-middle text-center" style="min-width: 100px; position: sticky; left: 220px; background-color: #212529; z-index: 11;">DNI</th>
-                            <th rowspan="2" class="align-middle text-center" style="min-width: 250px; position: sticky; left: 320px; background-color: #212529; z-index: 11;">PERSONAL</th>
+                            <th rowspan="2" class="align-middle text-center" style="min-width: 100px; position: sticky; left: 0; background-color: #212529; z-index: 11;">DNI</th>
+                            <th rowspan="2" class="align-middle text-center" style="min-width: 250px; position: sticky; left: 100px; background-color: #212529; z-index: 11;">PERSONAL</th>
                             
                             <!-- Modo normal: mostrar solo E y S -->
                             <ng-container *ngIf="!verTodo">
@@ -113,14 +112,14 @@
                     </thead>
                     <tbody>
                         <ng-container *ngFor="let grupo of datosAgrupados">
-                            <tr *ngFor="let empleado of grupo.empleados; let i = index">
-                                <td *ngIf="i === 0" [attr.rowspan]="grupo.empleados.length" class="align-middle fw-semibold" style="position: sticky; left: 0; background-color: #f8f9fa; font-weight: 500;">
-                                    {{ grupo.orden }}
-                                </td>
-                                <td class="text-center align-middle" style="position: sticky; left: 220px; background-color: white; font-weight: 500;">
+                            <tr class="orden-row">
+                                <td [attr.colspan]="calcularColspan()" class="fw-semibold">{{ grupo.orden }}</td>
+                            </tr>
+                            <tr *ngFor="let empleado of grupo.empleados">
+                                <td class="text-center align-middle" style="position: sticky; left: 0; background-color: white; font-weight: 500;">
                                     {{ empleado.dni }}
                                 </td>
-                                <td class="align-middle" style="position: sticky; left: 320px; background-color: white; font-weight: 500;">
+                                <td class="align-middle" style="position: sticky; left: 100px; background-color: white; font-weight: 500;">
                                     {{ empleado.personal }}
                                 </td>
                             
