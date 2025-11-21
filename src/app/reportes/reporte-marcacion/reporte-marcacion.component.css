@@ -55,6 +55,14 @@
     left: 100px;
 }
 
+.orden-row td {
+    position: static !important;
+    left: auto !important;
+    background-color: #eef2f7;
+    font-size: 12px;
+    border: 1px solid #dee2e6;
+}
+
 /* Fondo para días especiales */
 .table-info {
     background-color: #cfe2ff !important;

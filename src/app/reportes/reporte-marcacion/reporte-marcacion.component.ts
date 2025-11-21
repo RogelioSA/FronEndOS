@@ -474,7 +474,7 @@ export class ReporteMarcacionComponent {
 
   // Calcular colspan dinámico para el mensaje de "no hay datos"
   calcularColspan(): number {
-    const baseColumns = 3; // ORDEN, DNI y PERSONAL
+    const baseColumns = 2; // DNI y PERSONAL
     const eventColumns = this.verTodo ? 5 : 2; // E, SR, ER, S, D : E, S
     return baseColumns + (this.columnasdinamicas.length * eventColumns);
   }
