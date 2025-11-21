@@ -657,29 +657,28 @@ export class PersonalHorarioComponent {
       box.style.display = 'none';
     }, 3000);
   }
+
   async onExcelAsignacionChange(event: any) {
   const file: File = event.target.files?.[0];
   if (!file) {
     return;
   }
 
-  // Validación básica
   if (this.personalDisponibles.length === 0) {
     this.showMessage('No hay personal disponible cargado para asignar.');
+    event.target.value = null;
     return;
   }
 
-  this.blockUI.start('Procesando Excel...');
+  this.blockUI.start('Procesando Excel de asignación masiva...');
 
   try {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
-
-    // Tomamos la primera hoja (ajusta si necesitas otra)
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
 
-    // Leemos como matriz (array de filas) porque tu encabezado "DNI" está en la F, fila 2
+    // Leemos como matriz (header: 1)
     const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
     if (!rows || rows.length < 3) {
@@ -687,42 +686,69 @@ export class PersonalHorarioComponent {
       return;
     }
 
-    // Fila de encabezados es la segunda fila → índice 1
+    // Fila 2 (índice 1) contiene los encabezados: ITEM, DNI, ..., TURNO, MOVILIZACION, DESMOVILIZACION
     const headerRow = rows[1];
-    if (!headerRow) {
-      this.showMessage('No se encontró la fila de encabezados (fila 2).');
-      return;
-    }
 
-    // Buscar la columna cuyo encabezado sea "DNI"
     const dniColIndex = headerRow.findIndex((v: any) =>
       String(v ?? '').trim().toUpperCase() === 'DNI'
     );
+    const turnoColIndex = headerRow.findIndex((v: any) =>
+      String(v ?? '').trim().toUpperCase() === 'TURNO'
+    );
+    const movColIndex = headerRow.findIndex((v: any) =>
+      String(v ?? '').trim().toUpperCase() === 'MOVILIZACION'
+    );
+    const desColIndex = headerRow.findIndex((v: any) =>
+      String(v ?? '').trim().toUpperCase() === 'DESMOVILIZACION'
+    );
 
-    if (dniColIndex === -1) {
-      this.showMessage('No se encontró la columna DNI en la fila 2 del Excel.');
+    if (dniColIndex === -1 || turnoColIndex === -1 || movColIndex === -1 || desColIndex === -1) {
+      this.showMessage('No se encontraron las columnas DNI / TURNO / MOVILIZACION / DESMOVILIZACION en la fila 2.');
       return;
     }
 
-    // Las filas de datos empiezan desde la fila 3 → índice 2
-    const dniListaExcel: string[] = rows
-      .slice(2)
-      .map(row => this.normalizarDni(row[dniColIndex]))
-      .filter(d => d.length > 0);
+    // 1) Leemos las filas de datos (desde fila 3 → índice 2)
+    type ExcelRowInfo = {
+      dni: string;
+      turno: string;
+      inicio: Date;
+      fin: Date;
+    };
 
-    if (dniListaExcel.length === 0) {
-      this.showMessage('No se encontraron DNIs válidos en el Excel.');
+    const excelInfoPorDni = new Map<string, ExcelRowInfo>();
+
+    for (const row of rows.slice(2)) {
+      const dni = this.normalizarDni(row[dniColIndex]);
+      if (!dni) continue;
+
+      const turno = String(row[turnoColIndex] ?? '').trim();
+      const movRaw = row[movColIndex];
+      const desRaw = row[desColIndex];
+
+      if (!turno || !movRaw || !desRaw) continue;
+
+      const inicio = this.parseFechaExcel(movRaw);
+      const fin = this.parseFechaExcel(desRaw);
+
+      if (!inicio || !fin) {
+        console.warn('⚠️ Fila con fecha inválida en Excel. DNI:', dni, 'mov:', movRaw, 'des:', desRaw);
+        continue;
+      }
+
+      excelInfoPorDni.set(dni, { dni, turno, inicio, fin });
+
+    }
+
+    if (excelInfoPorDni.size === 0) {
+      this.showMessage('No se encontraron filas válidas con DNI y rango de fechas en el Excel.');
       return;
     }
 
-    console.log('📄 DNIs encontrados en Excel:', dniListaExcel);
-
-    // Mapa DNI → persona disponible
+    // 2) Hacemos match con personalDisponible por documentoIdentidad
     const mapaDisponiblesPorDni = new Map<string, any>();
     for (const p of this.personalDisponibles) {
       const dni = this.normalizarDni(p.documentoIdentidad);
       if (dni) {
-        // Si hay duplicados, se queda el primero (o podrías manejar colisiones)
         if (!mapaDisponiblesPorDni.has(dni)) {
           mapaDisponiblesPorDni.set(dni, p);
         }
@@ -730,12 +756,14 @@ export class PersonalHorarioComponent {
     }
 
     const seleccionDesdeExcel: any[] = [];
+    const mapPersonaIdToExcelInfo = new Map<number, ExcelRowInfo>();
     const noEncontrados: string[] = [];
 
-    for (const dni of dniListaExcel) {
+    for (const [dni, info] of excelInfoPorDni.entries()) {
       const persona = mapaDisponiblesPorDni.get(dni);
       if (persona) {
         seleccionDesdeExcel.push(persona);
+        mapPersonaIdToExcelInfo.set(persona.nEmpleado, info);
       } else {
         noEncontrados.push(dni);
       }
@@ -747,27 +775,95 @@ export class PersonalHorarioComponent {
       return;
     }
 
-    // Actualizamos la selección como si se hubiera hecho manualmente desde la grilla
+    console.log('✅ Personas a asignar desde Excel:', seleccionDesdeExcel);
+    if (noEncontrados.length > 0) {
+      console.warn('⚠️ DNIs sin coincidencia en personal disponible:', noEncontrados);
+    }
+
+    // 3) Cargar en la selección y reutilizar agregarSeleccionados()
     this.seleccionDisponibles = seleccionDesdeExcel;
     this.hayDisponiblesSeleccionados = this.seleccionDisponibles.length > 0;
 
-    console.log('✅ Personas seleccionadas desde Excel:', this.seleccionDisponibles);
-    if (noEncontrados.length > 0) {
-      console.warn('⚠️ DNIs del Excel sin coincidencia en personal disponible:', noEncontrados);
-    }
+    await this.agregarSeleccionados(); // esto crea OrdenTrabajoPersonal y filas en personalHorarios
 
-    // Reutilizamos TU lógica actual de asignación
-    await this.agregarSeleccionados();
+    // 4) Asignar horarios día a día según TURNO / MOVILIZACION / DESMOVILIZACION
+    await this.asignarHorariosDesdeExcel(mapPersonaIdToExcelInfo);
+
+    this.showMessage(`Asignación masiva completada. Personas: ${seleccionDesdeExcel.length}.`);
 
   } catch (err) {
     console.error('❌ Error procesando Excel de asignación masiva:', err);
     this.showMessage('Error al procesar el archivo Excel.');
   } finally {
     this.blockUI.stop();
-    // Opcional: limpiar el input de archivo
-    event.target.value = null;
+    event.target.value = null; // limpiar input file
   }
 }
+
+
+private async asignarHorariosDesdeExcel(
+  mapPersonaIdToExcelInfo: Map<number, { dni: string; turno: string; inicio: Date; fin: Date }>
+) {
+  if (!this.fechaDesde || !this.fechaHasta) {
+    console.warn('⚠️ No hay fechaDesde / fechaHasta global definidas, no se asignarán horarios.');
+    return;
+  }
+
+  // Preparamos búsqueda rápida de horarios por nombre (DIA / NOCHE, etc.)
+  const mapaHorarioPorNombre = new Map<string, any>();
+  for (const h of this.horarios) {
+    const nombre = String(h.cNombre ?? '').trim().toUpperCase();
+    if (nombre) {
+      mapaHorarioPorNombre.set(nombre, h);
+    }
+  }
+
+  for (const [personaId, info] of mapPersonaIdToExcelInfo.entries()) {
+    const nombreTurno = info.turno.trim().toUpperCase();
+    const horario = mapaHorarioPorNombre.get(nombreTurno);
+
+    if (!horario) {
+      console.warn(`⚠️ No se encontró horario con nombre "${info.turno}" para personaId=${personaId}`);
+      continue;
+    }
+
+    const horarioId = horario.nCodigo;
+
+    // Buscar la fila de la persona en el grid principal
+    const row = this.personalHorarios.find(p => p.nEmpleado === personaId);
+    if (!row) {
+      console.warn(`⚠️ No se encontró fila en personalHorarios para personaId=${personaId}`);
+      continue;
+    }
+
+    // Recorremos día a día desde inicio hasta fin
+    const cursor = new Date(info.inicio.getFullYear(), info.inicio.getMonth(), info.inicio.getDate());
+    const fin = new Date(info.fin.getFullYear(), info.fin.getMonth(), info.fin.getDate());
+
+    while (cursor <= fin) {
+      // Solo dentro del rango global de la OT
+      if (cursor >= this.fechaDesde && cursor <= this.fechaHasta) {
+        const field = 'd' + formatDate(cursor, 'yyyyMMdd', 'en-US');
+
+        if (row.hasOwnProperty(field)) {
+          // Actualizamos la celda en el modelo
+          row[field] = horarioId;
+
+          // Persistimos usando la misma lógica centralizada
+          await this.guardarHorarioIndividual(personaId, new Date(cursor), horarioId);
+        }
+      }
+
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  }
+
+  // Forzamos refresh del grid
+  this.personalHorarios = [...this.personalHorarios];
+  console.log('✅ Horarios asignados desde Excel:', this.personalHorarios);
+}
+
+
   private actualizarOrdenesConPersonales() {
     if (!this.ordenSeleccionadaCompleta) {
       return;
@@ -792,6 +888,55 @@ export class PersonalHorarioComponent {
         : orden
     );
   }
+
+private parseFechaExcel(valor: any): Date | null {
+  if (valor == null) return null;
+
+  // 1) Ya viene como Date (XLSX a veces ya convierte)
+  if (valor instanceof Date) {
+    return new Date(valor.getFullYear(), valor.getMonth(), valor.getDate());
+  }
+
+  // 2) Viene como número: SERIAL EXCEL (ej. 45968)
+  if (typeof valor === 'number') {
+    // Excel: día 1 = 1900-01-01, pero normalmente se usa 1899-12-30 por el bug de 1900
+    const excelEpoch = new Date(1899, 11, 30); // 1899-12-30
+    const d = new Date(excelEpoch.getTime() + valor * 24 * 60 * 60 * 1000);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  const texto = String(valor).trim();
+  if (!texto) return null;
+
+  // 3) Formato esperado: d/M/yyyy o dd/MM/yyyy (ej: 7/11/2025)
+  const m1 = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m1) {
+    const dia = parseInt(m1[1], 10);
+    const mes = parseInt(m1[2], 10) - 1; // 0-based
+    const anio = parseInt(m1[3], 10);
+    return new Date(anio, mes, dia);
+  }
+
+  // 4) ISO: yyyy-MM-dd
+  const m2 = texto.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m2) {
+    const anio = parseInt(m2[1], 10);
+    const mes = parseInt(m2[2], 10) - 1;
+    const dia = parseInt(m2[3], 10);
+    return new Date(anio, mes, dia);
+  }
+
+  // 5) Último intento: que JS lo interprete
+  const d = new Date(texto);
+  if (!isNaN(d.getTime())) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  console.warn('⚠️ No se pudo parsear la fecha del Excel:', valor);
+  return null;
+}
+
+
 @ViewChild('fileExcelMasivo') fileExcelMasivo!: ElementRef<HTMLInputElement>;
 
 btnExcelMasivoClick() {
