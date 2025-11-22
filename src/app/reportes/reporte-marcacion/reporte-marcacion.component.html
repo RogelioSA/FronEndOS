@@ -280,6 +280,58 @@
                                         <span *ngIf="detalleMarcacion.esTardanza"> ({{ detalleMarcacion.diferenciaMinutos }} min)</span>
                                     </span>
                                 </div>
+
+                                <div class="d-grid">
+                                    <button
+                                        type="button"
+                                        class="btn btn-warning btn-regularizar"
+                                        (click)="iniciarRegularizacion()"
+                                        *ngIf="!editandoMarcacion"
+                                    >
+                                        REGULARIZAR
+                                    </button>
+                                </div>
+
+                                <div class="regularizacion-form" *ngIf="editandoMarcacion">
+                                    <div class="info-line stacked">
+                                        <span class="info-label">Jornal:</span>
+                                        <input
+                                            type="date"
+                                            class="form-control"
+                                            [(ngModel)]="regularizacion.jornal"
+                                        />
+                                    </div>
+
+                                    <div class="info-line stacked">
+                                        <span class="info-label">Evento:</span>
+                                        <select class="form-select" [(ngModel)]="regularizacion.evento">
+                                            <option *ngFor="let evento of eventosMarcacion" [ngValue]="evento.id">
+                                                {{ evento.nombre }}
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <div class="info-line stacked">
+                                        <span class="info-label">Orden de Trabajo:</span>
+                                        <dx-select-box
+                                            [dataSource]="ordenesTrabajo"
+                                            displayExpr="cOrdenInterna"
+                                            valueExpr="id"
+                                            [(value)]="regularizacion.ordenTrabajoId"
+                                            placeholder="Seleccione una orden de trabajo"
+                                            [width]="'100%'"
+                                        ></dx-select-box>
+                                    </div>
+
+                                    <div class="regularizacion-actions">
+                                        <button type="button" class="btn btn-primary" (click)="regularizarMarcacion()">
+                                            Guardar
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" (click)="cancelarRegularizacion()">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="detalle-col detalle-extra">
