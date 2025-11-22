@@ -33,6 +33,7 @@ interface DetalleMarcacion {
   fecha: string;
   fechaJornal: string;
   tipoEvento: string;
+  tipoEventoCodigo: number;
   hora: string;
   esTardanza: boolean;
   diferenciaMinutos: number;
@@ -40,6 +41,7 @@ interface DetalleMarcacion {
   longitud: number | null;
   politica: string;
   horaProgramada: string;
+  ordenTrabajoId: number | null;
   linkGoogleMaps: string;
 }
 
@@ -58,10 +60,23 @@ export class ReporteMarcacionComponent {
   columnasdinamicas: any[] = [];
   ordenesTrabajo: { id: number; cOrdenInterna: string }[] = [];
   ordenTrabajoSeleccionada: number | null = null;
+  eventosMarcacion = [
+    { id: 0, nombre: 'Entrada' },
+    { id: 1, nombre: 'Salida' },
+    { id: 2, nombre: 'Salida Refrigerio' },
+    { id: 3, nombre: 'Entrada Refrigerio' },
+    { id: 99, nombre: 'Desconocido' }
+  ];
   
   // Propiedades para el modal
   mostrarModal: boolean = false;
   detalleMarcacion: DetalleMarcacion | null = null;
+  editandoMarcacion: boolean = false;
+  regularizacion = {
+    jornal: '',
+    evento: 0,
+    ordenTrabajoId: null as number | null,
+  };
   
   // Nueva propiedad para el checkbox
   verTodo: boolean = false;
@@ -385,6 +400,7 @@ export class ReporteMarcacionComponent {
     if (!datos) return;
 
     const tipoEventoTexto = this.obtenerTipoEventoTexto(datos.tipoEvento ?? 99);
+    const tipoEventoCodigo = datos.tipoEvento ?? 99;
     const hora = this.datePipe.transform(datos.fecha, 'HH:mm:ss') || '';
     const fechaCompleta = this.datePipe.transform(datos.fecha, 'dd/MM/yyyy HH:mm:ss') || '';
     const fechaJornal = this.datePipe.transform(datos.fechaJornal, 'dd/MM/yyyy') || '';
@@ -400,6 +416,7 @@ export class ReporteMarcacionComponent {
       fecha: fechaCompleta,
       fechaJornal: fechaJornal,
       tipoEvento: tipoEventoTexto,
+      tipoEventoCodigo: tipoEventoCodigo,
       hora: hora,
       esTardanza: datos.esTardanza,
       diferenciaMinutos: datos.diferenciaMinutos,
@@ -407,9 +424,12 @@ export class ReporteMarcacionComponent {
       longitud: datos.longitud,
       politica: datos.registroAsistenciaPolitica?.nombreCorto || datos.registroAsistenciaPolitica?.nombre || 'N/A',
       horaProgramada: datos.horarioDetalleEvento?.hora || 'N/A',
+      ordenTrabajoId: datos.ordenTrabajo?.id ?? null,
       linkGoogleMaps: linkGoogleMaps
     };
 
+    this.editandoMarcacion = false;
+    this.prepararDatosRegularizacion();
     this.mostrarModal = true;
 
     if (datos.latitud && datos.longitud) {
@@ -417,6 +437,51 @@ export class ReporteMarcacionComponent {
         this.inicializarMapa(datos.latitud, datos.longitud);
       }, 100);
     }
+  }
+
+  prepararDatosRegularizacion() {
+    if (!this.detalleMarcacion) {
+      return;
+    }
+
+    this.regularizacion = {
+      jornal: this.convertirFechaJornalAISO(this.detalleMarcacion.fechaJornal),
+      evento: this.detalleMarcacion.tipoEventoCodigo,
+      ordenTrabajoId: this.detalleMarcacion.ordenTrabajoId
+    };
+  }
+
+  iniciarRegularizacion() {
+    this.editandoMarcacion = true;
+    this.prepararDatosRegularizacion();
+  }
+
+  cancelarRegularizacion() {
+    this.editandoMarcacion = false;
+    this.prepararDatosRegularizacion();
+  }
+
+  regularizarMarcacion() {
+    if (!this.detalleMarcacion) {
+      return;
+    }
+
+    // TODO: implementar consumo de API de regularización (PUT)
+    console.log('Regularización pendiente de implementar', {
+      detalle: this.detalleMarcacion,
+      payload: this.regularizacion
+    });
+  }
+
+  private convertirFechaJornalAISO(fechaJornal: string): string {
+    const [dia, mes, anio] = fechaJornal.split('/');
+    if (!dia || !mes || !anio) {
+      return '';
+    }
+
+    const diaNormalizado = dia.padStart(2, '0');
+    const mesNormalizado = mes.padStart(2, '0');
+    return `${anio}-${mesNormalizado}-${diaNormalizado}`;
   }
 
   inicializarMapa(latitud: number, longitud: number) {
@@ -458,6 +523,7 @@ export class ReporteMarcacionComponent {
   cerrarModal() {
     this.mostrarModal = false;
     this.detalleMarcacion = null;
+    this.editandoMarcacion = false;
   }
 
   obtenerTipoEventoTexto(tipoEvento: number): string {
