@@ -1,90 +1,88 @@
-<div class="container-fluid">
-    <div class="row g-1 mt-2 justify-content-md-center mb-4">
-      <div class="col-12">
-        <h3>Gestión de Usuarios</h3>
-        <div id="data-grid">
-          <dx-data-grid
-            id="gridContainer"
-            [dataSource]="usuarios"
-            keyExpr="id"
-            [showBorders]="true"
-            (onRowInserting)="insertarUsuario($event)"
-            [columnHidingEnabled]="true"
-            [rowAlternationEnabled]="true"
-            [showColumnLines]="true"
-            [showRowLines]="true"
-            [allowColumnResizing]="true"
+<div class="container-fluid px-0">
+  <div class="row g-1 mt-2 mb-4">
+    <div class="col-12">
+      <h3 class="px-3">Gestión de Usuarios</h3>
+      <div id="data-grid">
+        <dx-data-grid
+          id="gridContainer"
+          [dataSource]="usuarios"
+          keyExpr="id"
+          [showBorders]="true"
+          (onRowInserting)="insertarUsuario($event)"
+          (onRowUpdating)="editarUsuario($event)"
+          (onSaving)="onSaving($event)"
+          [columnHidingEnabled]="true"
+          [rowAlternationEnabled]="true"
+          [showColumnLines]="true"
+          [showRowLines]="true"
+          [allowColumnResizing]="true"
+          [width]="'100%'"
+        >
+          <dxo-paging [pageSize]="15"></dxo-paging>
+          <dxo-pager
+            [visible]="true"
+            [showPageSizeSelector]="true"
+            [allowedPageSizes]="[15, 25, 50, 100]"
+          ></dxo-pager>
+
+          <dxo-editing
+            mode="row"
+            [allowUpdating]="true"
+            [allowAdding]="true"
+            [allowDeleting]="true"
+            [selectTextOnEditStart]="true"
+            [useIcons]="true"
           >
-            <dxo-paging [pageSize]="15"></dxo-paging>
-            <dxo-pager
-              [visible]="true"
-              [showPageSizeSelector]="true"
-              [allowedPageSizes]="[15, 25, 50, 100]"
-            ></dxo-pager>
+          </dxo-editing>
 
-            <dxo-editing
-              mode="row"
-              [allowUpdating]="false"
-              [allowAdding]="true"
-              [allowDeleting]="true"
-              [selectTextOnEditStart]="true"
-              [useIcons]="true"
-            >
-            </dxo-editing>
+          <dxi-column
+            dataField="id"
+            caption="ID"
+            [width]="70"
+            [allowEditing]="false"
+            alignment="center"
+          ></dxi-column>
 
-            <dxi-column
-              dataField="id"
-              caption="ID"
-              [width]="70"
-              [allowEditing]="false"
-              alignment="center"
-            ></dxi-column>
+          <dxi-column
+            dataField="userName"
+            caption="Correo Electrónico"
+            [allowEditing]="false"
+          >
+            <dxi-validation-rule
+              type="required"
+              message="El correo electrónico es requerido"
+            ></dxi-validation-rule>
+            <dxi-validation-rule
+              type="email"
+              message="Ingrese un correo electrónico válido"
+            ></dxi-validation-rule>
+          </dxi-column>
 
-            <dxi-column
-              dataField="userName"
-              caption="Correo Electrónico"
-              [width]="350"
-            >
-              <dxi-validation-rule
-                type="required"
-                message="El correo electrónico es requerido"
-              ></dxi-validation-rule>
-              <dxi-validation-rule
-                type="email"
-                message="Ingrese un correo electrónico válido"
-              ></dxi-validation-rule>
-            </dxi-column>
+          <dxi-column
+            dataField="password"
+            caption="Contraseña"
+          >
+            <dxi-validation-rule
+              type="required"
+              message="La contraseña es requerida"
+            ></dxi-validation-rule>
+          </dxi-column>
 
-            <dxi-column
-  dataField="password"
-  caption="Contraseña"
-  [width]="250"
-  cellTemplate="passwordTemplate"
->
-  <dxi-validation-rule
-    type="required"
-    message="La contraseña es requerida"
-  ></dxi-validation-rule>
-</dxi-column>
+          <dxi-column type="buttons" [width]="110">
+            <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
+            <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
+            <dxi-button name="save" icon="save" hint="Guardar"></dxi-button>
+            <dxi-button name="cancel" icon="revert" hint="Cancelar"></dxi-button>
+          </dxi-column>
+        </dx-data-grid>
 
-<div *dxTemplate="let data of 'passwordTemplate'">
-  {{ data.value || '-' }}
-</div>
+        <div
+          id="messageBox"
+          style="display: none; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;"
+        ></div>
 
-            <dxi-column type="buttons" [width]="110" [fixed]="true" fixedPosition="right">
-              <dxi-button name="delete" icon="trash" hint="Eliminar"></dxi-button>
-              <dxi-button name="save" icon="save" hint="Guardar"></dxi-button>
-              <dxi-button name="cancel" icon="revert" hint="Cancelar"></dxi-button>
-            </dxi-column>
-          </dx-data-grid>
-
-          <div
-            id="messageBox"
-            style="display: none; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;"
-          ></div>
-
-          <block-ui></block-ui>
-        </div>
+        <block-ui></block-ui>
       </div>
     </div>
   </div>
+</div>

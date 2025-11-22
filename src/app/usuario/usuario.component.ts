@@ -19,7 +19,9 @@ export class UsuarioComponent implements OnInit {
 
   usuarios: any[] = [];
 
-  constructor(private apiService: ApiService) {}
+  constructor(
+    private apiService: ApiService
+  ) {}
 
   async ngOnInit() {
     await this.cargarDatos();
@@ -32,24 +34,37 @@ export class UsuarioComponent implements OnInit {
       const usuariosResponse = await firstValueFrom(
         this.apiService.listarUsuarioEmpresa()
       );
-      this.usuarios = usuariosResponse;
+      
+      // Mapear usuarios y establecer password como "-" para visualización
+      this.usuarios = usuariosResponse.map((usuario: any) => ({
+        ...usuario,
+        password: '-'
+      }));
 
       this.blockUI.stop();
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
       this.blockUI.stop();
-      this.mostrarMensaje('Error al cargar los usuarios', 'error');
     }
+  }
+
+  onSaving(e: any) {
+    console.log('=== ON SAVING EVENT ===');
+    console.log('Evento completo:', e);
+    console.log('Changes:', e.changes);
   }
 
   construirPayload(rowData: any): CrearUsuarioPayload {
     return {
-      email: rowData.email,
+      email: rowData.userName || rowData.email,
       password: rowData.password
     };
   }
 
   async insertarUsuario(e: any) {
+    console.log('=== INSERTAR USUARIO ===');
+    console.log('Evento:', e);
+    
     try {
       this.blockUI.start('Guardando usuario...');
 
@@ -58,20 +73,59 @@ export class UsuarioComponent implements OnInit {
       await firstValueFrom(
         this.apiService.crearUsuario(payload)
       );
-
-      this.mostrarMensaje('Usuario creado exitosamente', 'success');
       await this.cargarDatos();
 
       this.blockUI.stop();
     } catch (error) {
       console.error('Error al insertar usuario:', error);
       this.blockUI.stop();
-      this.mostrarMensaje('Error al guardar el usuario', 'error');
       e.cancel = true;
     }
   }
 
-  
+  async editarUsuario(e: any) {
+    console.log('=== EDITAR USUARIO ===');
+    console.log('Evento completo:', e);
+    console.log('e.key (ID):', e.key);
+    console.log('e.newData:', e.newData);
+    console.log('e.oldData:', e.oldData);
+    
+    try {
+      // Validar que se haya ingresado una contraseña y que no sea "-"
+      if (!e.newData.password || e.newData.password.trim() === '' || e.newData.password === '-') {
+        console.log('ERROR: No hay contraseña válida');
+        
+        e.cancel = true;
+        return;
+      }
+
+      this.blockUI.start('Actualizando contraseña...');
+
+      const id = e.key;
+      
+      // El backend requiere el email también
+      const payload = {
+        email: e.oldData.userName || e.oldData.email,
+        password: e.newData.password
+      };
+
+      console.log('Enviando:', payload);
+
+      await firstValueFrom(
+        this.apiService.editarUsuario(id, payload)
+      );
+
+      
+      await this.cargarDatos();
+
+      this.blockUI.stop();
+    } catch (error) {
+      console.error('Error al editar usuario:', error);
+      this.blockUI.stop();
+      
+      e.cancel = true;
+    }
+  }
 
   mostrarMensaje(mensaje: string, tipo: 'success' | 'error') {
     const messageBox = document.getElementById('messageBox');
