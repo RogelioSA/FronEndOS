@@ -219,7 +219,7 @@
             <div class="modal-detalle" *ngIf="mostrarModal && detalleMarcacion">
                 <div class="modal-content-detalle" (click)="$event.stopPropagation()">
                     <div class="modal-header-detalle">
-                        <h5 class="modal-title">Información de la marcación {{ detalleMarcacion.fechaJornal }}</h5>
+                        <h5 class="modal-title">Marcacion: {{ detalleMarcacion.fechaJornal }}   Evento: {{ detalleMarcacion.tipoEvento }}</h5>
                         <button type="button" class="btn-close-detalle" (click)="cerrarModal()">
                             <i class="fa-solid fa-times"></i>
                         </button>
