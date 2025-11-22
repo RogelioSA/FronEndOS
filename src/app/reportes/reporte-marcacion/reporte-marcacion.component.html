@@ -226,93 +226,58 @@
                     </div>
                     
                     <div class="modal-body-detalle">
-                        <div class="info-grid">
-                            <!-- Fila 1 -->
-                            <div class="info-row">
-                                <div class="info-item">
-                                    <div class="info-line">
-                                        <span class="info-label">Fecha marcación:</span>
-                                        <span class="info-value">{{ detalleMarcacion.fecha }}</span>
-                                    </div>
+                        <div class="detalle-layout">
+                            <div class="detalle-col detalle-info">
+                                <div class="info-line stacked">
+                                    <span class="info-label">Fecha marcación:</span>
+                                    <span class="info-value">{{ detalleMarcacion.fecha }}</span>
                                 </div>
-                                <div class="info-item">
-                                    <div class="info-line">
-                                        <span class="info-label">Fecha registro:</span>
-                                        <span class="info-value">{{ detalleMarcacion.fecha }}</span>
-                                    </div>
+                                <div class="info-line stacked">
+                                    <span class="info-label">Fecha registro:</span>
+                                    <span class="info-value">{{ detalleMarcacion.fecha }}</span>
                                 </div>
-                            </div>
-
-                            <!-- Fila 2 -->
-                            <div class="info-row">
-                                <div class="info-item">
-                                    <div class="info-line">
-                                        <span class="info-label">Jornal:</span>
-                                        <span class="info-value">{{ detalleMarcacion.fechaJornal }}</span>
-                                    </div>
+                                <div class="info-line stacked">
+                                    <span class="info-label">Jornal:</span>
+                                    <span class="info-value">{{ detalleMarcacion.fechaJornal }}</span>
                                 </div>
-                                <div class="info-item">
-                                    <div class="info-line">
-                                        <span class="info-label">Regularizado?:</span>
-                                        <span class="info-value">NO</span>
-                                    </div>
+                                <div class="info-line stacked">
+                                    <span class="info-label">Regularizado?:</span>
+                                    <span class="info-value">NO</span>
                                 </div>
-                            </div>
-
-                            <!-- Fila 3 -->
-                            <div class="info-row">
-                                <div class="info-item">
-                                    <div class="info-line">
-                                        <span class="info-label">Usuario:</span>
-                                        <span class="info-value">{{ detalleMarcacion.personal }}</span>
-                                    </div>
+                                <div class="info-line stacked">
+                                    <span class="info-label">Usuario:</span>
+                                    <span class="info-value">{{ detalleMarcacion.personal }}</span>
                                 </div>
-                                <div class="info-item">
-                                    <div class="info-line">
-                                        <span class="info-label">Aplicación:</span>
-                                        <span class="info-value">Web / Mobile</span>
-                                    </div>
+                                <div class="info-line stacked">
+                                    <span class="info-label">Aplicación:</span>
+                                    <span class="info-value">Web / Mobile</span>
+                                </div>
+                                <div class="info-line stacked">
+                                    <span class="info-label">Tipo de Evento:</span>
+                                    <span class="info-value">{{ detalleMarcacion.tipoEvento }}</span>
+                                </div>
+                                <div class="info-line stacked">
+                                    <span class="info-label">Hora Programada:</span>
+                                    <span class="info-value">{{ detalleMarcacion.horaProgramada }}</span>
+                                </div>
+                                <div class="info-line stacked">
+                                    <span class="info-label">Tardanza:</span>
+                                    <span class="info-value" [ngClass]="{'text-danger fw-bold': detalleMarcacion.esTardanza}">
+                                        {{ detalleMarcacion.esTardanza ? 'SÍ' : 'NO' }}
+                                        <span *ngIf="detalleMarcacion.esTardanza"> ({{ detalleMarcacion.diferenciaMinutos }} min)</span>
+                                    </span>
                                 </div>
                             </div>
 
-                            <!-- Fila 4 -->
-                            <div class="info-row">
-                                <div class="info-item">
-                                    <div class="info-line">
-                                        <span class="info-label">Tipo de Evento:</span>
-                                        <span class="info-value">{{ detalleMarcacion.tipoEvento }}</span>
+                            <div class="detalle-col detalle-extra">
+                                <div class="imagen-section">
+                                    <div class="section-title">Imagen</div>
+                                    <div class="imagen-placeholder">
+                                        Imagen no disponible
                                     </div>
                                 </div>
-                                <div class="info-item">
-                                    <div class="info-line">
-                                        <span class="info-label">Hora Programada:</span>
-                                        <span class="info-value">{{ detalleMarcacion.horaProgramada }}</span>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Fila 5 -->
-                            <div class="info-row">
-                                <div class="info-item">
-                                    <div class="info-line">
-                                        <span class="info-label">Política:</span>
-                                        <span class="info-value">{{ detalleMarcacion.politica }}</span>
-                                    </div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-line">
-                                        <span class="info-label">Tardanza:</span>
-                                        <span class="info-value" [ngClass]="{'text-danger fw-bold': detalleMarcacion.esTardanza}">
-                                            {{ detalleMarcacion.esTardanza ? 'SÍ' : 'NO' }}
-                                            <span *ngIf="detalleMarcacion.esTardanza"> ({{ detalleMarcacion.diferenciaMinutos }} min)</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Ubicación -->
-                            <div class="info-row full-width">
-                                <div class="info-item-full">
+                                <div class="ubicacion-section">
                                     <div class="info-line">
                                         <span class="info-label">Ubicación:</span>
                                         <ng-container *ngIf="detalleMarcacion.latitud && detalleMarcacion.longitud; else sinCoordenadas">
