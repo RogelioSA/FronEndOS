@@ -2,7 +2,20 @@
     <!-- Leaflet CSS y JS desde CDN -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-    <div class="row g-1 mt-2 justify-content-md-center mb-4">
+    <div class="row g-1 mt-2 justify-content-md-center mb-4 align-items-end">
+        <div class="col-3">
+            <div class="dx-field-label">Orden de Trabajo:</div>
+            <div class="dx-field-value">
+                <dx-select-box
+                    [dataSource]="ordenesTrabajo"
+                    displayExpr="cOrdenInterna"
+                    valueExpr="id"
+                    [(value)]="ordenTrabajoSeleccionada"
+                    placeholder="Seleccione una orden de trabajo"
+                    [width]="'100%'"
+                ></dx-select-box>
+            </div>
+        </div>
         <div class="col-3">
             <div class="dx-field-label">Fecha Inicial</div>
             <div class="dx-field-value">
@@ -19,7 +32,7 @@
                 </dx-date-box>
             </div>
         </div>
-        <div class="col-2 pt-4">
+        <div class="col-auto pb-2 pb-md-0">
             <div class="form-check">
                 <input
                     class="form-check-input"
@@ -32,7 +45,7 @@
                 </label>
             </div>
         </div>
-        <div class="col-2 pt-2 text-end">
+        <div class="col-auto text-end pb-2 pb-md-0">
             <dx-button text="Buscar" stylingMode="contained" type="default" [width]="120"
                 icon="fa-solid fa-magnifying-glass" (onClick)="buscar()">
             </dx-button>

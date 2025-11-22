@@ -56,6 +56,8 @@ export class ReporteMarcacionComponent {
   datosReporte: EmpleadoReporte[] = [];
   datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
   columnasdinamicas: any[] = [];
+  ordenesTrabajo: { id: number; cOrdenInterna: string }[] = [];
+  ordenTrabajoSeleccionada: number | null = null;
   
   // Propiedades para el modal
   mostrarModal: boolean = false;
@@ -94,8 +96,25 @@ export class ReporteMarcacionComponent {
   }
 
   async ngOnInit(): Promise<void> {
+    await this.cargarOrdenesTrabajo();
     // Cargar marcaciones automáticamente al iniciar
     await this.buscar();
+  }
+
+  async cargarOrdenesTrabajo() {
+    try {
+      const response = await firstValueFrom(
+        this.apiService.listarOrdenTrabajoCabeceraSimplificado()
+      );
+
+      this.ordenesTrabajo = response.map((ot: any) => ({
+        id: ot.id,
+        cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`
+      }));
+    } catch (error) {
+      console.error('❌ Error al cargar órdenes de trabajo:', error);
+      this.showMessage('Error al cargar las órdenes de trabajo');
+    }
   }
 
   async traerMarcaciones() {
