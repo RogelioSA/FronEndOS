@@ -1,7 +1,7 @@
 <div class="container-fluid">
     <!-- Leaflet CSS y JS desde CDN -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+
     <div class="row g-1 mt-2 justify-content-md-center mb-4">
         <div class="col-3">
             <div class="dx-field-label">Fecha Inicial</div>
@@ -21,9 +21,9 @@
         </div>
         <div class="col-2 pt-4">
             <div class="form-check">
-                <input 
-                    class="form-check-input" 
-                    type="checkbox" 
+                <input
+                    class="form-check-input"
+                    type="checkbox"
                     id="verTodoCheck"
                     [(ngModel)]="verTodo"
                     (change)="onVerTodoChanged()">
@@ -38,14 +38,14 @@
             </dx-button>
         </div>
     </div>
-    
+
     <div class="row g-1 mt-2 justify-content-md-center mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0">Reporte de marcaciones</h3>
-                <dx-button 
-                    text="Descargar Excel" 
-                    stylingMode="contained" 
+                <dx-button
+                    text="Descargar Excel"
+                    stylingMode="contained"
                     type="success"
                     [width]="150"
                     icon="fa-solid fa-file-excel"
@@ -53,25 +53,25 @@
                     [disabled]="datosReporte.length === 0"
                 ></dx-button>
             </div>
-            
+
             <div class="table-responsive" style="overflow-x: auto; max-height: 600px;">
                 <table class="table table-bordered table-hover" style="font-size: 12px;">
                     <thead class="table-dark" style="position: sticky; top: 0; z-index: 10;">
                         <tr>
                             <th rowspan="2" class="align-middle text-center" style="min-width: 100px; position: sticky; left: 0; background-color: #212529; z-index: 11;">DNI</th>
                             <th rowspan="2" class="align-middle text-center" style="min-width: 250px; position: sticky; left: 100px; background-color: #212529; z-index: 11;">PERSONAL</th>
-                            
+
                             <!-- Modo normal: mostrar solo E y S -->
                             <ng-container *ngIf="!verTodo">
-                                <th *ngFor="let col of columnasdinamicas" colspan="2" class="text-center" 
+                                <th *ngFor="let col of columnasdinamicas" colspan="2" class="text-center"
                                     [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">
                                     <div><strong>{{ col.diaSemana }}</strong> {{ col.fechaDisplay }}</div>
                                 </th>
                             </ng-container>
-                            
+
                             <!-- Modo extendido: mostrar E, SR, ER, S, D -->
                             <ng-container *ngIf="verTodo">
-                                <th *ngFor="let col of columnasdinamicas" colspan="5" class="text-center" 
+                                <th *ngFor="let col of columnasdinamicas" colspan="5" class="text-center"
                                     [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">
                                     <div><strong>{{ col.diaSemana }}</strong> {{ col.fechaDisplay }}</div>
                                 </th>
@@ -81,29 +81,29 @@
                             <!-- Modo normal -->
                             <ng-container *ngIf="!verTodo">
                                 <ng-container *ngFor="let col of columnasdinamicas">
-                                    <th class="text-center" style="min-width: 60px;" 
+                                    <th class="text-center" style="min-width: 60px;"
                                         [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">E</th>
-                                    <th class="text-center" style="min-width: 60px;" 
+                                    <th class="text-center" style="min-width: 60px;"
                                         [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">S</th>
                                 </ng-container>
                             </ng-container>
-                            
+
                             <!-- Modo extendido -->
                             <ng-container *ngIf="verTodo">
                                 <ng-container *ngFor="let col of columnasdinamicas">
-                                    <th class="text-center" style="min-width: 60px;" 
+                                    <th class="text-center" style="min-width: 60px;"
                                         [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}"
                                         title="Entrada">E</th>
-                                    <th class="text-center" style="min-width: 60px;" 
+                                    <th class="text-center" style="min-width: 60px;"
                                         [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}"
                                         title="Salida Refrigerio">SR</th>
-                                    <th class="text-center" style="min-width: 60px;" 
+                                    <th class="text-center" style="min-width: 60px;"
                                         [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}"
                                         title="Entrada Refrigerio">ER</th>
-                                    <th class="text-center" style="min-width: 60px;" 
+                                    <th class="text-center" style="min-width: 60px;"
                                         [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}"
                                         title="Salida">S</th>
-                                    <th class="text-center" style="min-width: 60px;" 
+                                    <th class="text-center" style="min-width: 60px;"
                                         [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}"
                                         title="Desconocido">D</th>
                                 </ng-container>
@@ -122,11 +122,11 @@
                                 <td class="align-middle" style="position: sticky; left: 100px; background-color: white; font-weight: 500;">
                                     {{ empleado.personal }}
                                 </td>
-                            
+
                             <!-- Modo normal: E y S -->
                             <ng-container *ngIf="!verTodo">
                                 <ng-container *ngFor="let col of columnasdinamicas">
-                                    <td class="text-center align-middle celda-clickeable" 
+                                    <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{
                                             'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
                                             'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
@@ -136,7 +136,7 @@
                                         [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 0) ? 'pointer' : 'default'">
                                         {{ obtenerMarcacionPorTipo(empleado, col.fecha, 0) }}
                                     </td>
-                                    <td class="text-center align-middle celda-clickeable" 
+                                    <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                                     'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1)}"
                                         (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 1) && abrirDetalleMarcacionTipo(empleado, col.fecha, 1)"
@@ -145,12 +145,12 @@
                                     </td>
                                 </ng-container>
                             </ng-container>
-                            
+
                             <!-- Modo extendido: E, SR, ER, S, D -->
                             <ng-container *ngIf="verTodo">
                                 <ng-container *ngFor="let col of columnasdinamicas">
                                     <!-- Entrada (0) -->
-                                    <td class="text-center align-middle celda-clickeable" 
+                                    <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{
                                             'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
                                             'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
@@ -160,36 +160,36 @@
                                         [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 0) ? 'pointer' : 'default'">
                                         {{ obtenerMarcacionPorTipo(empleado, col.fecha, 0) }}
                                     </td>
-                                    
+
                                     <!-- Salida Refrigerio (2) -->
-                                    <td class="text-center align-middle celda-clickeable" 
+                                    <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                                     'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 2)}"
                                         (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 2) && abrirDetalleMarcacionTipo(empleado, col.fecha, 2)"
                                         [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 2) ? 'pointer' : 'default'">
                                         {{ obtenerMarcacionPorTipo(empleado, col.fecha, 2) }}
                                     </td>
-                                    
+
                                     <!-- Entrada Refrigerio (3) -->
-                                    <td class="text-center align-middle celda-clickeable" 
+                                    <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                                     'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 3)}"
                                         (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 3) && abrirDetalleMarcacionTipo(empleado, col.fecha, 3)"
                                         [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 3) ? 'pointer' : 'default'">
                                         {{ obtenerMarcacionPorTipo(empleado, col.fecha, 3) }}
                                     </td>
-                                    
+
                                     <!-- Salida (1) -->
-                                    <td class="text-center align-middle celda-clickeable" 
+                                    <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                                     'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1)}"
                                         (click)="obtenerMarcacionPorTipo(empleado, col.fecha, 1) && abrirDetalleMarcacionTipo(empleado, col.fecha, 1)"
                                         [style.cursor]="obtenerMarcacionPorTipo(empleado, col.fecha, 1) ? 'pointer' : 'default'">
                                         {{ obtenerMarcacionPorTipo(empleado, col.fecha, 1) }}
                                     </td>
-                                    
+
                                     <!-- Desconocido (99) -->
-                                    <td class="text-center align-middle celda-clickeable" 
+                                    <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                                     'bg-warning': obtenerMarcacionPorTipo(empleado, col.fecha, 99),
                                                     'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 99)}"
@@ -224,7 +224,7 @@
                             <i class="fa-solid fa-times"></i>
                         </button>
                     </div>
-                    
+
                     <div class="modal-body-detalle">
                         <div class="detalle-layout">
                             <div class="detalle-col detalle-info">
@@ -232,10 +232,10 @@
                                     <span class="info-label">Fecha marcación:</span>
                                     <span class="info-value">{{ detalleMarcacion.fecha }}</span>
                                 </div>
-                                <div class="info-line stacked">
+                                <!-- <div class="info-line stacked">
                                     <span class="info-label">Fecha registro:</span>
                                     <span class="info-value">{{ detalleMarcacion.fecha }}</span>
-                                </div>
+                                </div> -->
                                 <div class="info-line stacked">
                                     <span class="info-label">Jornal:</span>
                                     <span class="info-value">{{ detalleMarcacion.fechaJornal }}</span>
@@ -252,14 +252,14 @@
                                     <span class="info-label">Aplicación:</span>
                                     <span class="info-value">Web / Mobile</span>
                                 </div>
-                                <div class="info-line stacked">
+                                <!-- <div class="info-line stacked">
                                     <span class="info-label">Tipo de Evento:</span>
                                     <span class="info-value">{{ detalleMarcacion.tipoEvento }}</span>
-                                </div>
-                                <div class="info-line stacked">
+                                </div> -->
+                                <!-- <div class="info-line stacked">
                                     <span class="info-label">Hora Programada:</span>
                                     <span class="info-value">{{ detalleMarcacion.horaProgramada }}</span>
-                                </div>
+                                </div> -->
                                 <div class="info-line stacked">
                                     <span class="info-label">Tardanza:</span>
                                     <span class="info-value" [ngClass]="{'text-danger fw-bold': detalleMarcacion.esTardanza}">
@@ -271,7 +271,7 @@
 
                             <div class="detalle-col detalle-extra">
                                 <div class="imagen-section">
-                                    <div class="section-title">Imagen</div>
+                                    <div class="section-title">Rostro</div>
                                     <div class="imagen-placeholder">
                                         Imagen no disponible
                                     </div>
@@ -298,7 +298,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="modal-footer-detalle">
                         <button type="button" class="btn btn-light btn-cerrar" (click)="cerrarModal()">
                             Cerrar
