@@ -230,62 +230,82 @@
                             <!-- Fila 1 -->
                             <div class="info-row">
                                 <div class="info-item">
-                                    <label class="info-label">Fecha marcación</label>
-                                    <div class="info-value">{{ detalleMarcacion.fecha }}</div>
+                                    <div class="info-line">
+                                        <span class="info-label">Fecha marcación:</span>
+                                        <span class="info-value">{{ detalleMarcacion.fecha }}</span>
+                                    </div>
                                 </div>
                                 <div class="info-item">
-                                    <label class="info-label">Fecha registro</label>
-                                    <div class="info-value">{{ detalleMarcacion.fecha }}</div>
+                                    <div class="info-line">
+                                        <span class="info-label">Fecha registro:</span>
+                                        <span class="info-value">{{ detalleMarcacion.fecha }}</span>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Fila 2 -->
                             <div class="info-row">
                                 <div class="info-item">
-                                    <label class="info-label">Jornal</label>
-                                    <div class="info-value">{{ detalleMarcacion.fechaJornal }}</div>
+                                    <div class="info-line">
+                                        <span class="info-label">Jornal:</span>
+                                        <span class="info-value">{{ detalleMarcacion.fechaJornal }}</span>
+                                    </div>
                                 </div>
                                 <div class="info-item">
-                                    <label class="info-label">Regularizado?</label>
-                                    <div class="info-value">NO</div>
+                                    <div class="info-line">
+                                        <span class="info-label">Regularizado?:</span>
+                                        <span class="info-value">NO</span>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Fila 3 -->
                             <div class="info-row">
                                 <div class="info-item">
-                                    <label class="info-label">Usuario</label>
-                                    <div class="info-value">{{ detalleMarcacion.personal }}</div>
+                                    <div class="info-line">
+                                        <span class="info-label">Usuario:</span>
+                                        <span class="info-value">{{ detalleMarcacion.personal }}</span>
+                                    </div>
                                 </div>
                                 <div class="info-item">
-                                    <label class="info-label">Aplicación</label>
-                                    <div class="info-value">Web / Mobile</div>
+                                    <div class="info-line">
+                                        <span class="info-label">Aplicación:</span>
+                                        <span class="info-value">Web / Mobile</span>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Fila 4 -->
                             <div class="info-row">
                                 <div class="info-item">
-                                    <label class="info-label">Tipo de Evento</label>
-                                    <div class="info-value">{{ detalleMarcacion.tipoEvento }}</div>
+                                    <div class="info-line">
+                                        <span class="info-label">Tipo de Evento:</span>
+                                        <span class="info-value">{{ detalleMarcacion.tipoEvento }}</span>
+                                    </div>
                                 </div>
                                 <div class="info-item">
-                                    <label class="info-label">Hora Programada</label>
-                                    <div class="info-value">{{ detalleMarcacion.horaProgramada }}</div>
+                                    <div class="info-line">
+                                        <span class="info-label">Hora Programada:</span>
+                                        <span class="info-value">{{ detalleMarcacion.horaProgramada }}</span>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Fila 5 -->
                             <div class="info-row">
                                 <div class="info-item">
-                                    <label class="info-label">Política</label>
-                                    <div class="info-value">{{ detalleMarcacion.politica }}</div>
+                                    <div class="info-line">
+                                        <span class="info-label">Política:</span>
+                                        <span class="info-value">{{ detalleMarcacion.politica }}</span>
+                                    </div>
                                 </div>
                                 <div class="info-item">
-                                    <label class="info-label">Tardanza</label>
-                                    <div class="info-value" [ngClass]="{'text-danger fw-bold': detalleMarcacion.esTardanza}">
-                                        {{ detalleMarcacion.esTardanza ? 'SÍ' : 'NO' }}
-                                        <span *ngIf="detalleMarcacion.esTardanza"> ({{ detalleMarcacion.diferenciaMinutos }} min)</span>
+                                    <div class="info-line">
+                                        <span class="info-label">Tardanza:</span>
+                                        <span class="info-value" [ngClass]="{'text-danger fw-bold': detalleMarcacion.esTardanza}">
+                                            {{ detalleMarcacion.esTardanza ? 'SÍ' : 'NO' }}
+                                            <span *ngIf="detalleMarcacion.esTardanza"> ({{ detalleMarcacion.diferenciaMinutos }} min)</span>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -293,18 +313,21 @@
                             <!-- Ubicación -->
                             <div class="info-row full-width">
                                 <div class="info-item-full">
-                                    <label class="info-label">Ubicación</label>
-                                    <div class="info-value" *ngIf="detalleMarcacion.latitud && detalleMarcacion.longitud">
-                                        <a [href]="detalleMarcacion.linkGoogleMaps" target="_blank" class="link-ubicacion">
-                                            <i class="fa-solid fa-map-marker-alt"></i>
-                                            {{ detalleMarcacion.latitud }}, {{ detalleMarcacion.longitud }}
-                                        </a>
-                                        
-                                        <!-- Mapa -->
-                                        <div id="mapaMarcacion" class="mapa-container"></div>
+                                    <div class="info-line">
+                                        <span class="info-label">Ubicación:</span>
+                                        <ng-container *ngIf="detalleMarcacion.latitud && detalleMarcacion.longitud; else sinCoordenadas">
+                                            <a [href]="detalleMarcacion.linkGoogleMaps" target="_blank" class="link-ubicacion">
+                                                <i class="fa-solid fa-map-marker-alt"></i>
+                                                {{ detalleMarcacion.latitud }}, {{ detalleMarcacion.longitud }}
+                                            </a>
+                                        </ng-container>
+                                        <ng-template #sinCoordenadas>
+                                            <span class="info-value text-muted">Sin coordenadas disponibles</span>
+                                        </ng-template>
                                     </div>
-                                    <div class="info-value text-muted" *ngIf="!detalleMarcacion.latitud || !detalleMarcacion.longitud">
-                                        Sin coordenadas disponibles
+
+                                    <div class="mapa-wrapper" *ngIf="detalleMarcacion.latitud && detalleMarcacion.longitud">
+                                        <div id="mapaMarcacion" class="mapa-container"></div>
                                     </div>
                                 </div>
                             </div>
