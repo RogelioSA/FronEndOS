@@ -71,8 +71,8 @@ export class HorarioComponent {
         cDescripcion: h.descripcion,
         nDiasTrabajo: h.horarioDetalles?.length || 0,
         horarioDetalles: h.horarioDetalles,
-        nRefrigerio: 45,
-        nTraslado:0
+        minDescanso: h.minutosDescanso,
+        minTraslado:h.minutosTraslado
       }));
 
       console.log("✅ Horarios cargados:", this.horarios);
@@ -150,6 +150,8 @@ export class HorarioComponent {
       empresaId: this.empresaId,
       nombre: nuevosDatos.cNombre || event.oldData.cNombre,
       descripcion: nuevosDatos.cDescripcion || event.oldData.cDescripcion || '',
+      minutosDescanso: nuevosDatos.minDescanso || 0,
+      minutosTraslado: nuevosDatos.minTraslado || 0,
       activo: true,
       detalles: detallesParaEnviar
     };
@@ -178,6 +180,8 @@ export class HorarioComponent {
       nombre: event.data.cNombre,
       descripcion: event.data.cDescripcion || '',
       activo: true,
+      minutosDescanso:event.data.minDescanso,
+      minutosTraslado:event.data.minTraslado,
       detalles: this.generarDiasAutomaticos(numDias)
     };
 
