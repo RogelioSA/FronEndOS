@@ -58,7 +58,7 @@ export class ReporteMarcacionComponent {
   datosReporte: EmpleadoReporte[] = [];
   datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
   columnasdinamicas: any[] = [];
-  ordenesTrabajo: { id: number; cOrdenInterna: string }[] = [];
+  ordenesTrabajo: { id: number; cOrdenInterna: string; adjuntoId?: number }[] = [];
   ordenTrabajoSeleccionada: number | null = null;
   eventosMarcacion = [
     { id: 0, nombre: 'Entrada' },
@@ -80,6 +80,8 @@ export class ReporteMarcacionComponent {
   
   // Nueva propiedad para el checkbox
   verTodo: boolean = false;
+
+  rostroUrl: string | null = null;
   
   @BlockUI() blockUI!: NgBlockUI;
 
@@ -124,7 +126,8 @@ export class ReporteMarcacionComponent {
 
       this.ordenesTrabajo = response.map((ot: any) => ({
         id: ot.id,
-        cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`
+        cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`,
+        adjuntoId: ot.adjuntoId
       }));
     } catch (error) {
       console.error('❌ Error al cargar órdenes de trabajo:', error);
@@ -428,6 +431,7 @@ export class ReporteMarcacionComponent {
       linkGoogleMaps: linkGoogleMaps
     };
 
+    this.cargarImagenRostro(this.detalleMarcacion.ordenTrabajoId);
     this.editandoMarcacion = false;
     this.prepararDatosRegularizacion();
     this.mostrarModal = true;
@@ -471,6 +475,31 @@ export class ReporteMarcacionComponent {
       detalle: this.detalleMarcacion,
       payload: this.regularizacion
     });
+  }
+
+  private obtenerAdjuntoIdPorOrdenTrabajo(ordenTrabajoId: number | null): number | null {
+    if (!ordenTrabajoId) {
+      return null;
+    }
+
+    const ordenTrabajo = this.ordenesTrabajo.find(ot => ot.id === ordenTrabajoId);
+    return ordenTrabajo?.adjuntoId ?? null;
+  }
+
+  async cargarImagenRostro(ordenTrabajoId: number | null) {
+    this.rostroUrl = null;
+    const adjuntoId = this.obtenerAdjuntoIdPorOrdenTrabajo(ordenTrabajoId);
+
+    if (!adjuntoId) {
+      return;
+    }
+
+    try {
+      const imagenUrl = await firstValueFrom(this.apiService.obtenerAdjuntoImagen(adjuntoId));
+      this.rostroUrl = imagenUrl;
+    } catch (error) {
+      console.error('❌ Error al cargar la imagen de rostro:', error);
+    }
   }
 
   private convertirFechaJornalAISO(fechaJornal: string): string {
@@ -524,6 +553,7 @@ export class ReporteMarcacionComponent {
     this.mostrarModal = false;
     this.detalleMarcacion = null;
     this.editandoMarcacion = false;
+    this.rostroUrl = null;
   }
 
   obtenerTipoEventoTexto(tipoEvento: number): string {
