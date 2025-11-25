@@ -337,7 +337,8 @@
                             <div class="detalle-col detalle-extra">
                                 <div class="imagen-section">
                                     <div class="section-title">Rostro</div>
-                                    <div class="imagen-placeholder">
+                                    <img *ngIf="rostroUrl" [src]="rostroUrl" alt="Rostro de marcación" class="rostro-imagen">
+                                    <div class="imagen-placeholder" *ngIf="!rostroUrl">
                                         Imagen no disponible
                                     </div>
                                 </div>
