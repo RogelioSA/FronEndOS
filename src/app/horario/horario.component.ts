@@ -30,7 +30,7 @@ export class HorarioComponent {
     { id: 4, nombre: 'Jueves' },
     { id: 5, nombre: 'Viernes' },
     { id: 6, nombre: 'Sábado' },
-    { id: 7, nombre: 'Domingo' }
+    { id: 0, nombre: 'Domingo' }
   ];
 
   tiposEvento = [
