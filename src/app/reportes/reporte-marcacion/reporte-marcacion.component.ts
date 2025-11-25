@@ -67,7 +67,7 @@ export class ReporteMarcacionComponent {
     { id: 3, nombre: 'Entrada Refrigerio' },
     { id: 99, nombre: 'Desconocido' }
   ];
-  
+
   // Propiedades para el modal
   mostrarModal: boolean = false;
   detalleMarcacion: DetalleMarcacion | null = null;
@@ -77,12 +77,12 @@ export class ReporteMarcacionComponent {
     evento: 0,
     ordenTrabajoId: null as number | null,
   };
-  
+
   // Nueva propiedad para el checkbox
   verTodo: boolean = false;
 
   rostroUrl: string | null = null;
-  
+
   @BlockUI() blockUI!: NgBlockUI;
 
   now: Date = new Date();
@@ -99,13 +99,13 @@ export class ReporteMarcacionComponent {
 
   establecerFechasMesActual() {
     const hoy = new Date();
-    
+
     // Primer día del mes
     this.fechaInicial = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-    
+
     // Último día del mes (día 0 del siguiente mes)
     this.fechaFinal = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-    
+
     console.log('📅 Fechas establecidas:', {
       inicio: this.fechaInicial,
       fin: this.fechaFinal
@@ -155,7 +155,7 @@ export class ReporteMarcacionComponent {
 
       this.marcaciones = result;
       this.procesarDatosParaReporte();
-  
+
     } catch (error) {
       console.error('❌ Error trayendo las marcaciones:', error);
       this.showMessage('Error al cargar las marcaciones');
@@ -202,14 +202,14 @@ export class ReporteMarcacionComponent {
         empleado.orden = this.obtenerOrdenInfo(marcacion);
       }
       const fechaKey = this.datePipe.transform(marcacion.fechaJornal, 'yyyy-MM-dd')!;
-      
+
       if (!empleado.marcaciones[fechaKey]) {
         empleado.marcaciones[fechaKey] = {};
       }
 
       const hora = this.datePipe.transform(marcacion.fecha, 'HH:mm');
       const tipoEvento = marcacion.tipoEvento ?? 99; // Si es null/undefined, considerarlo como desconocido
-      
+
       // Mapear cada tipo de evento
       switch(tipoEvento) {
         case 0: // Entrada
@@ -259,27 +259,27 @@ export class ReporteMarcacionComponent {
 
   generarColumnasFechas() {
     this.columnasdinamicas = [];
-    
+
     const fechaIni = new Date(this.fechaInicial);
     const fechaFin = new Date(this.fechaFinal);
-    
+
     let fechaActual = new Date(fechaIni);
-    
+
     while (fechaActual <= fechaFin) {
       const fechaKey = this.datePipe.transform(fechaActual, 'yyyy-MM-dd')!;
       const fechaDisplay = this.datePipe.transform(fechaActual, 'dd/MM/yyyy')!;
       const diaSemana = this.obtenerDiaSemana(fechaActual);
-      
+
       this.columnasdinamicas.push({
         fecha: fechaKey,
         fechaDisplay: fechaDisplay,
         diaSemana: diaSemana,
         diaSemanaCorto: this.obtenerDiaSemanaCorto(fechaActual)
       });
-      
+
       fechaActual.setDate(fechaActual.getDate() + 1);
     }
-    
+
     console.log("📅 Columnas generadas:", this.columnasdinamicas);
   }
 
@@ -331,7 +331,7 @@ export class ReporteMarcacionComponent {
   obtenerMarcacion(empleado: EmpleadoReporte, fecha: string, tipo: 'E' | 'S'): string {
     const marcacion = empleado.marcaciones[fecha];
     if (!marcacion) return '';
-    
+
     if (tipo === 'E') {
       return marcacion.entrada || '';
     } else {
@@ -343,7 +343,7 @@ export class ReporteMarcacionComponent {
   obtenerMarcacionPorTipo(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): string {
     const marcacion = empleado.marcaciones[fecha];
     if (!marcacion) return '';
-    
+
     switch(tipoEvento) {
       case 0: // Entrada
         return marcacion.entrada || '';
@@ -431,7 +431,7 @@ export class ReporteMarcacionComponent {
       linkGoogleMaps: linkGoogleMaps
     };
 
-    this.cargarImagenRostro(this.detalleMarcacion.ordenTrabajoId);
+    this.cargarImagenRostro(datos.adjuntoId);
     this.editandoMarcacion = false;
     this.prepararDatosRegularizacion();
     this.mostrarModal = true;
@@ -477,22 +477,9 @@ export class ReporteMarcacionComponent {
     });
   }
 
-  private obtenerAdjuntoIdPorOrdenTrabajo(ordenTrabajoId: number | null): number | null {
-    if (!ordenTrabajoId) {
-      return null;
-    }
-
-    const ordenTrabajo = this.ordenesTrabajo.find(ot => ot.id === ordenTrabajoId);
-    return ordenTrabajo?.adjuntoId ?? null;
-  }
-
-  async cargarImagenRostro(ordenTrabajoId: number | null) {
+  async cargarImagenRostro(adjuntoId: number) {
     this.rostroUrl = null;
-    const adjuntoId = this.obtenerAdjuntoIdPorOrdenTrabajo(ordenTrabajoId);
 
-    if (!adjuntoId) {
-      return;
-    }
 
     try {
       const imagenUrl = await firstValueFrom(this.apiService.obtenerAdjuntoImagen(adjuntoId));
@@ -528,7 +515,7 @@ export class ReporteMarcacionComponent {
 
   crearMapa(latitud: number, longitud: number) {
     const L = (window as any).L;
-    
+
     const mapContainer = document.getElementById('mapaMarcacion');
     if (mapContainer) {
       mapContainer.innerHTML = '';
@@ -638,7 +625,7 @@ export class ReporteMarcacionComponent {
       // Agregar datos de empleados
       this.datosReporte.forEach(empleado => {
         const fila: any[] = [empleado.orden, empleado.dni, empleado.personal];
-        
+
         this.columnasdinamicas.forEach(col => {
           if (this.verTodo) {
             fila.push(
@@ -655,7 +642,7 @@ export class ReporteMarcacionComponent {
             );
           }
         });
-        
+
         datosExcel.push(fila);
       });
 
@@ -668,7 +655,7 @@ export class ReporteMarcacionComponent {
         { wch: 12 },  // DNI
         { wch: 35 }   // PERSONAL
       ];
-      
+
       // Ancho para cada par/grupo de columnas
       this.columnasdinamicas.forEach(() => {
         if (this.verTodo) {
@@ -682,13 +669,13 @@ export class ReporteMarcacionComponent {
           colWidths.push({ wch: 8 });  // S
         }
       });
-      
+
       ws['!cols'] = colWidths;
 
       // Mergear celdas del encabezado de fechas
       const merges: XLSX.Range[] = [];
       let colIndex = 3; // Empezar después de ORDEN, DNI y PERSONAL
-      
+
       this.columnasdinamicas.forEach(() => {
         if (this.verTodo) {
           // Mergear 5 columnas (E, SR, ER, S, D)
@@ -706,7 +693,7 @@ export class ReporteMarcacionComponent {
           colIndex += 2;
         }
       });
-      
+
       ws['!merges'] = merges;
 
       // Crear el libro
@@ -722,7 +709,7 @@ export class ReporteMarcacionComponent {
       XLSX.writeFile(wb, nombreArchivo);
 
       this.showMessage('Excel descargado correctamente');
-      
+
     } catch (error) {
       console.error('❌ Error al generar Excel:', error);
       this.showMessage('Error al generar el archivo Excel');

@@ -1832,7 +1832,7 @@ export class ApiService{
     return this.https.post<any>(url, data, { headers });
   }
 
-  obtenerAdjuntoImagen(adjuntoId: number): Observable<string> {
+  obtenerAdjuntoImagen(adjuntoId: number): Observable<any> {
     const headers = this.getHeaders();
     const url = `${this.baseUrl}/general/Adjunto/download/${adjuntoId}`;
     return this.https.get(url, { headers, responseType: 'text' as 'json' });
