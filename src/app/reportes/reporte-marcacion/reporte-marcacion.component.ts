@@ -105,7 +105,8 @@ export class ReporteMarcacionComponent {
 
     // Último día del mes (día 0 del siguiente mes)
     this.fechaFinal = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-
+    // ⏱️ Ajustar a 23:59:59
+      this.fechaFinal.setHours(23, 59, 59, 999);
     console.log('📅 Fechas establecidas:', {
       inicio: this.fechaInicial,
       fin: this.fechaFinal
@@ -139,9 +140,9 @@ export class ReporteMarcacionComponent {
     this.blockUI.start('Cargando marcaciones...');
 
     try {
-      console.log("📅 Trayendo marcaciones desde API...");
+      //console.log("📅 Trayendo marcaciones desde API...");
       const fechaInicio = this.datePipe.transform(this.fechaInicial, 'yyyy-MM-dd');
-      const fechaFin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd');
+      const fechaFin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd') + 'T23:59:59';
 
       if (!fechaInicio || !fechaFin) {
         throw new Error('Fechas inválidas');
@@ -151,7 +152,7 @@ export class ReporteMarcacionComponent {
         this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)
       );
 
-      console.log("✅ Marcaciones recibidas:", result);
+      //console.log("✅ Marcaciones recibidas:", result);
 
       this.marcaciones = result;
       this.procesarDatosParaReporte();
@@ -166,14 +167,11 @@ export class ReporteMarcacionComponent {
 
   procesarDatosParaReporte() {
     // Filtrar por rango de fechas (seguridad adicional)
-    const marcacionesFiltradas = this.marcaciones.filter(m => {
-      const fechaJornal = new Date(m.fechaJornal);
-      const fechaIni = new Date(this.fechaInicial);
-      const fechaFin = new Date(this.fechaFinal);
+    const fechaIni = new Date(this.fechaInicial);   // ya tiene 00:00:00
+    const fechaFin = new Date(this.fechaFinal);     // ya tiene 23:59:59
 
-      fechaJornal.setHours(0, 0, 0, 0);
-      fechaIni.setHours(0, 0, 0, 0);
-      fechaFin.setHours(0, 0, 0, 0);
+    const marcacionesFiltradas = this.marcaciones.filter(m => {
+      const fechaJornal = new Date(m.fecha);
 
       return fechaJornal >= fechaIni && fechaJornal <= fechaFin;
     });
