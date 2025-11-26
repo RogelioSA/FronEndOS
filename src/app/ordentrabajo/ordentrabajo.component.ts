@@ -45,7 +45,7 @@ export class OrdentrabajoComponent implements OnInit {
 
       // Cargar órdenes de trabajo
       const ordenesTrabajoResponse = await firstValueFrom(
-        this.apiService.listarOrdenTrabajoCabecera()
+        this.apiService.listarOrdenTrabajoCabeceraSimplificado()
       );
       this.ordenesTrabajo = ordenesTrabajoResponse;
 
