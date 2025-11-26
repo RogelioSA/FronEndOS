@@ -136,22 +136,24 @@ export class HorarioComponent {
 
   actualizar(event: any) {
     const idHorario = event.oldData.nCodigo;
-    const nuevosDatos = event.newData;
+    const nuevosDatos = event.newData || {};
+    const horarioActual = this.horarios.find(h => h.nCodigo === idHorario);
 
-    // Si se cambió el número de días, generar días automáticamente
-    let detallesParaEnviar = this.construirDetallesDesdeHorario(idHorario);
+    let detallesParaEnviar: any[] = [];
 
-    if (nuevosDatos.nDiasTrabajo && nuevosDatos.nDiasTrabajo !== event.oldData.nDiasTrabajo) {
-      detallesParaEnviar = this.generarDiasAutomaticos(nuevosDatos.nDiasTrabajo);
+    if (this.detallesEventos.length > 0) {
+      detallesParaEnviar = this.reconstruirDetallesDesdeEventos();
+    } else if (horarioActual) {
+      detallesParaEnviar = this.construirDetallesDesdeHorarioExistente(horarioActual);
     }
 
     const datos = {
       id: idHorario, // 🔥 Agregar el ID en el body
       empresaId: this.empresaId,
-      nombre: nuevosDatos.cNombre || event.oldData.cNombre,
-      descripcion: nuevosDatos.cDescripcion || event.oldData.cDescripcion || '',
-      minutosDescanso: nuevosDatos.minDescanso || 0,
-      minutosTraslado: nuevosDatos.minTraslado || 0,
+      nombre: nuevosDatos.cNombre ?? event.oldData.cNombre,
+      descripcion: nuevosDatos.cDescripcion ?? event.oldData.cDescripcion ?? '',
+      minutosDescanso: nuevosDatos.minDescanso ?? event.oldData.minDescanso ?? 0,
+      minutosTraslado: nuevosDatos.minTraslado ?? event.oldData.minTraslado ?? 0,
       activo: true,
       detalles: detallesParaEnviar
     };
@@ -460,6 +462,29 @@ export class HorarioComponent {
 
   construirDetallesDesdeHorario(idHorario: number): any[] {
     return this.reconstruirDetallesDesdeEventos();
+  }
+
+  private construirDetallesDesdeHorarioExistente(horario: any): any[] {
+    if (!horario?.horarioDetalles) {
+      return [];
+    }
+
+    return horario.horarioDetalles.map((detalle: any) => ({
+      id: detalle.id || 0,
+      empresaId: this.empresaId,
+      horarioCabeceraId: horario.nCodigo || horario.id || 0,
+      diaSemana: detalle.diaSemana,
+      eventos: (detalle.horarioDetalleEventos || detalle.eventos || []).map((evento: any) => ({
+        id: evento.id || 0,
+        empresaId: this.empresaId,
+        horarioDetalleId: detalle.id || evento.horarioDetalleId || 0,
+        tipoEvento: evento.tipoEvento,
+        hora: this.formatearHora(evento.hora),
+        diferenciaDia: evento.diferenciaDia ?? 0,
+        ventanaMin: evento.ventanaMin ?? 75,
+        ventanaMax: evento.ventanaMax ?? 75
+      }))
+    }));
   }
 
   formatearHora(hora: any): string {
