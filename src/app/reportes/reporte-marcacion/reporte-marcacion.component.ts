@@ -188,8 +188,8 @@ export class ReporteMarcacionComponent {
       const ordenServicioId = marcacion.ordenServicio?.id ?? 'sinOS';
       const ordenTrabajoId = marcacion.ordenTrabajo?.id ?? 'sinOT';
 
-      // 👷‍♂️ Agrupar por colaborador + orden de servicio + orden de trabajo + fecha
-      const grupoKey = `${personalId}-${fechaKey}-${ordenServicioId}-${ordenTrabajoId}`;
+      // 👷‍♂️ Agrupar por colaborador + orden de servicio + orden de trabajo
+         const grupoKey = `${personalId}-${ordenServicioId}-${ordenTrabajoId}`;
 
       if (!empleadosMap.has(grupoKey)) {
         empleadosMap.set(grupoKey, {
