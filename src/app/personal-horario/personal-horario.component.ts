@@ -535,10 +535,24 @@ export class PersonalHorarioComponent {
       if (horarioId) {
         // Ya existe un registro, hacer PUT
         console.log('🔄 Actualizando registro existente con PUT. ID:', horarioId);
-        response = await firstValueFrom(
-          this.apiService.actualizarOrdenTrabajoHorario(horarioId, payload)
-        );
-        console.log('✅ Horario actualizado correctamente. Response:', response);
+        try {
+          response = await firstValueFrom(
+            this.apiService.actualizarOrdenTrabajoHorario(horarioId, payload)
+          );
+          console.log('✅ Horario actualizado correctamente. Response:', response);
+        } catch (error) {
+          console.warn('⚠️ Falló la actualización, reintentando guardado', error);
+
+          response = await firstValueFrom(
+            this.apiService.guardarOrdenTrabajoHorario(payload)
+          );
+
+          if (response && response.id) {
+            this.ordenTrabajoHorarioIds.set(key, response.id);
+          }
+
+          console.log('✅ Horario guardado en reintento. Response:', response);
+        }
       } else {
         // No existe, hacer POST
         console.log('➕ Creando nuevo registro con POST');
