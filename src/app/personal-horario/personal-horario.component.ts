@@ -574,9 +574,12 @@ export class PersonalHorarioComponent {
     }
 
     try {
-      for (const col of this.columnasFechas) {
-        const fecha = col.date;
-        await this.guardarHorarioIndividual(personalId, fecha, horarioCabeceraId);
+      const operacionesBatch = this.columnasFechas.map(col =>
+        this.guardarHorarioIndividual(personalId, col.date, horarioCabeceraId)
+      );
+
+      if (operacionesBatch.length > 0) {
+        await Promise.all(operacionesBatch);
       }
 
       console.log('✅ Horario asignado a todo el rango exitosamente');
@@ -840,6 +843,8 @@ private async asignarHorariosDesdeExcel(
     const cursor = new Date(info.inicio.getFullYear(), info.inicio.getMonth(), info.inicio.getDate());
     const fin = new Date(info.fin.getFullYear(), info.fin.getMonth(), info.fin.getDate());
 
+    const operacionesBatch: Promise<void>[] = [];
+
     while (cursor <= fin) {
       // Solo dentro del rango global de la OT
       if (cursor >= this.fechaDesde && cursor <= this.fechaHasta) {
@@ -850,11 +855,17 @@ private async asignarHorariosDesdeExcel(
           row[field] = horarioId;
 
           // Persistimos usando la misma lógica centralizada
-          await this.guardarHorarioIndividual(personaId, new Date(cursor), horarioId);
+          operacionesBatch.push(
+            this.guardarHorarioIndividual(personaId, new Date(cursor), horarioId)
+          );
         }
       }
 
       cursor.setDate(cursor.getDate() + 1);
+    }
+
+    if (operacionesBatch.length > 0) {
+      await Promise.all(operacionesBatch);
     }
   }
 
