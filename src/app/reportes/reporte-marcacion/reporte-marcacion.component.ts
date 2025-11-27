@@ -179,14 +179,20 @@ export class ReporteMarcacionComponent {
     // Generar columnas dinámicas (fechas en el rango)
     this.generarColumnasFechas();
 
-    // Agrupar por empleado
-    const empleadosMap = new Map<number, EmpleadoReporte>();
+    // Agrupar por empleado, orden de servicio/trabajo y fecha
+    const empleadosMap = new Map<string, EmpleadoReporte>();
 
     marcacionesFiltradas.forEach(marcacion => {
       const personalId = marcacion.personalId;
+      const fechaKey = this.datePipe.transform(marcacion.fechaJornal, 'yyyy-MM-dd')!;
+      const ordenServicioId = marcacion.ordenServicio?.id ?? 'sinOS';
+      const ordenTrabajoId = marcacion.ordenTrabajo?.id ?? 'sinOT';
 
-      if (!empleadosMap.has(personalId)) {
-        empleadosMap.set(personalId, {
+      // 👷‍♂️ Agrupar por colaborador + orden de servicio + orden de trabajo + fecha
+      const grupoKey = `${personalId}-${fechaKey}-${ordenServicioId}-${ordenTrabajoId}`;
+
+      if (!empleadosMap.has(grupoKey)) {
+        empleadosMap.set(grupoKey, {
           orden: this.obtenerOrdenInfo(marcacion),
           dni: marcacion.persona?.documentoIdentidad || marcacion.personal?.persona?.documentoIdentidad || 'N/A',
           personal: this.obtenerNombreCompleto(marcacion.personal, marcacion.persona),
@@ -195,11 +201,10 @@ export class ReporteMarcacionComponent {
         });
       }
 
-      const empleado = empleadosMap.get(personalId)!;
+      const empleado = empleadosMap.get(grupoKey)!;
       if (empleado.orden === 'Sin orden vinculada') {
         empleado.orden = this.obtenerOrdenInfo(marcacion);
       }
-      const fechaKey = this.datePipe.transform(marcacion.fechaJornal, 'yyyy-MM-dd')!;
 
       if (!empleado.marcaciones[fechaKey]) {
         empleado.marcaciones[fechaKey] = {};
