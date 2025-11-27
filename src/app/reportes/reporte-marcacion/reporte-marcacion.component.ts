@@ -190,7 +190,7 @@ export class ReporteMarcacionComponent {
 
       // 👷‍♂️ Agrupar por colaborador + orden de servicio + orden de trabajo
          const grupoKey = `${personalId}-${ordenServicioId}-${ordenTrabajoId}`;
-
+      //ultima modif
       if (!empleadosMap.has(grupoKey)) {
         empleadosMap.set(grupoKey, {
           orden: this.obtenerOrdenInfo(marcacion),
