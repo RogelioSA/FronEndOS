@@ -317,7 +317,9 @@ export class ReporteMarcacionComponent {
 
   obtenerOrdenInfo(marcacion: any): string {
     const codigoOrdenServicio = marcacion.ordenServicio?.codigoOrdenInterna || marcacion.ordenServicio?.codigoReferencial;
-    const nombreOrdenTrabajo = marcacion.ordenTrabajo?.nombre;
+    const nombreOT = marcacion.ordenTrabajo?.nombre;
+    const descripcionOT = marcacion.ordenTrabajo?.descripcion;
+    const nombreOrdenTrabajo = `${nombreOT} - ${descripcionOT}`;
 
     const partes = [];
     if (codigoOrdenServicio) {
