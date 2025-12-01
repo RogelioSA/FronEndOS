@@ -173,7 +173,12 @@ export class ReporteMarcacionComponent {
     const marcacionesFiltradas = this.marcaciones.filter(m => {
       const fechaJornal = new Date(m.fecha);
 
-      return fechaJornal >= fechaIni && fechaJornal <= fechaFin;
+     // return fechaJornal >= fechaIni && fechaJornal <= fechaFin;
+      const cumpleFecha = fechaJornal >= fechaIni && fechaJornal <= fechaFin;
+      const cumpleOrdenTrabajo = !this.ordenTrabajoSeleccionada ||
+      m.ordenTrabajo?.id === this.ordenTrabajoSeleccionada;
+
+      return cumpleFecha && cumpleOrdenTrabajo;
     });
 
     // Generar columnas dinámicas (fechas en el rango)
