@@ -572,61 +572,159 @@ export class PersonalComponent {
       console.log('📖 Leyendo archivo Excel...');
   
       const data = await this.leerArchivoExcel(this.archivoSeleccionado);
-      console.log('✅ Datos leídos del Excel:', data);
+      console.log('✅ Datos leídos del Excel:', data.length, 'registros');
+      
+      if (data.length === 0) {
+        this.erroresProcesamiento.push('El archivo Excel no contiene datos válidos');
+        this.procesandoArchivo = false;
+        return;
+      }
   
-      // 🔹 FILTRAR FILAS VACÍAS
+      console.log('🔍 Columnas detectadas:', Object.keys(data[0]));
+      console.log('🔍 Primer registro:', data[0]);
+  
+      // 🔹 FILTRAR por DNI válido
       const dataFiltrada = data.filter((fila: any) => {
-        // Verificar que tenga al menos APELLIDO/NOMBRES
-        return fila['APELLIDO/NOMBRES'] && String(fila['APELLIDO/NOMBRES']).trim() !== '';
+        const dni = String(
+          fila['NRO DOCUMENTO'] || 
+          fila['NRO.DOCUMENTO'] ||
+          fila['DOCUMENTO'] || 
+          fila['DNI'] || 
+          ''
+        ).trim();
+        return dni && dni.length === 8;
       });
   
       console.log(`📊 Registros válidos: ${dataFiltrada.length} de ${data.length}`);
   
       if (dataFiltrada.length === 0) {
-        this.erroresProcesamiento.push('No se encontraron registros válidos en el archivo Excel');
+        this.erroresProcesamiento.push('No se encontraron registros con DNI válido de 8 dígitos');
         this.procesandoArchivo = false;
         return;
       }
   
       this.blockUI.start('Procesando registros...');
   
-      // Procesar cada fila del Excel
+      // 🔹 PASO 1: Crear mapa de DNIs del Excel
+      const dnisEnExcel = new Map<string, any>();
+      dataFiltrada.forEach((fila: any) => {
+        const dni = String(
+          fila['NRO DOCUMENTO'] || 
+          fila['NRO.DOCUMENTO'] ||
+          fila['DOCUMENTO'] || 
+          fila['DNI'] || 
+          ''
+        ).trim();
+        if (dni && dni.length === 8) {
+          dnisEnExcel.set(dni, fila);
+        }
+      });
+  
+      console.log(`📋 DNIs en Excel (${dnisEnExcel.size}):`, Array.from(dnisEnExcel.keys()).slice(0, 10), '...');
+      console.log(`📋 Total en tabla actual: ${this.personal.length}`);
+  
+      // 🔹 PASO 2: Identificar registros a ELIMINAR
+      const registrosAEliminar = this.personal.filter((p: any) => {
+        const dniTabla = String(p.cDNI || '').trim();
+        return dniTabla && !dnisEnExcel.has(dniTabla);
+      });
+  
+      console.log(`\n🗑️ Registros a ELIMINAR: ${registrosAEliminar.length}`);
+  
+      // 🔹 PASO 3: ELIMINAR los que NO están en el Excel
+      let eliminados = 0;
+      for (const persona of registrosAEliminar) {
+        try {
+          console.log(`🗑️ Eliminando DNI ${persona.cDNI} (ID: ${persona.nCodigo})`);
+          
+          try {
+            await firstValueFrom(this.apiService.deletePersonal(persona.nCodigo));
+          } catch (err) {
+            console.log(`  ⚠️ Sin asignación en Personal`);
+          }
+          
+          await firstValueFrom(this.apiService.deletePersona(persona.nCodigo));
+          console.log(`  ✅ Eliminado`);
+          eliminados++;
+          
+        } catch (error: any) {
+          console.error(`  ❌ Error al eliminar DNI ${persona.cDNI}:`, error);
+        }
+      }
+  
+      // 🔹 PASO 4: Procesar registros del Excel
+      let actualizados = 0;
+      let creados = 0;
+      
       for (let i = 0; i < dataFiltrada.length; i++) {
         const fila = dataFiltrada[i];
-        console.log(`\n🔄 Procesando registro ${i + 1}/${dataFiltrada.length}:`, fila);
+        const dni = String(
+          fila['NRO DOCUMENTO'] || 
+          fila['NRO.DOCUMENTO'] ||
+          fila['DOCUMENTO'] || 
+          fila['DNI'] || 
+          ''
+        ).trim();
   
         try {
-          await this.procesarRegistroPersonal(fila, i + 1);
-          this.registrosExitosos++;
-          console.log(`✅ Registro ${i + 1} procesado exitosamente`);
+          // Buscar si ya existe
+          const registroExistente = this.personal.find((p: any) => 
+            String(p.cDNI || '').trim() === dni
+          );
+  
+          if (registroExistente) {
+            // ✏️ ACTUALIZAR si estado es false
+            if (registroExistente.bEstado === false) {
+              console.log(`✏️ Actualizando DNI ${dni} - Cambiando estado a true`);
+              
+              // Crear objeto con todos los datos del registro existente + estado true
+              const datosActualizados = {
+                ...registroExistente,
+                bEstado: true
+              };
+              
+              // Usar tu API de edición existente
+              await firstValueFrom(
+                this.apiService.updatePersonal(registroExistente.nCodigo, datosActualizados)
+              );
+              
+              actualizados++;
+              this.registrosExitosos++;
+            } else {
+              console.log(`ℹ️ DNI ${dni} ya activo - Sin cambios`);
+              this.registrosExitosos++;
+            }
+          } else {
+            // ➕ CREAR nuevo
+            console.log(`➕ Creando DNI ${dni}`);
+            await this.procesarRegistroPersonal(fila, i + 1);
+            creados++;
+            this.registrosExitosos++;
+          }
+          
         } catch (error: any) {
           this.registrosFallidos++;
-          const mensajeError = `Fila ${i + 2}: ${error.message || error}`;
-          this.erroresProcesamiento.push(mensajeError);
-          console.error(`❌ Error en registro ${i + 1}:`, error);
+          this.erroresProcesamiento.push(`Fila ${i + 2}: ${error.message || error}`);
         }
       }
   
       console.log('\n📊 Resumen final:');
-      console.log(`   ✅ Exitosos: ${this.registrosExitosos}`);
+      console.log(`   ➕ Creados: ${creados}`);
+      console.log(`   ✏️ Actualizados (estado): ${actualizados}`);
+      console.log(`   🗑️ Eliminados: ${eliminados}`);
       console.log(`   ❌ Fallidos: ${this.registrosFallidos}`);
   
-      // ✅ ACTUALIZAR LA TABLA
       await this.traerPersonal();
-      console.log('✅ Tabla actualizada con los nuevos registros');
-  
       this.blockUI.stop();
   
-      // ✅ SI TODO FUE EXITOSO, CERRAR EL MODAL AUTOMÁTICAMENTE
       if (this.registrosFallidos === 0) {
-        console.log('✅ Todos los registros procesados exitosamente, cerrando modal...');
         setTimeout(() => {
           this.popupSubidaMasivaVisible = false;
-        }, 2000); // Esperar 2 segundos para que el usuario vea el resumen
+        }, 2000);
       }
   
     } catch (error) {
-      console.error('❌ Error general al procesar archivo:', error);
+      console.error('❌ Error general:', error);
       this.erroresProcesamiento.push('Error al leer el archivo Excel');
       this.blockUI.stop();
     } finally {
@@ -637,19 +735,64 @@ export class PersonalComponent {
   leerArchivoExcel(file: File): Promise<any[]> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-
+  
       reader.onload = (e: any) => {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-          resolve(jsonData);
+          
+          // 🔹 Leer TODO como JSON sin encabezados
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+          
+          console.log('📄 Primeras 5 filas del Excel:', jsonData.slice(0, 5));
+          
+          // 🔹 Buscar la fila de encabezados (la que tiene "CODIGO", "APELLIDO", etc.)
+          let headerRowIndex = -1;
+          for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+            const row: any = jsonData[i];
+            if (Array.isArray(row)) {
+              const rowText = row.join('|').toUpperCase();
+              if (rowText.includes('CODIGO') && rowText.includes('APELLIDO')) {
+                headerRowIndex = i;
+                console.log(`✅ Encabezados encontrados en fila ${i}:`, row);
+                break;
+              }
+            }
+          }
+  
+          if (headerRowIndex === -1) {
+            reject(new Error('No se encontraron los encabezados (CODIGO, APELLIDO/NOMBRES) en las primeras 10 filas'));
+            return;
+          }
+  
+          // 🔹 Extraer encabezados
+          const headers: any[] = jsonData[headerRowIndex] as any[];
+          console.log('📋 Encabezados:', headers);
+  
+          // 🔹 Convertir filas de datos usando los encabezados
+          const dataRows = jsonData.slice(headerRowIndex + 1);
+          const result = dataRows
+            .filter((row: any) => Array.isArray(row) && row.some(cell => cell != null && cell !== ''))
+            .map((row: any) => {
+              const obj: any = {};
+              headers.forEach((header, index) => {
+                if (header) {
+                  obj[header] = row[index];
+                }
+              });
+              return obj;
+            });
+  
+          console.log('✅ Datos procesados:', result.length, 'registros');
+          console.log('🔍 Primer registro:', result[0]);
+          
+          resolve(result);
         } catch (error) {
           reject(error);
         }
       };
-
+  
       reader.onerror = () => reject(reader.error);
       reader.readAsArrayBuffer(file);
     });

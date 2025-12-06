@@ -211,16 +211,13 @@ export class ApiService{
       );
     }
 
-    deletePersonal(id: number): Observable<any> {
-      const headers = this.getHttpHeaders();
-      const body = { id: id.toString() };
-
-      return this.https.request('DELETE', `${this.baseUrl}/general/Persona/${id}`, {
-        headers,
-        body
-      });
+    deletePersona(id: number): Observable<any> {
+      return this.https.delete(
+        `${this.baseUrl}/general/Persona/${id}`,
+        { headers: this.getHttpHeaders() }
+      );
     }
-
+    
     getPersonalById(id: number): Observable<any> {
       return this.https.get(
         `${this.baseUrl}/rrhh/Personal/${id}`,
@@ -244,6 +241,14 @@ export class ApiService{
         { headers: this.getHttpHeaders() }
       );
     }
+
+    deletePersonal(id: number): Observable<any> {
+      return this.https.delete(
+        `${this.baseUrl}/rrhh/Personal/${id}`,
+        { headers: this.getHttpHeaders() }
+      );
+    }
+    
 
     getPersonas(): Observable<any[]> {
       return this.https.get<any[]>(
