@@ -623,32 +623,31 @@ export class PersonalComponent {
       console.log(`📋 DNIs en Excel (${dnisEnExcel.size}):`, Array.from(dnisEnExcel.keys()).slice(0, 10), '...');
       console.log(`📋 Total en tabla actual: ${this.personal.length}`);
   
-      // 🔹 PASO 2: Identificar registros a ELIMINAR
-      const registrosAEliminar = this.personal.filter((p: any) => {
+      // 🔹 PASO 2: Identificar registros a INACTIVAR
+      const registrosAInactivar = this.personal.filter((p: any) => {
         const dniTabla = String(p.cDNI || '').trim();
         return dniTabla && !dnisEnExcel.has(dniTabla);
       });
   
-      console.log(`\n🗑️ Registros a ELIMINAR: ${registrosAEliminar.length}`);
+      console.log(`\n🔒 Registros a INACTIVAR: ${registrosAInactivar.length}`);
   
-      // 🔹 PASO 3: ELIMINAR los que NO están en el Excel
-      let eliminados = 0;
-      for (const persona of registrosAEliminar) {
+      // 🔹 PASO 3: INACTIVAR los que NO están en el Excel
+      let inactivados = 0;
+      for (const persona of registrosAInactivar) {
         try {
-          console.log(`🗑️ Eliminando DNI ${persona.cDNI} (ID: ${persona.nCodigo})`);
+          console.log(`🔒 Inactivando DNI ${persona.cDNI} (ID: ${persona.nCodigo})`);
           
-          try {
-            await firstValueFrom(this.apiService.deletePersonal(persona.nCodigo));
-          } catch (err) {
-            console.log(`  ⚠️ Sin asignación en Personal`);
-          }
+          const datosInactivar = {
+            ...persona,
+            bEstado: false
+          };
           
-          await firstValueFrom(this.apiService.deletePersona(persona.nCodigo));
-          console.log(`  ✅ Eliminado`);
-          eliminados++;
+          await firstValueFrom(this.apiService.updatePersonal(persona.nCodigo, datosInactivar));
+          console.log(`  ✅ Inactivado`);
+          inactivados++;
           
         } catch (error: any) {
-          console.error(`  ❌ Error al eliminar DNI ${persona.cDNI}:`, error);
+          console.error(`  ❌ Error al inactivar DNI ${persona.cDNI}:`, error);
         }
       }
   
@@ -711,7 +710,7 @@ export class PersonalComponent {
       console.log('\n📊 Resumen final:');
       console.log(`   ➕ Creados: ${creados}`);
       console.log(`   ✏️ Actualizados (estado): ${actualizados}`);
-      console.log(`   🗑️ Eliminados: ${eliminados}`);
+      console.log(`   🔒 Inactivados: ${inactivados}`);
       console.log(`   ❌ Fallidos: ${this.registrosFallidos}`);
   
       await this.traerPersonal();
