@@ -509,6 +509,10 @@ export class HorarioComponent {
   }
 
   calcularDiferenciaDia(evento: any, eventosDia: any[]): number {
+    if (evento.tipoEvento === 0) {
+      return 0;
+    }
+
     if (evento.tipoEvento !== 1) {
       return evento.diferenciaDia ?? 0;
     }
@@ -521,7 +525,7 @@ export class HorarioComponent {
     const horaSalida = this.convertirHoraANumero(evento.hora);
     const horaEntrada = this.convertirHoraANumero(entrada.hora);
 
-    return horaSalida < horaEntrada ? 1 : 0;
+   return horaEntrada > horaSalida ? 1 : 0;
   }
 
   private convertirHoraANumero(hora: any): number {
