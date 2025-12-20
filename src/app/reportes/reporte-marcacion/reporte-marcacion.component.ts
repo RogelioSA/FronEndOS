@@ -72,6 +72,8 @@ export class ReporteMarcacionComponent {
   mostrarModal: boolean = false;
   detalleMarcacion: DetalleMarcacion | null = null;
   editandoMarcacion: boolean = false;
+  mostrarRegularizacionNueva: boolean = false;
+  contextoRegularizacionNueva: { empleado: EmpleadoReporte; fecha: string; tipoEvento: number } | null = null;
   regularizacion = {
     jornal: '',
     evento: 0,
@@ -370,6 +372,26 @@ export class ReporteMarcacionComponent {
     }
   }
 
+  tieneMarcacionPorTipo(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): boolean {
+    const marcacion = empleado.marcaciones[fecha];
+    if (!marcacion) return false;
+
+    switch (tipoEvento) {
+      case 0:
+        return !!(marcacion.entrada || marcacion.datosEntrada);
+      case 1:
+        return !!(marcacion.salida || marcacion.datosSalida);
+      case 2:
+        return !!(marcacion.salidaRefrigerio || marcacion.datosSalidaRefrigerio);
+      case 3:
+        return !!(marcacion.entradaRefrigerio || marcacion.datosEntradaRefrigerio);
+      case 99:
+        return !!(marcacion.desconocido || marcacion.datosDesconocido);
+      default:
+        return false;
+    }
+  }
+
   // Actualizar método esTardanza para aceptar tipo de evento
   esTardanza(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): boolean {
     const marcacion = empleado.marcaciones[fecha];
@@ -471,8 +493,68 @@ export class ReporteMarcacionComponent {
   }
 
   cancelarRegularizacion() {
+    if (this.mostrarRegularizacionNueva) {
+      this.cerrarRegularizacionNueva();
+      return;
+    }
+
     this.editandoMarcacion = false;
     this.prepararDatosRegularizacion();
+  }
+
+  onCellClick(empleado: EmpleadoReporte, fecha: string, tipoEvento: number) {
+    const tieneMarcacion = this.tieneMarcacionPorTipo(empleado, fecha, tipoEvento);
+
+    if (tieneMarcacion) {
+      this.abrirDetalleMarcacionTipo(empleado, fecha, tipoEvento);
+      return;
+    }
+
+    this.abrirRegularizacionNueva(empleado, fecha, tipoEvento);
+  }
+
+  abrirRegularizacionNueva(empleado: EmpleadoReporte, fecha: string, tipoEvento: number) {
+    this.contextoRegularizacionNueva = { empleado, fecha, tipoEvento };
+
+    const fechaDisplay = this.datePipe.transform(new Date(fecha), 'dd/MM/yyyy') || '';
+
+    this.detalleMarcacion = {
+      personal: empleado.personal,
+      dni: empleado.dni,
+      fecha: fechaDisplay,
+      fechaJornal: fechaDisplay,
+      tipoEvento: this.obtenerTipoEventoTexto(tipoEvento),
+      tipoEventoCodigo: tipoEvento,
+      hora: '',
+      esTardanza: false,
+      diferenciaMinutos: 0,
+      latitud: null,
+      longitud: null,
+      politica: '',
+      horaProgramada: '',
+      ordenTrabajoId: null,
+      linkGoogleMaps: ''
+    };
+
+    this.regularizacion = {
+      jornal: fecha,
+      evento: tipoEvento,
+      ordenTrabajoId: null
+    };
+
+    this.mostrarRegularizacionNueva = true;
+  }
+
+  cerrarRegularizacionNueva() {
+    this.mostrarRegularizacionNueva = false;
+    this.contextoRegularizacionNueva = null;
+    this.editandoMarcacion = false;
+    this.detalleMarcacion = null;
+    this.regularizacion = {
+      jornal: '',
+      evento: 0,
+      ordenTrabajoId: null
+    };
   }
 
   regularizarMarcacion() {
