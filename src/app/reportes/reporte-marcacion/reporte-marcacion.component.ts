@@ -43,6 +43,7 @@ interface DetalleMarcacion {
   horaProgramada: string;
   ordenTrabajoId: number | null;
   linkGoogleMaps: string;
+  personalId: number;
 }
 
 @Component({
@@ -78,6 +79,7 @@ export class ReporteMarcacionComponent {
     jornal: '',
     evento: 0,
     ordenTrabajoId: null as number | null,
+    hora: '',
   };
 
   // Nueva propiedad para el checkbox
@@ -460,7 +462,8 @@ export class ReporteMarcacionComponent {
       politica: datos.registroAsistenciaPolitica?.nombreCorto || datos.registroAsistenciaPolitica?.nombre || 'N/A',
       horaProgramada: datos.horarioDetalleEvento?.hora || 'N/A',
       ordenTrabajoId: datos.ordenTrabajo?.id ?? null,
-      linkGoogleMaps: linkGoogleMaps
+      linkGoogleMaps: linkGoogleMaps,
+      personalId: empleado.personalId
     };
 
     this.cargarImagenRostro(datos.adjuntoId);
@@ -483,7 +486,8 @@ export class ReporteMarcacionComponent {
     this.regularizacion = {
       jornal: this.convertirFechaJornalAISO(this.detalleMarcacion.fechaJornal),
       evento: this.detalleMarcacion.tipoEventoCodigo,
-      ordenTrabajoId: this.detalleMarcacion.ordenTrabajoId
+      ordenTrabajoId: this.detalleMarcacion.ordenTrabajoId,
+      hora: (this.detalleMarcacion.hora || '').slice(0, 5)
     };
   }
 
@@ -533,13 +537,15 @@ export class ReporteMarcacionComponent {
       politica: '',
       horaProgramada: '',
       ordenTrabajoId: null,
-      linkGoogleMaps: ''
+      linkGoogleMaps: '',
+      personalId: empleado.personalId
     };
 
     this.regularizacion = {
       jornal: fecha,
       evento: tipoEvento,
-      ordenTrabajoId: null
+      ordenTrabajoId: null,
+      hora: ''
     };
 
     this.mostrarRegularizacionNueva = true;
@@ -553,20 +559,58 @@ export class ReporteMarcacionComponent {
     this.regularizacion = {
       jornal: '',
       evento: 0,
-      ordenTrabajoId: null
+      ordenTrabajoId: null,
+      hora: ''
     };
   }
 
-  regularizarMarcacion() {
-    if (!this.detalleMarcacion) {
+  async regularizarMarcacion() {
+    const personalId = this.detalleMarcacion?.personalId || this.contextoRegularizacionNueva?.empleado.personalId;
+    if (!personalId) {
+      this.showMessage('No se pudo identificar al colaborador para regularizar');
       return;
     }
 
-    // TODO: implementar consumo de API de regularización (PUT)
-    console.log('Regularización pendiente de implementar', {
-      detalle: this.detalleMarcacion,
-      payload: this.regularizacion
-    });
+    if (!this.regularizacion.jornal || !this.regularizacion.hora) {
+      this.showMessage('Ingresa la fecha y hora de la regularización');
+      return;
+    }
+
+    const fecha = new Date(`${this.regularizacion.jornal}T${this.regularizacion.hora}`);
+    if (isNaN(fecha.getTime())) {
+      this.showMessage('La fecha u hora ingresada no es válida');
+      return;
+    }
+
+    const payload = {
+      empresaId: Number(localStorage.getItem('empresa_id')) || 0,
+      personalId,
+      fecha: fecha.toISOString(),
+      latitud: 0,
+      longitud: 0,
+      adjuntoId: 0,
+      ordenTrabajoId: this.regularizacion.ordenTrabajoId,
+      tipoEvento: this.regularizacion.evento
+    };
+
+    try {
+      this.blockUI.start('Registrando regularización...');
+      await firstValueFrom(this.apiService.regularizarMarcacion(payload));
+      this.showMessage('Regularización registrada correctamente');
+      if (this.mostrarRegularizacionNueva) {
+        this.cerrarRegularizacionNueva();
+      } else {
+        this.editandoMarcacion = false;
+        this.detalleMarcacion = null;
+        this.mostrarModal = false;
+      }
+      await this.traerMarcaciones();
+    } catch (error) {
+      console.error('❌ Error al regularizar la marcación:', error);
+      this.showMessage('Error al regularizar la marcación');
+    } finally {
+      this.blockUI.stop();
+    }
   }
 
   async cargarImagenRostro(adjuntoId: number) {

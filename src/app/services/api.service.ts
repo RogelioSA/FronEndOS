@@ -1812,6 +1812,12 @@ export class ApiService{
     return this.https.post<any>(url, body, { headers });
   }
 
+  regularizarMarcacion(body: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/rrhh/RegistroAsistenciaOrdenTrabajo`;
+    return this.https.post<any>(url, body, { headers });
+  }
+
   //
   //subir foto
 

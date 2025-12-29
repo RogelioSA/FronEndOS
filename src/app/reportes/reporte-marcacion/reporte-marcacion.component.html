@@ -389,6 +389,16 @@
                         ></dx-select-box>
                     </div>
 
+                    <div class="info-line stacked">
+                        <span class="info-label">Hora:</span>
+                        <input
+                            type="time"
+                            class="form-control"
+                            [(ngModel)]="regularizacion.hora"
+                            placeholder="00:00"
+                        />
+                    </div>
+
                     <div class="regularizacion-actions">
                         <button type="button" class="btn btn-primary" (click)="regularizarMarcacion()">
                             Guardar
