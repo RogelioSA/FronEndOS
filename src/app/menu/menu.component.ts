@@ -14,6 +14,7 @@ export class MenuComponent {
 
   menus : [] = [];
   estados : any[] = [];
+  modulos: any[] = [];
   @BlockUI() blockUI!: NgBlockUI;
 
   constructor(private apiService: ApiService,){}
@@ -21,11 +22,28 @@ export class MenuComponent {
   async ngOnInit():Promise<void> {
 
     this.traerMenus();
-
+    await this.traerModulos();
     this.estados = [{ID:'A', Name: 'Activo'},{ID: 'I', Name: 'Inactivo'}];
 
   }
 
+  async traerModulos() {
+    try {
+      const result = await firstValueFrom(this.apiService.listarModulos());
+      this.modulos = result;
+    } catch (error) {
+      console.error('Error trayendo módulos', error);
+    }
+  }
+
+  obtenerDatosModulo(moduloId: number) {
+    const modulo = this.modulos.find(m => m.id === moduloId);
+    return {
+      controlador: modulo?.controlador ?? '',
+      action: modulo?.action ?? ''
+    };
+  }
+  
   async traerMenus() {
     this.blockUI.start('Cargando...');
   
@@ -37,11 +55,12 @@ export class MenuComponent {
       this.menus = result.map((m: any) => ({
         nCodigo: m.id,
         nPadre: m.parentId,
+        moduloId: m.moduloId, // 🔥 IMPORTANTE
         cNombre: m.nombre,
         cNombreMostrar: m.nombreCorto,
         cDetalle: m.descripcion,
         cIcono: m.icono,
-        cPath: m.controlador && m.action ? `${m.controlador}/${m.action}` : '',
+        cPath: m.claimType,
         nOrden: m.orden
       }));
   
@@ -54,73 +73,61 @@ export class MenuComponent {
   }
   
 
-  guardar(event : any){
-    console.log(event);
-  }
-
   actualizar(event: any) {
-    const id = event.oldData.nCodigo; // ID del menú a actualizar
+
+    const moduloId =
+      event.newData.moduloId ??
+      event.oldData.moduloId;
   
-    // Mapear newData a la estructura de la API
+    const datosModulo = this.obtenerDatosModulo(moduloId);
+  
     let body = {
       parentId: event.newData.nPadre ?? event.oldData.nPadre ?? 0,
-      moduloId: 0, // si en el futuro lo tienes, cámbialo aquí
+      moduloId: moduloId,
       nombre: event.newData.cNombre ?? event.oldData.cNombre,
       nombreCorto: event.newData.cNombreMostrar ?? event.oldData.cNombreMostrar,
       descripcion: event.newData.cDetalle ?? event.oldData.cDetalle ?? '',
-      controlador: (event.newData.cPath ?? event.oldData.cPath)?.split('/')[0] ?? '',
-      action: (event.newData.cPath ?? event.oldData.cPath)?.split('/')[1] ?? '',
+      controlador: datosModulo.controlador, // 👈
+      action: datosModulo.action,           // 👈
       icono: event.newData.cIcono ?? event.oldData.cIcono ?? '',
-      claimType: '', // lo dejas vacío si no lo usas
+      claimType: event.newData.cPath ?? event.oldData.cPath ?? '',
       orden: event.newData.nOrden ?? event.oldData.nOrden ?? 0,
       estado: true
     };
   
-    this.apiService.actualizarMenu(id, body).subscribe(
-      (response: any) => {
-        this.traerMenus();
-      },
-      (error: any) => {
-        console.error('Error al actualizar registro.', error);
-      }
-    );
+    this.apiService.actualizarMenu(event.oldData.nCodigo, body).subscribe(() => {
+      this.traerMenus();
+    });
   
-    console.log("ID:", id);
-    console.log("Body enviado a la API:", body);
-    console.log("Evento recibido:", event);
+    console.log('Body enviado:', body);
   }
   
 
   insertar(event: any) {
-    // Mapear los campos a la estructura de la API
+
+    const datosModulo = this.obtenerDatosModulo(event.data.moduloId);
+  
     let body = {
       parentId: event.data.nPadre ?? 0,
-      moduloId: 0, // si más adelante recibes este dato, reemplázalo
+      moduloId: event.data.moduloId,
       nombre: event.data.cNombre,
       nombreCorto: event.data.cNombreMostrar,
       descripcion: event.data.cDetalle ?? '',
-      controlador: event.data.cPath ? event.data.cPath.split('/')[0] : '',
-      action: event.data.cPath ? event.data.cPath.split('/')[1] : '',
+      controlador: datosModulo.controlador, // 👈
+      action: datosModulo.action,           // 👈
       icono: event.data.cIcono ?? '',
-      claimType: '', // por ahora vacío
+      claimType: event.data.cPath ?? '',
       orden: event.data.nOrden ?? 0,
       estado: true
     };
   
-    this.apiService.crearMenu(body).subscribe(
-      (response: any) => {
-        this.traerMenus();
-      },
-      (error: any) => {
-        console.error('Error al insertar registro.', error);
-      }
-    );
+    this.apiService.crearMenu(body).subscribe(() => {
+      this.traerMenus();
+    });
   
-    console.log("Body enviado a la API:", body);
-    console.log("Evento recibido:", event);
+    console.log('Body enviado:', body);
   }
   
-
   eliminar(event: any) {
     const id = event.data.nCodigo; // ID del menú a eliminar
   
