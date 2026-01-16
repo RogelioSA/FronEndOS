@@ -36,8 +36,11 @@
             >
             </dxo-editing>
           
+            <dxi-column dataField="nCodigo" caption="ID" [allowEditing]="false"></dxi-column>
+            <dxi-column dataField="nPadre" caption="Padre"></dxi-column>
             <dxi-column dataField="cNombre" caption="Nombre"></dxi-column>
             <dxi-column dataField="cNombreMostrar" caption="Nombre Mostrar"></dxi-column>
+            <dxi-column dataField="cDetalle" caption="Descripción"></dxi-column>
             <dxi-column
               dataField="moduloId"
               caption="Módulo"
@@ -48,9 +51,18 @@
                 displayExpr="nombre">
               </dxo-lookup>
             </dxi-column>
+            <dxi-column dataField="cControlador" caption="Controlador"></dxi-column>
+            <dxi-column dataField="cAction" caption="Ruta/Accion"></dxi-column>
             <dxi-column dataField="cIcono" caption="Icono"></dxi-column>
-            <dxi-column dataField="cPath" caption="Path"></dxi-column>
+            <dxi-column dataField="cValorClave" caption="valorClave"></dxi-column>
             <dxi-column dataField="nOrden" caption="Orden" sortOrder="asc"></dxi-column>
+            <dxi-column dataField="lEstado" caption="Estado">
+              <dxo-lookup
+                [dataSource]="estados"
+                valueExpr="ID"
+                displayExpr="Name">
+              </dxo-lookup>
+            </dxi-column>
 
             <dxi-column type="buttons">
               <dxi-button name="add" icon="fa-solid fa-plus" hint="Agregar"></dxi-button>
