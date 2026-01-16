@@ -1668,11 +1668,35 @@ export class ApiService{
     });
   }
 
-  crearMenu(data: any): Observable<any> {
-    return this.https.post(`${this.baseUrl}/security/Formulario`, data, {
+  
+  //formulariocurrect
+  getMenusCurrent(): Observable<any> {
+    return this.https.get(`${this.baseUrl}/security/Formulario/current_user`, {
       headers: this.getHttpHeaders()
     });
   }
+
+  crearMenu(data: any): Observable<any> {
+    return this.https.post(
+      `${this.baseUrl}/security/Formulario`,
+      {
+        parentId: data.parentId,
+        moduloId: data.moduloId,
+        nombre: data.nombre,
+        nombreCorto: data.nombreCorto,
+        descripcion: data.descripcion,
+        controlador: data.controlador,
+        action: data.action,
+        icono: data.icono,
+        claimType: data.claimType,
+        orden: data.orden,
+        estado: data.estado
+      },
+      {
+        headers: this.getHttpHeaders()
+      }
+    );
+  }  
 
   actualizarMenu(id: number, data: any): Observable<any> {
     return this.https.put(`${this.baseUrl}/security/Formulario/${id}`, data, {

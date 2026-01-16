@@ -38,7 +38,16 @@
           
             <dxi-column dataField="cNombre" caption="Nombre"></dxi-column>
             <dxi-column dataField="cNombreMostrar" caption="Nombre Mostrar"></dxi-column>
-            <dxi-column dataField="cDetalle" caption="Detalle"></dxi-column>
+            <dxi-column
+              dataField="moduloId"
+              caption="Módulo"
+            >
+              <dxo-lookup
+                [dataSource]="modulos"
+                valueExpr="id"
+                displayExpr="nombre">
+              </dxo-lookup>
+            </dxi-column>
             <dxi-column dataField="cIcono" caption="Icono"></dxi-column>
             <dxi-column dataField="cPath" caption="Path"></dxi-column>
             <dxi-column dataField="nOrden" caption="Orden" sortOrder="asc"></dxi-column>

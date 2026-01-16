@@ -54,6 +54,7 @@ export class MenuBarComponent {
 
     await this.traerUsuariosEmpresas();
     this.crearMenusEstaticos();
+    //await this.cargarMenuDesdeApi();
   }
 
   crearMenusEstaticos() {
@@ -436,4 +437,78 @@ export class MenuBarComponent {
       }
     }
   }
+
+  async cargarMenuDesdeApi() {
+    try {
+      const response = await firstValueFrom(this.apiService.getMenusCurrent());
+  
+      // 1. Filtrar solo activos
+      const activos = response.filter((x: any) => x.estado);
+  
+      // 2. Crear mapa por id
+      const map = new Map<number, any>();
+  
+      activos.forEach((item: any) => {
+        map.set(item.id, {
+          cNombre: item.nombre,
+          nCodigo: item.id,
+          nPadre: item.parentId ?? 0,
+          icono: item.icono,
+          nOrden: item.orden,
+          path: item.claimType ? item.claimType : '#',
+          items: []
+        });
+      });
+  
+      // 3. Armar jerarquía
+      const menuFinal: any[] = [];
+  
+      map.forEach(item => {
+        if (item.nPadre === 0) {
+          menuFinal.push(item);
+        } else {
+          const padre = map.get(item.nPadre);
+          if (padre) {
+            padre.items.push(item);
+          }
+        }
+      });
+  
+      // 4. Ordenar padres e hijos
+      menuFinal.sort((a, b) => a.nOrden - b.nOrden);
+      menuFinal.forEach(p =>
+        p.items.sort((a: any, b: any) => a.nOrden - b.nOrden)
+      );
+  
+      // 5. Agregar menú Usuario (logout)
+      menuFinal.push({
+        cNombre: this.claims.cUsuario || 'Usuario',
+        nCodigo: 990,
+        nPadre: 0,
+        nOrden: 999,
+        path: '#',
+        cssClass: 'logout-item',
+        icono: 'user',
+        items: [
+          {
+            cNombre: 'Cerrar Sesión',
+            nCodigo: 999,
+            nPadre: 990,
+            nOrden: 1000,
+            path: '#',
+            icono: 'logout',
+            items: []
+          }
+        ]
+      });
+  
+      this.menuBar = menuFinal;
+  
+      console.log('Menú dinámico cargado desde API:', this.menuBar);
+  
+    } catch (error) {
+      console.error('Error cargando menú desde API', error);
+    }
+  }
+  
 }
