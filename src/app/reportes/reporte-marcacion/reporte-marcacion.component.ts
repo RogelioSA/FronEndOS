@@ -576,8 +576,11 @@ export class ReporteMarcacionComponent {
       return;
     }
 
-    const fecha = new Date(`${this.regularizacion.jornal}T${this.regularizacion.hora}`);
-    if (isNaN(fecha.getTime())) {
+    const fechaLocal = this.construirFechaHoraLocal(
+      this.regularizacion.jornal,
+      this.regularizacion.hora
+    );
+    if (!fechaLocal) {
       this.showMessage('La fecha u hora ingresada no es válida');
       return;
     }
@@ -585,7 +588,7 @@ export class ReporteMarcacionComponent {
     const payload = {
       empresaId: Number(localStorage.getItem('empresa_id')) || 0,
       personalId,
-      fecha: fecha.toISOString(),
+      fecha: fechaLocal,
       latitud: 0,
       longitud: 0,
       adjuntoId: 0,
@@ -863,5 +866,20 @@ export class ReporteMarcacionComponent {
         messageBox.style.display = 'none';
       }, 3000);
     }
+  }
+
+  private construirFechaHoraLocal(jornal: string, hora: string): string | null {
+    const fecha = new Date(`${jornal}T${hora}`);
+    if (Number.isNaN(fecha.getTime())) {
+      return null;
+    }
+
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    const hours = String(fecha.getHours()).padStart(2, '0');
+    const minutes = String(fecha.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:00`;
   }
 }
