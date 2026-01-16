@@ -23,7 +23,7 @@ export class MenuComponent {
 
     this.traerMenus();
     await this.traerModulos();
-    this.estados = [{ID:'A', Name: 'Activo'},{ID: 'I', Name: 'Inactivo'}];
+    this.estados = [{ID: true, Name: 'Activo'},{ID: false, Name: 'Inactivo'}];
 
   }
 
@@ -36,14 +36,6 @@ export class MenuComponent {
     }
   }
 
-  obtenerDatosModulo(moduloId: number) {
-    const modulo = this.modulos.find(m => m.id === moduloId);
-    return {
-      controlador: modulo?.controlador ?? '',
-      action: modulo?.action ?? ''
-    };
-  }
-  
   async traerMenus() {
     this.blockUI.start('Cargando...');
   
@@ -55,13 +47,16 @@ export class MenuComponent {
       this.menus = result.map((m: any) => ({
         nCodigo: m.id,
         nPadre: m.parentId,
-        moduloId: m.moduloId, // 🔥 IMPORTANTE
+        moduloId: m.moduloId,
         cNombre: m.nombre,
         cNombreMostrar: m.nombreCorto,
         cDetalle: m.descripcion,
+        cControlador: m.controlador,
+        cAction: m.action,
         cIcono: m.icono,
-        cPath: m.claimType,
-        nOrden: m.orden
+        cValorClave: m.claimType,
+        nOrden: m.orden,
+        lEstado: m.estado
       }));
   
       console.log("Menus mapeados:", this.menus);
@@ -79,20 +74,18 @@ export class MenuComponent {
       event.newData.moduloId ??
       event.oldData.moduloId;
   
-    const datosModulo = this.obtenerDatosModulo(moduloId);
-  
     let body = {
-      parentId: event.newData.nPadre ?? event.oldData.nPadre ?? 0,
+      parentId: event.newData.nPadre ?? event.oldData.nPadre ?? null,
       moduloId: moduloId,
       nombre: event.newData.cNombre ?? event.oldData.cNombre,
       nombreCorto: event.newData.cNombreMostrar ?? event.oldData.cNombreMostrar,
       descripcion: event.newData.cDetalle ?? event.oldData.cDetalle ?? '',
-      controlador: datosModulo.controlador, // 👈
-      action: datosModulo.action,           // 👈
+      controlador: event.newData.cControlador ?? event.oldData.cControlador ?? '',
+      action: event.newData.cAction ?? event.oldData.cAction ?? '',
       icono: event.newData.cIcono ?? event.oldData.cIcono ?? '',
-      claimType: event.newData.cPath ?? event.oldData.cPath ?? '',
+      claimType: event.newData.cValorClave ?? event.oldData.cValorClave ?? '',
       orden: event.newData.nOrden ?? event.oldData.nOrden ?? 0,
-      estado: true
+      estado: event.newData.lEstado ?? event.oldData.lEstado ?? true
     };
   
     this.apiService.actualizarMenu(event.oldData.nCodigo, body).subscribe(() => {
@@ -104,21 +97,19 @@ export class MenuComponent {
   
 
   insertar(event: any) {
-
-    const datosModulo = this.obtenerDatosModulo(event.data.moduloId);
   
     let body = {
-      parentId: event.data.nPadre ?? 0,
+      parentId: event.data.nPadre ?? null,
       moduloId: event.data.moduloId,
       nombre: event.data.cNombre,
       nombreCorto: event.data.cNombreMostrar,
       descripcion: event.data.cDetalle ?? '',
-      controlador: datosModulo.controlador, // 👈
-      action: datosModulo.action,           // 👈
+      controlador: event.data.cControlador ?? '',
+      action: event.data.cAction ?? '',
       icono: event.data.cIcono ?? '',
-      claimType: event.data.cPath ?? '',
+      claimType: event.data.cValorClave ?? '',
       orden: event.data.nOrden ?? 0,
-      estado: true
+      estado: event.data.lEstado ?? true
     };
   
     this.apiService.crearMenu(body).subscribe(() => {
