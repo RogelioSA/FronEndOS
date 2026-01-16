@@ -19,6 +19,7 @@
             [showRowLines]="true"
             [allowColumnResizing]="true"
             (onInitNewRow)="initNewRow($event)"
+            (onEditorPreparing)="onEditorPreparing($event)"
           >
             <dxo-paging [pageSize]="15"> </dxo-paging>
             <dxo-pager
@@ -38,12 +39,9 @@
           
             <dxi-column dataField="nCodigo" caption="ID" [allowEditing]="false" [visible]="false"></dxi-column>
             <dxi-column dataField="nPadre" caption="Padre" [visible]="false"></dxi-column>
-            <dxi-column dataField="cNombre" caption="Nombre"></dxi-column>
-            <dxi-column dataField="cNombreMostrar" caption="Nombre Corto"></dxi-column>
-            <dxi-column dataField="cDetalle" caption="Descripción"></dxi-column>
             <dxi-column
               dataField="moduloId"
-              caption="Módulo"
+              caption="Modulo"
             >
               <dxo-lookup
                 [dataSource]="modulos"
@@ -51,6 +49,10 @@
                 displayExpr="nombre">
               </dxo-lookup>
             </dxi-column>
+            <dxi-column dataField="cControlador" caption="Controlador" [allowEditing]="false"></dxi-column>
+            <dxi-column dataField="cNombre" caption="Nombre"></dxi-column>
+            <dxi-column dataField="cNombreMostrar" caption="Nombre Corto"></dxi-column>
+            <dxi-column dataField="cDetalle" caption="Descripción"></dxi-column>
             <dxi-column dataField="cAction" caption="Ruta/Accion"></dxi-column>
             <dxi-column dataField="cIcono" caption="Icono"></dxi-column>
             <dxi-column dataField="cValorClave" caption="valorClave"></dxi-column>

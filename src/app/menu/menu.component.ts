@@ -48,6 +48,7 @@ export class MenuComponent {
         nCodigo: m.id,
         nPadre: m.parentId,
         moduloId: m.moduloId,
+        cControlador: m.controlador,
         cNombre: m.nombre,
         cNombreMostrar: m.nombreCorto,
         cDetalle: m.descripcion,
@@ -66,12 +67,41 @@ export class MenuComponent {
     }
   }
   
+  getNombreModulo(moduloId: number | string | null | undefined): string {
+    if (moduloId === null || moduloId === undefined) {
+      return '';
+    }
+
+    const modulo = this.modulos.find((item: any) => item.id === moduloId);
+    return modulo?.nombre ?? '';
+  }
+
+  onEditorPreparing(event: any) {
+    if (event.parentType !== 'dataRow' || event.dataField !== 'moduloId') {
+      return;
+    }
+
+    const originalOnValueChanged = event.editorOptions.onValueChanged;
+
+    event.editorOptions.onValueChanged = (args: any) => {
+      if (originalOnValueChanged) {
+        originalOnValueChanged(args);
+      }
+
+      const controlador = this.getNombreModulo(args.value);
+      event.setValue(args.value);
+      event.component.cellValue(event.row.rowIndex, 'cControlador', controlador);
+    };
+  }
 
   actualizar(event: any) {
 
     const moduloId =
       event.newData.moduloId ??
       event.oldData.moduloId;
+    const controlador =
+      this.getNombreModulo(moduloId) ||
+      (event.newData.cControlador ?? event.oldData.cControlador ?? '');
   
     let body = {
       parentId: event.newData.nPadre ?? event.oldData.nPadre ?? null,
@@ -79,7 +109,7 @@ export class MenuComponent {
       nombre: event.newData.cNombre ?? event.oldData.cNombre,
       nombreCorto: event.newData.cNombreMostrar ?? event.oldData.cNombreMostrar,
       descripcion: event.newData.cDetalle ?? event.oldData.cDetalle ?? '',
-      controlador: moduloId,
+      controlador: controlador,
       action: event.newData.cAction ?? event.oldData.cAction ?? '',
       icono: event.newData.cIcono ?? event.oldData.cIcono ?? '',
       claimType: event.newData.cValorClave ?? event.oldData.cValorClave ?? '',
@@ -97,13 +127,18 @@ export class MenuComponent {
 
   insertar(event: any) {
   
+    const moduloId = event.data.moduloId;
+    const controlador =
+      this.getNombreModulo(moduloId) ||
+      (event.data.cControlador ?? '');
+
     let body = {
       parentId: event.data.nPadre ?? null,
-      moduloId: event.data.moduloId,
+      moduloId: moduloId,
       nombre: event.data.cNombre,
       nombreCorto: event.data.cNombreMostrar,
       descripcion: event.data.cDetalle ?? '',
-      controlador: event.data.moduloId,
+      controlador: controlador,
       action: event.data.cAction ?? '',
       icono: event.data.cIcono ?? '',
       claimType: event.data.cValorClave ?? '',
