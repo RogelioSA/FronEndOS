@@ -430,12 +430,34 @@ export class MenuBarComponent {
       this.onLogout();
       window.location.reload();
     } else {
-      const path = event.itemData.path;
+      const path = this.normalizeMenuPath(event.itemData.path);
       if (path && path !== '#') {
         console.log('Navegando a:', path);
-        this.router.navigate([path]);
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+          window.location.href = path;
+          return;
+        }
+        this.router.navigateByUrl(path);
       }
     }
+  }
+
+  private normalizeMenuPath(action?: string): string {
+    if (!action) {
+      return '#';
+    }
+
+    const trimmed = action.trim();
+
+    if (!trimmed || trimmed === '#') {
+      return '#';
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+
+    return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
   }
 
   async cargarMenuDesdeApi() {
@@ -449,13 +471,20 @@ export class MenuBarComponent {
       const map = new Map<number, any>();
 
       activos.forEach((item: any) => {
+        const action =
+          item.Action ??
+          item.action ??
+          item.path ??
+          item.cPath ??
+          '#';
+
         map.set(item.id, {
           cNombre: item.nombre,
           nCodigo: item.id,
           nPadre: item.parentId ?? 0,
           icono: item.icono,
           nOrden: item.orden,
-          path: item.Action ? item.Action : '#',
+          path: this.normalizeMenuPath(action),
           items: []
         });
       });
