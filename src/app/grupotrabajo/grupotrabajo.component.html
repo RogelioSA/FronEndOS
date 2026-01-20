@@ -22,11 +22,11 @@
             [(selectedRowKeys)]="filasSeleccionadasCabecera"
             (onSelectionChanged)="onSelectionChangedCabecera($event)"
           >
-            <dxo-paging [pageSize]="15"></dxo-paging>
+            <dxo-paging [pageSize]="50"></dxo-paging>
             <dxo-pager
               [visible]="true"
               [showPageSizeSelector]="true"
-              [allowedPageSizes]="[15, 20, 50]"
+              [allowedPageSizes]="[50, 100, 150, 200]"
             ></dxo-pager>
             <dxo-selection mode="single"></dxo-selection>
           
@@ -78,11 +78,11 @@
             (onSelectionChanged)="onSelectionChangedPersonas($event)"
           >
             <dxo-scrolling mode="standard"></dxo-scrolling>
-            <dxo-paging [pageSize]="15"></dxo-paging>
+            <dxo-paging [pageSize]="50"></dxo-paging>
             <dxo-pager
               [visible]="true"
               [showPageSizeSelector]="true"
-              [allowedPageSizes]="[15, 20, 50]"
+              [allowedPageSizes]="[50, 100, 150, 200]"
               [showInfo]="true"
             ></dxo-pager>
             <dxo-selection 
