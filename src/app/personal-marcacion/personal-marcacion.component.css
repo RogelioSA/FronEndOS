@@ -145,6 +145,16 @@
   ::ng-deep #gridContainer .dx-datagrid-headers {
     font-size: 0.8rem;
   }
+
+  ::ng-deep #gridContainer .dx-datagrid-rowsview .dx-row > td,
+  ::ng-deep #gridContainer .dx-datagrid-headers .dx-header-row > td {
+    padding: 0.5rem 0.6rem;
+    white-space: normal;
+  }
+
+  ::ng-deep #gridContainer .dx-datagrid-rowsview .dx-row > td {
+    line-height: 1.2;
+  }
 }
 
 /* Ocultar scroll horizontal innecesario */

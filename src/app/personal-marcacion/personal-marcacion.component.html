@@ -15,8 +15,11 @@
             class="btn btn-outline-primary btn-sm" 
             (click)="cambiarMes(-1)"
           >
-            <i class="bi bi-chevron-left"></i>
-            <span class="d-none d-sm-inline"> Anterior</span>
+            <span class="d-inline d-sm-none fw-bold">&lt;</span>
+            <span class="d-none d-sm-inline">
+              <i class="bi bi-chevron-left"></i>
+              Anterior
+            </span>
           </button>
           
           <h5 class="mb-0 text-capitalize fw-bold fs-6 fs-md-5">{{ mesActual }}</h5>
@@ -25,8 +28,11 @@
             class="btn btn-outline-primary btn-sm" 
             (click)="cambiarMes(1)"
           >
-            <span class="d-none d-sm-inline">Siguiente </span>
-            <i class="bi bi-chevron-right"></i>
+            <span class="d-none d-sm-inline">
+              Siguiente
+              <i class="bi bi-chevron-right"></i>
+            </span>
+            <span class="d-inline d-sm-none fw-bold">&gt;</span>
           </button>
         </div>
       </div>
@@ -93,6 +99,8 @@
               [showColumnLines]="true"
               [showRowLines]="true"
               [allowColumnResizing]="true"
+              [columnAutoWidth]="true"
+              [wordWrapEnabled]="true"
               [width]="'100%'"
             >
               <dxo-paging [pageSize]="50"></dxo-paging>
