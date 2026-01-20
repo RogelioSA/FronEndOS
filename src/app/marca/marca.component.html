@@ -17,11 +17,11 @@
                 [(selectedRowKeys)]="filasSeleccionadasMarca"
                 (onSelectionChanged)="onSelectionChangedGrid($event)"
             >
-              <dxo-paging [pageSize]="15"> </dxo-paging>
+              <dxo-paging [pageSize]="50"> </dxo-paging>
               <dxo-pager
                   [visible]="true"
                   [showPageSizeSelector]="true"
-                  [allowedPageSizes]="[15, 25, 50, 100]"
+                  [allowedPageSizes]="[50, 100, 150, 200]"
               ></dxo-pager>
               <dxo-editing
                 mode="row"
@@ -73,11 +73,11 @@
                 (onRowInserted)="insertarModelo($event)"
                 (onRowRemoved)="eliminarModelo($event)"
             >
-              <dxo-paging [pageSize]="15"> </dxo-paging>
+              <dxo-paging [pageSize]="50"> </dxo-paging>
               <dxo-pager
                   [visible]="true"
                   [showPageSizeSelector]="true"
-                  [allowedPageSizes]="[15, 25, 50, 100]"
+                  [allowedPageSizes]="[50, 100, 150, 200]"
               ></dxo-pager>
               <dxo-editing
                 mode="row"

@@ -19,11 +19,11 @@
                     [(selectedRowKeys)]="filasSeleccionadasRol"
                     (onSelectionChanged)="onSelectionChangedGrid($event)">
                 >
-                    <dxo-paging [pageSize]="15"> </dxo-paging>
+                    <dxo-paging [pageSize]="50"> </dxo-paging>
                     <dxo-pager
                         [visible]="true"
                         [showPageSizeSelector]="true"
-                        [allowedPageSizes]="[15, 20]"
+                        [allowedPageSizes]="[50, 100, 150, 200]"
                     ></dxo-pager>
                     <dxo-selection mode="single"></dxo-selection>
                 
@@ -51,10 +51,10 @@
                     (onSelectionChanged)="onSelectionChangedTree($event)"
                     >
                     <dxo-scrolling mode="standard"></dxo-scrolling>
-                    <dxo-paging [enabled]="true" [pageSize]="15"> </dxo-paging>
+                    <dxo-paging [enabled]="true" [pageSize]="50"> </dxo-paging>
                     <dxo-pager
                         [showPageSizeSelector]="true"
-                        [allowedPageSizes]="[15, 20]"
+                        [allowedPageSizes]="[50, 100, 150, 200]"
                         [showInfo]="true"
                     >
                     </dxo-pager>
