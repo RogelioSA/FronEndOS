@@ -53,8 +53,8 @@ export class MenuBarComponent {
     console.log('Es usuario con documento (tipo U):', this.esUsuarioDocumento);
 
     await this.traerUsuariosEmpresas();
-    this.crearMenusEstaticos();
-    //await this.cargarMenuDesdeApi();
+    //this.crearMenusEstaticos();
+    await this.cargarMenuDesdeApi();
   }
 
   crearMenusEstaticos() {
@@ -441,13 +441,13 @@ export class MenuBarComponent {
   async cargarMenuDesdeApi() {
     try {
       const response = await firstValueFrom(this.apiService.getMenusCurrent());
-  
+
       // 1. Filtrar solo activos
       const activos = response.filter((x: any) => x.estado);
-  
+
       // 2. Crear mapa por id
       const map = new Map<number, any>();
-  
+
       activos.forEach((item: any) => {
         map.set(item.id, {
           cNombre: item.nombre,
@@ -455,14 +455,14 @@ export class MenuBarComponent {
           nPadre: item.parentId ?? 0,
           icono: item.icono,
           nOrden: item.orden,
-          path: item.claimType ? item.claimType : '#',
+          path: item.Action ? item.Action : '#',
           items: []
         });
       });
-  
+
       // 3. Armar jerarquía
       const menuFinal: any[] = [];
-  
+
       map.forEach(item => {
         if (item.nPadre === 0) {
           menuFinal.push(item);
@@ -473,13 +473,13 @@ export class MenuBarComponent {
           }
         }
       });
-  
+
       // 4. Ordenar padres e hijos
       menuFinal.sort((a, b) => a.nOrden - b.nOrden);
       menuFinal.forEach(p =>
         p.items.sort((a: any, b: any) => a.nOrden - b.nOrden)
       );
-  
+
       // 5. Agregar menú Usuario (logout)
       menuFinal.push({
         cNombre: this.claims.cUsuario || 'Usuario',
@@ -501,14 +501,14 @@ export class MenuBarComponent {
           }
         ]
       });
-  
+
       this.menuBar = menuFinal;
-  
+
       console.log('Menú dinámico cargado desde API:', this.menuBar);
-  
+
     } catch (error) {
       console.error('Error cargando menú desde API', error);
     }
   }
-  
+
 }
