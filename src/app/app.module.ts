@@ -65,6 +65,7 @@ import { OrigenfinancieroComponent } from './origenfinanciero/origenfinanciero.c
 import { CuentaCorrienteComponent } from './cuenta-corriente/cuenta-corriente.component';
 import { PersonalMarcacionComponent } from './personal-marcacion/personal-marcacion.component';
 import { UsuarioComponent } from './usuario/usuario.component';
+import { MarcacionDatosComponent } from './marcacion-datos/marcacion-datos.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -123,7 +124,8 @@ import { UsuarioComponent } from './usuario/usuario.component';
         OrigenfinancieroComponent,
         CuentaCorrienteComponent,
         PersonalMarcacionComponent,
-        UsuarioComponent
+        UsuarioComponent,
+        MarcacionDatosComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

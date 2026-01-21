@@ -1,0 +1,80 @@
+<div class="container-fluid px-2 px-md-3">
+  <div class="row g-2 align-items-end mt-2 mb-3">
+    <div class="col-12 col-md-3">
+      <div class="dx-field-label">Fecha Desde</div>
+      <div class="dx-field-value">
+        <dx-date-box
+          type="date"
+          [value]="now"
+          [(ngModel)]="fechaDesde"
+          name="fechaDesde"
+          [displayFormat]="'dd/MM/yyyy'"
+          [inputAttr]="{ 'aria-label': 'Fecha desde' }"
+        ></dx-date-box>
+      </div>
+    </div>
+    <div class="col-12 col-md-3">
+      <div class="dx-field-label">Fecha Hasta</div>
+      <div class="dx-field-value">
+        <dx-date-box
+          type="date"
+          [value]="now"
+          [(ngModel)]="fechaHasta"
+          name="fechaHasta"
+          [displayFormat]="'dd/MM/yyyy'"
+          [inputAttr]="{ 'aria-label': 'Fecha hasta' }"
+        ></dx-date-box>
+      </div>
+    </div>
+    <div class="col-auto">
+      <dx-button
+        text="Buscar"
+        stylingMode="contained"
+        type="default"
+        [width]="120"
+        icon="fa-solid fa-magnifying-glass"
+        (onClick)="buscar()"
+      ></dx-button>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Marcación de Datos</h5>
+    </div>
+    <div class="card-body p-0">
+      <dx-data-grid
+        id="marcacionDatosGrid"
+        [dataSource]="datos"
+        [showBorders]="true"
+        [rowAlternationEnabled]="true"
+        [showColumnLines]="true"
+        [showRowLines]="true"
+        [columnAutoWidth]="true"
+        [wordWrapEnabled]="true"
+        [allowColumnResizing]="true"
+      >
+        <dxo-paging [pageSize]="50"></dxo-paging>
+        <dxo-pager
+          [visible]="true"
+          [showPageSizeSelector]="true"
+          [allowedPageSizes]="[50, 100, 150]"
+          [showInfo]="true"
+        ></dxo-pager>
+        <dxo-filter-row [visible]="true"></dxo-filter-row>
+        <dxo-header-filter [visible]="true"></dxo-header-filter>
+        <dxo-search-panel [visible]="true" placeholder="Buscar..."></dxo-search-panel>
+
+        <dxi-column dataField="sedeProyecto" caption="SEDE/PROYECTO" [minWidth]="180"></dxi-column>
+        <dxi-column dataField="empleado" caption="EMPLEADO" [minWidth]="220"></dxi-column>
+        <dxi-column dataField="doc" caption="DOC" [width]="120"></dxi-column>
+        <dxi-column dataField="fecha" caption="FECHA" [width]="120"></dxi-column>
+        <dxi-column dataField="iprog" caption="IProg" [width]="90"></dxi-column>
+        <dxi-column dataField="ingreso" caption="Ingreso" [width]="110"></dxi-column>
+        <dxi-column dataField="sprod" caption="SProd" [width]="90"></dxi-column>
+        <dxi-column dataField="salida" caption="Salida" [width]="110"></dxi-column>
+        <dxi-column dataField="diferencia" caption="Diferencia" [width]="110"></dxi-column>
+      </dx-data-grid>
+    </div>
+  </div>
+</div>
