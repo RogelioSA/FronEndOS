@@ -39,24 +39,24 @@ export class RolUsuarioComponent {
 
   async traerRoles() {
     console.log("traer roles");
-  
+
     try {
       const obser = this.apiService.getRoles();
       const result = await firstValueFrom(obser);
-  
+
       // Mapeamos la respuesta al formato que espera el grid
       this.roles = result.map((r: any) => ({
         nCodigo: r.id,            // id → nCodigo
         cNombre: r.name,          // name → cNombre
         cDetalle: r.normalizedName // normalizedName → cDetalle
       }));
-  
+
       console.log("Roles mapeados:", this.roles);
     } catch (error) {
       console.log("Error trayendo los roles.", error);
     }
   }
-  
+
 
   async traerUsuarios() {
     console.log("traer usuarios");
@@ -78,7 +78,7 @@ export class RolUsuarioComponent {
     }
   }
 
-  async traerRolUsuario(rol : number){
+  async traerRolUsuario(rol : string){
     console.log("traer rolUsuarios");
 
     try{
@@ -112,15 +112,15 @@ export class RolUsuarioComponent {
 
     }catch(error){
       console.log('Error traendo los roles.')
-    }finally{ 
+    }finally{
       this.blockUI.stop();
     }
   }
 
   async onSelectionChangedGrid(event: any) {
-    await this.traerRolUsuario(event.selectedRowsData[0].nCodigo);
+    await this.traerRolUsuario(event.selectedRowsData[0].cNombre);
   }
-  
+
   onSelectionChangedTree(event: any) {
     //console.log(this.filasSeleccionadasMenu);
   }
