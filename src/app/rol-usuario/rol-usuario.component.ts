@@ -85,7 +85,21 @@ export class RolUsuarioComponent {
       const obser = this.apiService.getRolUsuarios(rol);
       const result = await firstValueFrom(obser);
 
-      this.filasSeleccionadasUsuario = result.data;
+      const usuariosRol = Array.isArray(result) ? result : result?.data ?? [];
+
+      this.rolUsuario = usuariosRol.map((usuario: any) => ({
+        id: usuario.id,
+        userName: usuario.userName,
+        email: usuario.email
+      }));
+
+      const usuariosPorNombre = new Map(
+        (this.usuarios as any[]).map((usuario: any) => [usuario.cUsuario, usuario.nCodigo])
+      );
+
+      this.filasSeleccionadasUsuario = this.rolUsuario
+        .map((usuario: any) => usuariosPorNombre.get(usuario.userName))
+        .filter((usuarioId: any) => usuarioId !== undefined && usuarioId !== null);
     }catch(error){
       console.log('Error traendo los rolUsuarios.')
     }finally{

@@ -331,7 +331,7 @@ export class ApiService{
     }
 
     getRolUsuarios(rolname: string ): Observable<any> {
-         return this.https.get<any>(`${this.baseUrl}/security/Rol/${rolname}`, {
+         return this.https.get<any>(`${this.baseUrl}/security/Usuario/rol/${rolname}`, {
         headers: this.getHttpHeaders()
       });
     }
