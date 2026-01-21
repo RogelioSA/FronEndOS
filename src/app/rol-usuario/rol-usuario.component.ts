@@ -116,13 +116,23 @@ export class RolUsuarioComponent {
     if (seleccionUsuario.length === 0 || seleccionRol === undefined){
       this.mensajeToast = 'Se debe seleccionar opciones para configurar';
       this.visibleToast = true;
+      this.blockUI.stop();
       return;
     }
 
     try{
-      const obser = this.apiService.sincronizarRolUsuario(seleccionRol[0],seleccionUsuario);
+      const roleName = (this.roles as any[]).find((rol: any) => rol.nCodigo === seleccionRol[0])?.cNombre;
+
+      if (!roleName) {
+        this.mensajeToast = 'No se pudo identificar el rol seleccionado';
+        this.visibleToast = true;
+        return;
+      }
+
+      const usuariosSeleccionados = (seleccionUsuario as any[]).map((usuarioId: any) => String(usuarioId));
+      const obser = this.apiService.asignarRolUsuario(roleName, usuariosSeleccionados);
       const result = await firstValueFrom(obser);
-      await this.traerRolUsuario(seleccionRol[0]);
+      await this.traerRolUsuario(roleName);
 
     }catch(error){
       console.log('Error traendo los roles.')
