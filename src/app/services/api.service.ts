@@ -217,7 +217,7 @@ export class ApiService{
         { headers: this.getHttpHeaders() }
       );
     }
-    
+
     getPersonalById(id: number): Observable<any> {
       return this.https.get(
         `${this.baseUrl}/rrhh/Personal/${id}`,
@@ -248,7 +248,7 @@ export class ApiService{
         { headers: this.getHttpHeaders() }
       );
     }
-    
+
 
     getPersonas(): Observable<any[]> {
       return this.https.get<any[]>(
@@ -330,14 +330,10 @@ export class ApiService{
         return this.https.get<any>(url, { headers: headers, params: params });
     }
 
-    getRolUsuarios(rol: number ): Observable<any> {
-        const url = `${this.baseUrl}/Seguridad/GetRolUsuario`;
-        const params = {
-            nRol: rol
-          };
-        const headers = this.getHeaders();
-
-        return this.https.get<any>(url, { headers: headers, params: params });
+    getRolUsuarios(rolname: string ): Observable<any> {
+         return this.https.get<any>(`${this.baseUrl}/security/Rol/${rolname}`, {
+        headers: this.getHttpHeaders()
+      });
     }
 
     sincronizarRolUsuario(rol: number, usuarios: any ): Observable<any> {
@@ -1668,7 +1664,7 @@ export class ApiService{
     });
   }
 
-  
+
   //formulariocurrect
   getMenusCurrent(): Observable<any> {
     return this.https.get(`${this.baseUrl}/security/Formulario/current_user`, {
@@ -1696,7 +1692,7 @@ export class ApiService{
         headers: this.getHttpHeaders()
       }
     );
-  }  
+  }
 
   actualizarMenu(id: number, data: any): Observable<any> {
     return this.https.put(`${this.baseUrl}/security/Formulario/${id}`, data, {
