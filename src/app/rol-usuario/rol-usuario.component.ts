@@ -31,7 +31,7 @@ export class RolUsuarioComponent {
     this.blockUI.start('Cargando...'); // Start blocking
 
     this.traerRoles();
-    this.traerPersonal();
+    this.traerUsuarios();
 
     this.blockUI.stop();
 
@@ -58,19 +58,23 @@ export class RolUsuarioComponent {
   }
   
 
-  async traerPersonal(){
-    console.log("traer personal");
+  async traerUsuarios() {
+    console.log("traer usuarios");
 
-    try{
-      const obser = this.apiService.getPersonal();
+    try {
+      const obser = this.apiService.listarUsuarioEmpresa();
       const result = await firstValueFrom(obser);
 
-      this.usuarios = result.data;
+      this.usuarios = result.map((usuario: any) => ({
+        nCodigo: usuario.id,
+        nPadre: null,
+        cUsuario: usuario.userName,
+        cCorreo: usuario.email
+      }));
 
       console.log(this.usuarios);
-    }catch(error){
-      console.log('Error traendo el personal.')
-    }finally{
+    } catch (error) {
+      console.log('Error trayendo los usuarios.');
     }
   }
 
