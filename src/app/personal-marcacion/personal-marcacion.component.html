@@ -5,14 +5,14 @@
       <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-3">
         <h3 class="mb-0">
           <i class="bi bi-clock-history me-2"></i>
-          <span class="d-none d-md-inline">Mis Registros de Asistencia</span>
-          <span class="d-inline d-md-none">Asistencia</span>
+          <!-- <span class="d-none d-md-inline">Asistencia</span> -->
+          <!-- <span class="d-inline d-md-none">Asistencia</span> -->
         </h3>
-        
+
         <!-- Navegación de mes -->
         <div class="d-flex align-items-center gap-2 gap-md-3 w-100 w-md-auto justify-content-between">
-          <button 
-            class="btn btn-outline-primary btn-sm" 
+          <button
+            class="btn btn-outline-primary btn-sm"
             (click)="cambiarMes(-1)"
           >
             <span class="d-inline d-sm-none fw-bold">&lt;</span>
@@ -21,11 +21,11 @@
               Anterior
             </span>
           </button>
-          
+
           <h5 class="mb-0 text-capitalize fw-bold fs-6 fs-md-5">{{ mesActual }}</h5>
-          
-          <button 
-            class="btn btn-outline-primary btn-sm" 
+
+          <button
+            class="btn btn-outline-primary btn-sm"
             (click)="cambiarMes(1)"
           >
             <span class="d-none d-sm-inline">
@@ -115,23 +115,23 @@
               <dxo-header-filter [visible]="true"></dxo-header-filter>
               <dxo-search-panel [visible]="true" placeholder="Buscar..."></dxo-search-panel>
 
-              <dxi-column 
-                dataField="fecha" 
+              <dxi-column
+                dataField="fecha"
                 caption="Fecha/Hora"
                 [customizeText]="formatearFechaHora"
                 sortOrder="desc"
                 [hidingPriority]="8"
               ></dxi-column>
 
-              <dxi-column 
-                dataField="fechaJornal" 
+              <dxi-column
+                dataField="fechaJornal"
                 caption="Fecha Jornal"
                 [customizeText]="formatearSoloFecha"
                 [hidingPriority]="2"
               ></dxi-column>
 
-              <dxi-column 
-                dataField="tipoEvento" 
+              <dxi-column
+                dataField="tipoEvento"
                 caption="Tipo"
                 alignment="center"
                 [calculateCellValue]="calcularCellValue"
@@ -139,15 +139,15 @@
                 [hidingPriority]="7"
               ></dxi-column>
 
-              <dxi-column 
+              <dxi-column
                 caption="Hora Prog."
                 alignment="center"
                 [calculateCellValue]="calcularHoraProgramada"
                 [hidingPriority]="3"
               ></dxi-column>
 
-              <dxi-column 
-                dataField="esTardanza" 
+              <dxi-column
+                dataField="esTardanza"
                 caption="Tardanza"
                 dataType="boolean"
                 alignment="center"
@@ -155,17 +155,17 @@
                 [hidingPriority]="5"
               ></dxi-column>
 
-              <dxi-column 
-                dataField="diferenciaMinutos" 
+              <dxi-column
+                dataField="diferenciaMinutos"
                 caption="Dif. (min)"
                 alignment="center"
                 cellTemplate="diferenciaTemplate"
                 [hidingPriority]="4"
               ></dxi-column>
 
-              <dxi-column 
-                type="buttons" 
-                [width]="60" 
+              <dxi-column
+                type="buttons"
+                [width]="60"
                 caption="Mapa"
                 [fixed]="true"
                 fixedPosition="right"
@@ -197,8 +197,8 @@
               </div>
 
               <div *dxTemplate="let cell of 'diferenciaTemplate'">
-                <span 
-                  *ngIf="cell.data.diferenciaMinutos > 0" 
+                <span
+                  *ngIf="cell.data.diferenciaMinutos > 0"
                   [class]="'badge ' + (cell.data.esTardanza ? 'bg-danger' : 'bg-info')"
                 >
                   {{ cell.data.diferenciaMinutos }}
