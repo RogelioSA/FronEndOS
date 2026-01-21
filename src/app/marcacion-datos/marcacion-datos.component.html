@@ -39,8 +39,15 @@
   </div>
 
   <div class="card shadow-sm">
-    <div class="card-header bg-white">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between gap-2 flex-wrap">
       <h5 class="mb-0">Data Marcación</h5>
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm"
+        (click)="generarReporteSunafil()"
+      >
+        GENERAR REPORTE SUNAFIL
+      </button>
     </div>
     <div class="card-body p-0">
       <dx-data-grid
