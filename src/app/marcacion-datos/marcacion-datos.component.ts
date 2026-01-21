@@ -106,7 +106,14 @@ export class MarcacionDatosComponent implements OnInit {
       }
     });
 
-    this.datos = Array.from(datosMap.values());
+    this.datos = Array.from(datosMap.values()).sort((a, b) => {
+      const empleadoCompare = a.empleado.localeCompare(b.empleado, 'es', { sensitivity: 'base' });
+      if (empleadoCompare !== 0) {
+        return empleadoCompare;
+      }
+
+      return a.fecha.localeCompare(b.fecha);
+    });
   }
 
   obtenerNombreCompleto(persona: any): string {
@@ -146,5 +153,139 @@ export class MarcacionDatosComponent implements OnInit {
     const seconds = Math.floor((diffAbs % 60000) / 1000);
 
     return `${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  generarReporteSunafil() {
+    if (!this.datos.length) {
+      alert('No hay datos para generar el reporte.');
+      return;
+    }
+
+    const columnas = [
+      { key: 'sedeProyecto', label: 'SEDE/PROYECTO' },
+      { key: 'empleado', label: 'EMPLEADO' },
+      { key: 'doc', label: 'DOC' },
+      { key: 'fecha', label: 'FECHA' },
+      { key: 'iprog', label: 'IProg' },
+      { key: 'ingreso', label: 'Ingreso' },
+      { key: 'sprod', label: 'SProd' },
+      { key: 'salida', label: 'Salida' },
+      { key: 'diferencia', label: 'Diferencia' }
+    ] as const;
+
+    const filas = [...this.datos].sort((a, b) => {
+      const empleadoCompare = a.empleado.localeCompare(b.empleado, 'es', { sensitivity: 'base' });
+      if (empleadoCompare !== 0) {
+        return empleadoCompare;
+      }
+
+      return a.fecha.localeCompare(b.fecha);
+    });
+
+    const tablaHtml = filas
+      .map(row => {
+        const celdas = columnas
+          .map(columna => `<td>${this.escapeHtml(String(row[columna.key] ?? ''))}</td>`)
+          .join('');
+        return `<tr>${celdas}</tr>`;
+      })
+      .join('');
+
+    const html = `
+      <html>
+        <head>
+          <title>Reporte General de Marcaciones</title>
+          <style>
+            body {
+              font-family: Arial, Helvetica, sans-serif;
+              margin: 24px;
+              color: #1f2937;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 18px;
+            }
+            .header h1 {
+              font-size: 18px;
+              margin: 0 0 4px;
+              letter-spacing: 0.5px;
+            }
+            .header h2 {
+              font-size: 14px;
+              margin: 0;
+              font-weight: normal;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 11px;
+            }
+            th, td {
+              border: 1px solid #d1d5db;
+              padding: 6px 8px;
+              text-align: left;
+              vertical-align: top;
+            }
+            th {
+              background: #f3f4f6;
+              text-transform: uppercase;
+              font-size: 10px;
+              letter-spacing: 0.4px;
+            }
+            @media print {
+              body {
+                margin: 12px;
+              }
+              table {
+                page-break-inside: auto;
+              }
+              tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>REPORTE GENERAL DE MARCACIONES</h1>
+            <h2>CONVEYOR BELT TECHNOLOGY S.A.C. - RUC : 20454826699</h2>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                ${columnas.map(columna => `<th>${columna.label}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${tablaHtml}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const ventana = window.open('', '_blank');
+    if (!ventana) {
+      alert('No se pudo abrir la ventana de impresión.');
+      return;
+    }
+
+    ventana.document.open();
+    ventana.document.write(html);
+    ventana.document.close();
+    ventana.focus();
+    ventana.print();
+  }
+
+  private escapeHtml(text: string): string {
+    const mapa: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => mapa[m]);
   }
 }
