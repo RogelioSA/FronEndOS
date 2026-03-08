@@ -1751,6 +1751,12 @@ export class ApiService{
     return this.https.put<any>(url, data, { headers });
   }
 
+  actualizarPass(data: { id: string; password: string }): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/security/Usuario/resetpw`;
+    return this.https.put<any>(url, data, { headers });
+  }
+
 
   //usuarioempresa
   listarUsuarioEmpresaPorUsuario(usuarioId: number): Observable<any> {

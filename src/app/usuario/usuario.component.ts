@@ -136,16 +136,15 @@ export class UsuarioComponent implements OnInit {
 
       const id = e.key;
       
-      // El backend requiere el email también
-      const payload: CrearUsuarioPayload = {
-        email: e.oldData.userName || e.oldData.email,
+      const payload = {
+        id: String(id),
         password: e.newData.password
       };
 
       console.log('Enviando:', payload);
 
       await firstValueFrom(
-        this.apiService.editarUsuario(id, payload)
+        this.apiService.actualizarPass(payload)
       );
 
       notify('Contraseña actualizada exitosamente', 'success', 3000);

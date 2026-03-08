@@ -24,6 +24,11 @@
             [showPageSizeSelector]="true"
             [allowedPageSizes]="[50, 100, 150, 200]"
           ></dxo-pager>
+          <dxo-search-panel
+            [visible]="true"
+            [width]="280"
+            placeholder="Buscar correo electrónico..."
+          ></dxo-search-panel>
 
           <dxo-editing
             mode="row"
@@ -40,12 +45,14 @@
             caption="ID"
             [width]="70"
             [allowEditing]="false"
+            [allowSearch]="false"
             alignment="center"
           ></dxi-column>
 
           <dxi-column
             dataField="userName"
             caption="Correo Electrónico"
+            [allowSearch]="true"
           >
             <dxi-validation-rule
               type="required"
@@ -60,6 +67,7 @@
           <dxi-column
             dataField="password"
             caption="Contraseña"
+            [allowSearch]="false"
           >
             <dxi-validation-rule
               type="required"
