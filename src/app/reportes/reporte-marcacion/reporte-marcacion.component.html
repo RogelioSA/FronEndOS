@@ -56,15 +56,26 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0">Reporte de marcaciones</h3>
-                <dx-button
-                    text="Descargar Excel"
-                    stylingMode="contained"
-                    type="success"
-                    [width]="150"
-                    icon="fa-solid fa-file-excel"
-                    (onClick)="descargarExcel()"
-                    [disabled]="datosReporte.length === 0"
-                ></dx-button>
+                <div class="d-flex gap-2">
+                    <dx-button
+                        text="Descargar Excel"
+                        stylingMode="contained"
+                        type="success"
+                        [width]="150"
+                        icon="fa-solid fa-file-excel"
+                        (onClick)="descargarExcel()"
+                        [disabled]="datosReporte.length === 0"
+                    ></dx-button>
+                    <dx-button
+                        text="Reporte Tareo"
+                        stylingMode="contained"
+                        type="default"
+                        [width]="150"
+                        icon="fa-solid fa-table"
+                        (onClick)="descargarReporteTareo()"
+                        [disabled]="datosReporte.length === 0"
+                    ></dx-button>
+                </div>
             </div>
 
             <div class="table-responsive" style="overflow-x: auto; max-height: 600px;">
@@ -245,10 +256,6 @@
                                     <span class="info-label">Fecha marcación:</span>
                                     <span class="info-value">{{ detalleMarcacion.fecha }}</span>
                                 </div>
-                                <!-- <div class="info-line stacked">
-                                    <span class="info-label">Fecha registro:</span>
-                                    <span class="info-value">{{ detalleMarcacion.fecha }}</span>
-                                </div> -->
                                 <div class="info-line stacked">
                                     <span class="info-label">Jornal:</span>
                                     <span class="info-value">{{ detalleMarcacion.fechaJornal }}</span>
@@ -265,14 +272,6 @@
                                     <span class="info-label">Aplicación:</span>
                                     <span class="info-value">Web / Mobile</span>
                                 </div>
-                                <!-- <div class="info-line stacked">
-                                    <span class="info-label">Tipo de Evento:</span>
-                                    <span class="info-value">{{ detalleMarcacion.tipoEvento }}</span>
-                                </div> -->
-                                <!-- <div class="info-line stacked">
-                                    <span class="info-label">Hora Programada:</span>
-                                    <span class="info-value">{{ detalleMarcacion.horaProgramada }}</span>
-                                </div> -->
                                 <div class="info-line stacked">
                                     <span class="info-label">Tardanza:</span>
                                     <span class="info-value" [ngClass]="{'text-danger fw-bold': detalleMarcacion.esTardanza}">

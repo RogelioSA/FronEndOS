@@ -3,6 +3,7 @@ import { ApiService } from '../../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { DatePipe } from '@angular/common';
+import * as ExcelJS from 'exceljs';
 import * as XLSX from 'xlsx';
 
 interface MarcacionPorDia {
@@ -97,20 +98,14 @@ export class ReporteMarcacionComponent {
     private apiService: ApiService,
     private datePipe: DatePipe
   ){
-    // Establecer el primer y último día del mes actual
     this.establecerFechasMesActual();
   }
 
   establecerFechasMesActual() {
     const hoy = new Date();
-
-    // Primer día del mes
     this.fechaInicial = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-
-    // Último día del mes (día 0 del siguiente mes)
     this.fechaFinal = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-    // ⏱️ Ajustar a 23:59:59
-      this.fechaFinal.setHours(23, 59, 59, 999);
+    this.fechaFinal.setHours(23, 59, 59, 999);
     console.log('📅 Fechas establecidas:', {
       inicio: this.fechaInicial,
       fin: this.fechaFinal
@@ -119,7 +114,6 @@ export class ReporteMarcacionComponent {
 
   async ngOnInit(): Promise<void> {
     await this.cargarOrdenesTrabajo();
-    // Cargar marcaciones automáticamente al iniciar
     await this.buscar();
   }
 
@@ -144,7 +138,6 @@ export class ReporteMarcacionComponent {
     this.blockUI.start('Cargando marcaciones...');
 
     try {
-      //console.log("📅 Trayendo marcaciones desde API...");
       const fechaInicio = this.datePipe.transform(this.fechaInicial, 'yyyy-MM-dd');
       const fechaFin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd') + 'T23:59:59';
 
@@ -155,8 +148,6 @@ export class ReporteMarcacionComponent {
       const result = await firstValueFrom(
         this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)
       );
-
-      //console.log("✅ Marcaciones recibidas:", result);
 
       this.marcaciones = result;
       this.procesarDatosParaReporte();
@@ -170,25 +161,19 @@ export class ReporteMarcacionComponent {
   }
 
   procesarDatosParaReporte() {
-    // Filtrar por rango de fechas (seguridad adicional)
-    const fechaIni = new Date(this.fechaInicial);   // ya tiene 00:00:00
-    const fechaFin = new Date(this.fechaFinal);     // ya tiene 23:59:59
+    const fechaIni = new Date(this.fechaInicial);
+    const fechaFin = new Date(this.fechaFinal);
 
     const marcacionesFiltradas = this.marcaciones.filter(m => {
       const fechaJornal = new Date(m.fecha);
-
-     // return fechaJornal >= fechaIni && fechaJornal <= fechaFin;
       const cumpleFecha = fechaJornal >= fechaIni && fechaJornal <= fechaFin;
       const cumpleOrdenTrabajo = !this.ordenTrabajoSeleccionada ||
       m.ordenTrabajo?.id === this.ordenTrabajoSeleccionada;
-
       return cumpleFecha && cumpleOrdenTrabajo;
     });
 
-    // Generar columnas dinámicas (fechas en el rango)
     this.generarColumnasFechas();
 
-    // Agrupar por empleado, orden de servicio/trabajo y fecha
     const empleadosMap = new Map<string, EmpleadoReporte>();
 
     marcacionesFiltradas.forEach(marcacion => {
@@ -197,9 +182,8 @@ export class ReporteMarcacionComponent {
       const ordenServicioId = marcacion.ordenServicio?.id ?? 'sinOS';
       const ordenTrabajoId = marcacion.ordenTrabajo?.id ?? 'sinOT';
 
-      // 👷‍♂️ Agrupar por colaborador + orden de servicio + orden de trabajo
-         const grupoKey = `${personalId}-${ordenServicioId}-${ordenTrabajoId}`;
-      //ultima modif
+      const grupoKey = `${personalId}-${ordenServicioId}-${ordenTrabajoId}`;
+
       if (!empleadosMap.has(grupoKey)) {
         empleadosMap.set(grupoKey, {
           orden: this.obtenerOrdenInfo(marcacion),
@@ -220,28 +204,27 @@ export class ReporteMarcacionComponent {
       }
 
       const hora = this.datePipe.transform(marcacion.fecha, 'HH:mm');
-      const tipoEvento = marcacion.tipoEvento ?? 99; // Si es null/undefined, considerarlo como desconocido
+      const tipoEvento = marcacion.tipoEvento ?? 99;
 
-      // Mapear cada tipo de evento
       switch(tipoEvento) {
-        case 0: // Entrada
+        case 0:
           empleado.marcaciones[fechaKey].entrada = hora || '';
           empleado.marcaciones[fechaKey].tardanza = marcacion.esTardanza;
           empleado.marcaciones[fechaKey].datosEntrada = marcacion;
           break;
-        case 1: // Salida
+        case 1:
           empleado.marcaciones[fechaKey].salida = hora || '';
           empleado.marcaciones[fechaKey].datosSalida = marcacion;
           break;
-        case 2: // Salida Refrigerio (Inicio Almuerzo)
+        case 2:
           empleado.marcaciones[fechaKey].salidaRefrigerio = hora || '';
           empleado.marcaciones[fechaKey].datosSalidaRefrigerio = marcacion;
           break;
-        case 3: // Entrada Refrigerio (Fin Almuerzo)
+        case 3:
           empleado.marcaciones[fechaKey].entradaRefrigerio = hora || '';
           empleado.marcaciones[fechaKey].datosEntradaRefrigerio = marcacion;
           break;
-        default: // Desconocido (99 u otros)
+        default:
           empleado.marcaciones[fechaKey].desconocido = hora || '';
           empleado.marcaciones[fechaKey].datosDesconocido = marcacion;
           break;
@@ -341,7 +324,6 @@ export class ReporteMarcacionComponent {
     return partes.join(' - ') || 'Sin orden vinculada';
   }
 
-  // Método antiguo (mantener por compatibilidad)
   obtenerMarcacion(empleado: EmpleadoReporte, fecha: string, tipo: 'E' | 'S'): string {
     const marcacion = empleado.marcaciones[fecha];
     if (!marcacion) return '';
@@ -353,24 +335,17 @@ export class ReporteMarcacionComponent {
     }
   }
 
-  // Nuevo método para obtener marcación por tipo de evento
   obtenerMarcacionPorTipo(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): string {
     const marcacion = empleado.marcaciones[fecha];
     if (!marcacion) return '';
 
     switch(tipoEvento) {
-      case 0: // Entrada
-        return marcacion.entrada || '';
-      case 1: // Salida
-        return marcacion.salida || '';
-      case 2: // Salida Refrigerio
-        return marcacion.salidaRefrigerio || '';
-      case 3: // Entrada Refrigerio
-        return marcacion.entradaRefrigerio || '';
-      case 99: // Desconocido
-        return marcacion.desconocido || '';
-      default:
-        return '';
+      case 0: return marcacion.entrada || '';
+      case 1: return marcacion.salida || '';
+      case 2: return marcacion.salidaRefrigerio || '';
+      case 3: return marcacion.entradaRefrigerio || '';
+      case 99: return marcacion.desconocido || '';
+      default: return '';
     }
   }
 
@@ -379,59 +354,38 @@ export class ReporteMarcacionComponent {
     if (!marcacion) return false;
 
     switch (tipoEvento) {
-      case 0:
-        return !!(marcacion.entrada || marcacion.datosEntrada);
-      case 1:
-        return !!(marcacion.salida || marcacion.datosSalida);
-      case 2:
-        return !!(marcacion.salidaRefrigerio || marcacion.datosSalidaRefrigerio);
-      case 3:
-        return !!(marcacion.entradaRefrigerio || marcacion.datosEntradaRefrigerio);
-      case 99:
-        return !!(marcacion.desconocido || marcacion.datosDesconocido);
-      default:
-        return false;
+      case 0: return !!(marcacion.entrada || marcacion.datosEntrada);
+      case 1: return !!(marcacion.salida || marcacion.datosSalida);
+      case 2: return !!(marcacion.salidaRefrigerio || marcacion.datosSalidaRefrigerio);
+      case 3: return !!(marcacion.entradaRefrigerio || marcacion.datosEntradaRefrigerio);
+      case 99: return !!(marcacion.desconocido || marcacion.datosDesconocido);
+      default: return false;
     }
   }
 
-  // Actualizar método esTardanza para aceptar tipo de evento
   esTardanza(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): boolean {
     const marcacion = empleado.marcaciones[fecha];
-    // Solo las entradas (tipo 0) pueden tener tardanza
     if (tipoEvento !== 0) return false;
     return marcacion?.tardanza || false;
   }
 
-  // Método antiguo (mantener por compatibilidad)
   abrirDetalleMarcacion(empleado: EmpleadoReporte, fecha: string, tipo: 'E' | 'S') {
     const tipoEvento = tipo === 'E' ? 0 : 1;
     this.abrirDetalleMarcacionTipo(empleado, fecha, tipoEvento);
   }
 
-  // Nuevo método para abrir detalle por tipo de evento
   abrirDetalleMarcacionTipo(empleado: EmpleadoReporte, fecha: string, tipoEvento: number) {
     const marcacion = empleado.marcaciones[fecha];
     if (!marcacion) return;
 
     let datos: any;
     switch(tipoEvento) {
-      case 0:
-        datos = marcacion.datosEntrada;
-        break;
-      case 1:
-        datos = marcacion.datosSalida;
-        break;
-      case 2:
-        datos = marcacion.datosSalidaRefrigerio;
-        break;
-      case 3:
-        datos = marcacion.datosEntradaRefrigerio;
-        break;
-      case 99:
-        datos = marcacion.datosDesconocido;
-        break;
-      default:
-        return;
+      case 0: datos = marcacion.datosEntrada; break;
+      case 1: datos = marcacion.datosSalida; break;
+      case 2: datos = marcacion.datosSalidaRefrigerio; break;
+      case 3: datos = marcacion.datosEntradaRefrigerio; break;
+      case 99: datos = marcacion.datosDesconocido; break;
+      default: return;
     }
 
     if (!datos) return;
@@ -619,7 +573,6 @@ export class ReporteMarcacionComponent {
   async cargarImagenRostro(adjuntoId: number) {
     this.rostroUrl = null;
 
-
     try {
       const imagenUrl = await firstValueFrom(this.apiService.obtenerAdjuntoImagen(adjuntoId));
       this.rostroUrl = imagenUrl;
@@ -707,20 +660,17 @@ export class ReporteMarcacionComponent {
     await this.traerMarcaciones();
   }
 
-  // Evento cuando cambia el checkbox
   onVerTodoChanged() {
     console.log('👁️ Ver todo:', this.verTodo);
-    // No es necesario recargar datos, solo cambia la vista
   }
 
-  // Calcular colspan dinámico para el mensaje de "no hay datos"
   calcularColspan(): number {
-    const baseColumns = 2; // DNI y PERSONAL
-    const eventColumns = this.verTodo ? 5 : 2; // E, SR, ER, S, D : E, S
+    const baseColumns = 2;
+    const eventColumns = this.verTodo ? 5 : 2;
     return baseColumns + (this.columnasdinamicas.length * eventColumns);
   }
 
-  /* ================= EXPORTAR A EXCEL ================= */
+  /* ================= EXPORTAR A EXCEL (XLSX básico) ================= */
   descargarExcel() {
     if (!this.datosReporte || this.datosReporte.length === 0) {
       this.showMessage('No hay datos para exportar');
@@ -730,28 +680,20 @@ export class ReporteMarcacionComponent {
     try {
       this.blockUI.start('Generando Excel...');
 
-      // Crear el array de datos para Excel
       const datosExcel: any[] = [];
 
-      // Crear encabezado principal (primera fila con fechas)
       const encabezadoFechas = ['ORDEN', 'DNI', 'PERSONAL'];
       this.columnasdinamicas.forEach(col => {
         encabezadoFechas.push(`${col.diaSemana} ${col.fechaDisplay}`);
         if (this.verTodo) {
-          // Agregar columnas vacías para SR, ER, S, D
-          encabezadoFechas.push('');
-          encabezadoFechas.push('');
-          encabezadoFechas.push('');
-          encabezadoFechas.push('');
+          encabezadoFechas.push('', '', '', '');
         } else {
-          // Solo agregar una columna vacía para S
           encabezadoFechas.push('');
         }
       });
       datosExcel.push(encabezadoFechas);
 
-      // Crear subencabezado (segunda fila con E, S, etc.)
-      const subencabezado = ['', '', '']; // Vacíos para ORDEN, DNI y PERSONAL
+      const subencabezado = ['', '', ''];
       this.columnasdinamicas.forEach(() => {
         if (this.verTodo) {
           subencabezado.push('E', 'SR', 'ER', 'S', 'D');
@@ -761,23 +703,22 @@ export class ReporteMarcacionComponent {
       });
       datosExcel.push(subencabezado);
 
-      // Agregar datos de empleados
       this.datosReporte.forEach(empleado => {
         const fila: any[] = [empleado.orden, empleado.dni, empleado.personal];
 
         this.columnasdinamicas.forEach(col => {
           if (this.verTodo) {
             fila.push(
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 0) || '',  // E
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 2) || '',  // SR
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 3) || '',  // ER
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 1) || '',  // S
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 99) || ''  // D
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 0) || '',
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 2) || '',
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 3) || '',
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 1) || '',
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 99) || ''
             );
           } else {
             fila.push(
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 0) || '',  // E
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 1) || ''   // S
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 0) || '',
+              this.obtenerMarcacionPorTipo(empleado, col.fecha, 1) || ''
             );
           }
         });
@@ -785,66 +726,46 @@ export class ReporteMarcacionComponent {
         datosExcel.push(fila);
       });
 
-      // Crear libro de trabajo
       const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(datosExcel);
 
-      // Aplicar estilos y ajustar anchos de columna
       const colWidths = [
-        { wch: 25 },  // ORDEN
-        { wch: 12 },  // DNI
-        { wch: 35 }   // PERSONAL
+        { wch: 25 },
+        { wch: 12 },
+        { wch: 35 }
       ];
 
-      // Ancho para cada par/grupo de columnas
       this.columnasdinamicas.forEach(() => {
         if (this.verTodo) {
-          colWidths.push({ wch: 6 });  // E
-          colWidths.push({ wch: 6 });  // SR
-          colWidths.push({ wch: 6 });  // ER
-          colWidths.push({ wch: 6 });  // S
-          colWidths.push({ wch: 6 });  // D
+          colWidths.push({ wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 6 });
         } else {
-          colWidths.push({ wch: 8 });  // E
-          colWidths.push({ wch: 8 });  // S
+          colWidths.push({ wch: 8 }, { wch: 8 });
         }
       });
 
       ws['!cols'] = colWidths;
 
-      // Mergear celdas del encabezado de fechas
       const merges: XLSX.Range[] = [];
-      let colIndex = 3; // Empezar después de ORDEN, DNI y PERSONAL
+      let colIndex = 3;
 
       this.columnasdinamicas.forEach(() => {
         if (this.verTodo) {
-          // Mergear 5 columnas (E, SR, ER, S, D)
-          merges.push({
-            s: { r: 0, c: colIndex },
-            e: { r: 0, c: colIndex + 4 }
-          });
+          merges.push({ s: { r: 0, c: colIndex }, e: { r: 0, c: colIndex + 4 } });
           colIndex += 5;
         } else {
-          // Mergear 2 columnas (E, S)
-          merges.push({
-            s: { r: 0, c: colIndex },
-            e: { r: 0, c: colIndex + 1 }
-          });
+          merges.push({ s: { r: 0, c: colIndex }, e: { r: 0, c: colIndex + 1 } });
           colIndex += 2;
         }
       });
 
       ws['!merges'] = merges;
 
-      // Crear el libro
       const wb: XLSX.WorkBook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Reporte Marcaciones');
 
-      // Generar nombre de archivo con fecha
       const fechaActual = this.datePipe.transform(new Date(), 'dd-MM-yyyy');
       const modoVista = this.verTodo ? 'Completo' : 'Resumido';
       const nombreArchivo = `Reporte_Marcaciones_${modoVista}_${fechaActual}.xlsx`;
 
-      // Descargar el archivo
       XLSX.writeFile(wb, nombreArchivo);
 
       this.showMessage('Excel descargado correctamente');
@@ -855,6 +776,395 @@ export class ReporteMarcacionComponent {
     } finally {
       this.blockUI.stop();
     }
+  }
+
+  /* ================= DESCARGAR REPORTE FORMATO TAREO (ExcelJS con estilos) ================= */
+  async descargarReporteTareo() {
+    if (!this.datosReporte || this.datosReporte.length === 0) {
+      this.showMessage('No hay datos para exportar');
+      return;
+    }
+
+    try {
+      this.blockUI.start('Generando reporte tareo...');
+
+      const workbook = new ExcelJS.Workbook();
+      const ws = workbook.addWorksheet('Tareo', {
+        views: [{ state: 'frozen', xSplit: 7, ySplit: 5 }]
+      });
+
+      const mesActual = this.datePipe.transform(this.fechaInicial, 'MMMM yyyy', 'es-PE')?.toUpperCase() || '';
+      const numDias = this.columnasdinamicas.length;
+      const numColsDias = numDias * 3;
+      const colInicioAdicionales = 8 + numColsDias; // 1-indexed
+
+      // ── Estilos reutilizables ──
+      const borderThin: Partial<ExcelJS.Borders> = {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      };
+
+      const borderMedium: Partial<ExcelJS.Borders> = {
+        top: { style: 'medium' },
+        bottom: { style: 'medium' },
+        left: { style: 'medium' },
+        right: { style: 'medium' },
+      };
+
+      const fillTitulo: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
+      const fillEncabezadoPrincipal: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5B9BD5' } };
+      const fillEncabezadoDias: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+      const fillEncabezadoColumnas: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF70AD47' } };
+      const fillFinDeSemana: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
+      const fillTotales: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } };
+
+      const fontBlanco: Partial<ExcelJS.Font> = { bold: true, color: { argb: 'FFFFFFFF' } };
+      const fontTitulo: Partial<ExcelJS.Font> = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+      const fontEncDias: Partial<ExcelJS.Font> = { bold: true, size: 10, color: { argb: 'FF000000' } };
+      const fontEncCols: Partial<ExcelJS.Font> = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+
+      const alignCenter: Partial<ExcelJS.Alignment> = { horizontal: 'center', vertical: 'middle' };
+      const alignLeft: Partial<ExcelJS.Alignment> = { horizontal: 'left', vertical: 'middle' };
+
+      // ── FILA 1 y 2: vacías ──
+      ws.addRow([]);
+      ws.addRow([]);
+
+      // ── FILA 3: Título + días de semana ──
+      const fila3Data: any[] = [`TAREO MES DE ${mesActual}`, '', '', '', '', '', 'GUARDIAS'];
+      this.columnasdinamicas.forEach(col => {
+        fila3Data.push(col.diaSemana, '', '');
+      });
+      fila3Data.push('TOTAL DE HORAS AL MES', 'HORAS EXTRA AL 25%', 'PAGAR', 'MOTIVO',
+                     'FECHA DE INICIO', 'FECHA DE FIN', 'TOTAL DE DÍAS', 'MEDIDA', 'OBSERVACIONES');
+      const row3 = ws.addRow(fila3Data);
+
+      // Merge título A3:F3
+      ws.mergeCells(3, 1, 3, 6);
+      for (let c = 1; c <= 6; c++) {
+        const cell = row3.getCell(c);
+        cell.fill = fillTitulo;
+        cell.font = fontTitulo;
+        cell.alignment = alignCenter;
+        cell.border = borderMedium;
+      }
+
+      // GUARDIAS
+      const cellGuardias = row3.getCell(7);
+      cellGuardias.fill = fillEncabezadoPrincipal;
+      cellGuardias.font = fontBlanco;
+      cellGuardias.alignment = alignCenter;
+      cellGuardias.border = borderThin;
+
+      // Merge y estilo días de semana
+      for (let i = 0; i < numDias; i++) {
+        const colStart = 8 + i * 3;
+        const colEnd = colStart + 2;
+        ws.mergeCells(3, colStart, 3, colEnd);
+        for (let c = colStart; c <= colEnd; c++) {
+          const cell = row3.getCell(c);
+          cell.fill = fillEncabezadoDias;
+          cell.font = fontEncDias;
+          cell.alignment = alignCenter;
+          cell.border = borderThin;
+        }
+      }
+
+      // Columnas adicionales fila 3
+      for (let c = colInicioAdicionales; c < colInicioAdicionales + 9; c++) {
+        const cell = row3.getCell(c);
+        cell.fill = fillEncabezadoPrincipal;
+        cell.font = fontBlanco;
+        cell.alignment = alignCenter;
+        cell.border = borderThin;
+      }
+
+      // ── FILA 4: Fechas ──
+      const fila4Data: any[] = ['', '', '', '', '', '', ''];
+      this.columnasdinamicas.forEach(col => {
+        fila4Data.push(col.fechaDisplay, '', '');
+      });
+      fila4Data.push('', '', '', '', '', '', '', '', '');
+      const row4 = ws.addRow(fila4Data);
+
+      for (let i = 0; i < numDias; i++) {
+        const colStart = 8 + i * 3;
+        const colEnd = colStart + 2;
+        ws.mergeCells(4, colStart, 4, colEnd);
+        for (let c = colStart; c <= colEnd; c++) {
+          const cell = row4.getCell(c);
+          cell.fill = fillEncabezadoDias;
+          cell.font = fontEncDias;
+          cell.alignment = alignCenter;
+          cell.border = borderThin;
+        }
+      }
+
+      // ── FILA 5: Encabezados (Nº, DNI, APELLIDOS, ..., L, HH, OS) ──
+      const fila5Data: any[] = ['Nº', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', '', ''];
+      this.columnasdinamicas.forEach(() => {
+        fila5Data.push('L', 'HH', 'OS');
+      });
+      fila5Data.push('', '', '', '', '', '', '', '', '');
+      const row5 = ws.addRow(fila5Data);
+
+      for (let c = 1; c <= 7; c++) {
+        const cell = row5.getCell(c);
+        cell.fill = fillEncabezadoColumnas;
+        cell.font = fontEncCols;
+        cell.alignment = alignCenter;
+        cell.border = borderThin;
+      }
+      for (let c = 8; c < 8 + numColsDias; c++) {
+        const cell = row5.getCell(c);
+        cell.fill = fillEncabezadoColumnas;
+        cell.font = fontEncCols;
+        cell.alignment = alignCenter;
+        cell.border = borderThin;
+      }
+
+      // ── Datos auxiliares ──
+      const fechaInicioMes = this.datePipe.transform(this.fechaInicial, 'dd/MM/yyyy') || '';
+      const fechaFinMes = this.datePipe.transform(this.fechaFinal, 'dd/MM/yyyy') || '';
+      const diasDelMes = this.columnasdinamicas.length;
+
+      // ── FILAS DE DATOS ──
+      this.datosReporte.forEach((empleado, index) => {
+        const filaData: any[] = [
+          index + 1,
+          empleado.dni,
+          this.obtenerApellidos(empleado.personal),
+          this.obtenerNombres(empleado.personal),
+          '',  // CARGO
+          '',  // Notas
+          '.'  // GUARDIAS
+        ];
+
+        let totalHoras = 0;
+
+        this.columnasdinamicas.forEach(col => {
+          const marcacion = empleado.marcaciones[col.fecha];
+
+          let letra = '';
+          if (marcacion?.entrada) {
+            letra = this.obtenerLetraPorOrden(empleado.orden);
+          }
+
+          let horas = 0;
+          let horasTexto: string | number = '';
+          if (marcacion?.entrada && marcacion?.salida) {
+            horas = this.calcularHorasNumerico(marcacion.entrada, marcacion.salida);
+            horasTexto = horas > 0 ? horas : '';
+            totalHoras += horas;
+          }
+
+          let ordenServicio = '';
+          if (marcacion?.entrada) {
+            ordenServicio = this.obtenerCodigoOrdenServicio(empleado.orden);
+          }
+
+          filaData.push(letra, horasTexto, ordenServicio);
+        });
+
+        // Columnas adicionales
+        const horasExtra = totalHoras - 192;
+        const horasExtraDisplay = horasExtra > 0 ? horasExtra : 0;
+        const textoPagar = horasExtra > 0
+          ? `PAGAR ${horasExtra} HORAS EXTRA AL 25% DEL MES DE ${mesActual}`
+          : `PAGAR 0 HORAS EXTRA AL 25% DEL MES DE ${mesActual}`;
+
+        filaData.push(
+          totalHoras > 0 ? totalHoras : 0,
+          horasExtraDisplay,
+          textoPagar,
+          '',
+          fechaInicioMes,
+          fechaFinMes,
+          diasDelMes,
+          'DIAS',
+          ''
+        );
+
+        const row = ws.addRow(filaData);
+
+        // ── Estilos fila de datos ──
+
+        // Columnas fijas 1-7
+        for (let c = 1; c <= 7; c++) {
+          const cell = row.getCell(c);
+          cell.border = borderThin;
+          cell.alignment = (c >= 3 && c <= 6) ? alignLeft : alignCenter;
+        }
+
+        // Columnas de días (L, HH, OS)
+        for (let i = 0; i < numDias; i++) {
+          const colStart = 8 + i * 3;
+          const esFinDeSemana = this.columnasdinamicas[i].diaSemana === 'SÁB' ||
+                                this.columnasdinamicas[i].diaSemana === 'DOM';
+
+          for (let c = colStart; c <= colStart + 2; c++) {
+            const cell = row.getCell(c);
+            cell.alignment = alignCenter;
+            cell.border = borderThin;
+            if (esFinDeSemana) {
+              cell.fill = fillFinDeSemana;
+            }
+          }
+        }
+
+        // Columnas adicionales (totales)
+        const colPagar = colInicioAdicionales + 2;
+        const colMotivo = colInicioAdicionales + 3;
+        const colObservaciones = colInicioAdicionales + 8;
+
+        for (let c = colInicioAdicionales; c <= colInicioAdicionales + 8; c++) {
+          const cell = row.getCell(c);
+          cell.fill = fillTotales;
+          cell.border = borderThin;
+          cell.font = { bold: true, size: 10 };
+
+          if (c === colPagar || c === colMotivo || c === colObservaciones) {
+            cell.alignment = alignLeft;
+          } else {
+            cell.alignment = alignCenter;
+          }
+        }
+      });
+
+      // ── ANCHOS DE COLUMNA ──
+      ws.getColumn(1).width = 5;
+      ws.getColumn(2).width = 12;
+      ws.getColumn(3).width = 25;
+      ws.getColumn(4).width = 25;
+      ws.getColumn(5).width = 15;
+      ws.getColumn(6).width = 50;
+      ws.getColumn(7).width = 10;
+
+      for (let i = 0; i < numDias; i++) {
+        const colStart = 8 + i * 3;
+        ws.getColumn(colStart).width = 8;
+        ws.getColumn(colStart + 1).width = 12;
+        ws.getColumn(colStart + 2).width = 15;
+      }
+
+      const anchosAdicionales = [20, 18, 45, 20, 15, 15, 15, 10, 30];
+      anchosAdicionales.forEach((ancho, idx) => {
+        ws.getColumn(colInicioAdicionales + idx).width = ancho;
+      });
+
+      // ── GENERAR Y DESCARGAR ──
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+
+      const fechaActual = this.datePipe.transform(new Date(), 'dd-MM-yyyy');
+      const nombreArchivo = `Tareo_${mesActual}_${fechaActual}.xlsx`;
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = nombreArchivo;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      this.showMessage('Reporte tareo descargado correctamente');
+
+    } catch (error) {
+      console.error('❌ Error al generar reporte tareo:', error);
+      this.showMessage('Error al generar el reporte tareo');
+    } finally {
+      this.blockUI.stop();
+    }
+  }
+
+  /* ================= MÉTODOS AUXILIARES ================= */
+
+  numeroALetraColumna(num: number): string {
+    let letra = '';
+    while (num >= 0) {
+      letra = String.fromCharCode((num % 26) + 65) + letra;
+      num = Math.floor(num / 26) - 1;
+    }
+    return letra;
+  }
+
+  obtenerApellidos(nombreCompleto: string): string {
+    const partes = nombreCompleto.split(',');
+    return partes[0]?.trim() || '';
+  }
+
+  obtenerNombres(nombreCompleto: string): string {
+    const partes = nombreCompleto.split(',');
+    return partes[1]?.trim() || '';
+  }
+
+  obtenerLetraPorOrden(orden: string): string {
+    if (orden.includes('SMCV')) return 'SMCV';
+    if (orden.includes('CHILE')) return 'CHILE';
+    if (orden.includes('EIMISA')) return 'EIMISA';
+
+    const match = orden.match(/[A-Z]{2,}/);
+    return match ? match[0] : '';
+  }
+
+  calcularHorasTrabajadas(entrada: string, salida: string): string {
+    try {
+      const [hE, mE] = entrada.split(':').map(Number);
+      const [hS, mS] = salida.split(':').map(Number);
+
+      const minutosEntrada = hE * 60 + mE;
+      const minutosSalida = hS * 60 + mS;
+
+      let diferenciaMinutos = minutosSalida - minutosEntrada;
+
+      if (diferenciaMinutos < 0) {
+        diferenciaMinutos += 24 * 60;
+      }
+
+      const horas = Math.floor(diferenciaMinutos / 60);
+      const minutos = diferenciaMinutos % 60;
+
+      return minutos > 0 ? `${horas}.${(minutos / 60).toFixed(1).split('.')[1]}` : `${horas}`;
+
+    } catch (error) {
+      return '';
+    }
+  }
+
+  calcularHorasNumerico(entrada: string, salida: string): number {
+    try {
+      const [hE, mE] = entrada.split(':').map(Number);
+      const [hS, mS] = salida.split(':').map(Number);
+
+      const minutosEntrada = hE * 60 + mE;
+      const minutosSalida = hS * 60 + mS;
+
+      let diferenciaMinutos = minutosSalida - minutosEntrada;
+
+      if (diferenciaMinutos < 0) {
+        diferenciaMinutos += 24 * 60;
+      }
+
+      const horas = diferenciaMinutos / 60;
+
+      return Math.round(horas * 100) / 100;
+
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  obtenerCodigoOrdenServicio(orden: string): string {
+    const matchOS = orden.match(/OS[A-Z0-9]+/);
+    if (matchOS) return matchOS[0];
+
+    const matchNumerico = orden.match(/\d{10,}/);
+    if (matchNumerico) return matchNumerico[0];
+
+    return '';
   }
 
   showMessage(message: string) {

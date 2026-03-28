@@ -105,6 +105,31 @@
     background: #555;
 }
 
+/* ========== ESTILOS PARA BOTONES DE DESCARGA ========== */
+
+.d-flex.gap-2 {
+    gap: 0.5rem;
+}
+
+/* Estilos adicionales para los botones si necesitas personalizarlos más */
+.dx-button {
+    transition: all 0.3s ease;
+}
+
+.dx-button:hover:not(.dx-state-disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dx-button:active:not(.dx-state-disabled) {
+    transform: translateY(0);
+}
+
+.dx-button.dx-state-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* ========== ESTILOS DEL MODAL ========== */
 
 .modal-backdrop {
@@ -402,5 +427,15 @@
 
     .detalle-layout {
         grid-template-columns: 1fr;
+    }
+
+    /* Botones responsivos */
+    .d-flex.gap-2 {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .d-flex.gap-2 dx-button {
+        width: 100% !important;
     }
 }
