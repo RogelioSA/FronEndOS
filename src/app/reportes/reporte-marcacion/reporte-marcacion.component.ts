@@ -790,13 +790,14 @@ export class ReporteMarcacionComponent {
 
       const workbook = new ExcelJS.Workbook();
       const ws = workbook.addWorksheet('Tareo', {
-        views: [{ state: 'frozen', xSplit: 7, ySplit: 5 }]
+        views: [{ state: 'frozen', xSplit: 6, ySplit: 5 }]
       });
 
       const mesActual = this.datePipe.transform(this.fechaInicial, 'MMMM yyyy', 'es-PE')?.toUpperCase() || '';
       const numDias = this.columnasdinamicas.length;
-      const numColsDias = numDias * 3;
-      const colInicioAdicionales = 8 + numColsDias; // 1-indexed
+      const numColsDias = numDias * 3; // L, HH, OS por día
+      // Columnas fijas: Nº(1), DNI(2), APELLIDOS(3), NOMBRES(4), CARGO(5), GUARDIAS(6)
+      const colInicioAdicionales = 7 + numColsDias; // 1-indexed
 
       // ── Estilos reutilizables ──
       const borderThin: Partial<ExcelJS.Borders> = {
@@ -832,8 +833,8 @@ export class ReporteMarcacionComponent {
       ws.addRow([]);
       ws.addRow([]);
 
-      // ── FILA 3: Título + días de semana ──
-      const fila3Data: any[] = [`TAREO MES DE ${mesActual}`, '', '', '', '', '', 'GUARDIAS'];
+      // ── FILA 3: Título + días de semana + columnas adicionales ──
+      const fila3Data: any[] = [`TAREO MES DE ${mesActual}`, '', '', '', '', 'GUARDIAS'];
       this.columnasdinamicas.forEach(col => {
         fila3Data.push(col.diaSemana, '', '');
       });
@@ -841,9 +842,9 @@ export class ReporteMarcacionComponent {
                      'FECHA DE INICIO', 'FECHA DE FIN', 'TOTAL DE DÍAS', 'MEDIDA', 'OBSERVACIONES');
       const row3 = ws.addRow(fila3Data);
 
-      // Merge título A3:F3
-      ws.mergeCells(3, 1, 3, 6);
-      for (let c = 1; c <= 6; c++) {
+      // Merge título A3:E3
+      ws.mergeCells(3, 1, 3, 5);
+      for (let c = 1; c <= 5; c++) {
         const cell = row3.getCell(c);
         cell.fill = fillTitulo;
         cell.font = fontTitulo;
@@ -851,16 +852,16 @@ export class ReporteMarcacionComponent {
         cell.border = borderMedium;
       }
 
-      // GUARDIAS
-      const cellGuardias = row3.getCell(7);
+      // GUARDIAS (columna 6)
+      const cellGuardias = row3.getCell(6);
       cellGuardias.fill = fillEncabezadoPrincipal;
       cellGuardias.font = fontBlanco;
       cellGuardias.alignment = alignCenter;
       cellGuardias.border = borderThin;
 
-      // Merge y estilo días de semana
+      // Merge y estilo días de semana (desde columna 7)
       for (let i = 0; i < numDias; i++) {
-        const colStart = 8 + i * 3;
+        const colStart = 7 + i * 3;
         const colEnd = colStart + 2;
         ws.mergeCells(3, colStart, 3, colEnd);
         for (let c = colStart; c <= colEnd; c++) {
@@ -882,7 +883,7 @@ export class ReporteMarcacionComponent {
       }
 
       // ── FILA 4: Fechas ──
-      const fila4Data: any[] = ['', '', '', '', '', '', ''];
+      const fila4Data: any[] = ['', '', '', '', '', ''];
       this.columnasdinamicas.forEach(col => {
         fila4Data.push(col.fechaDisplay, '', '');
       });
@@ -890,7 +891,7 @@ export class ReporteMarcacionComponent {
       const row4 = ws.addRow(fila4Data);
 
       for (let i = 0; i < numDias; i++) {
-        const colStart = 8 + i * 3;
+        const colStart = 7 + i * 3;
         const colEnd = colStart + 2;
         ws.mergeCells(4, colStart, 4, colEnd);
         for (let c = colStart; c <= colEnd; c++) {
@@ -902,43 +903,59 @@ export class ReporteMarcacionComponent {
         }
       }
 
-      // ── FILA 5: Encabezados (Nº, DNI, APELLIDOS, ..., L, HH, OS) ──
-      const fila5Data: any[] = ['Nº', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', '', ''];
+      // ── FILA 5: Encabezados (Nº, DNI, APELLIDOS, NOMBRES, CARGO, GUARDIAS, L, HH, OS...) ──
+      const fila5Data: any[] = ['Nº', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', ''];
       this.columnasdinamicas.forEach(() => {
         fila5Data.push('L', 'HH', 'OS');
       });
       fila5Data.push('', '', '', '', '', '', '', '', '');
       const row5 = ws.addRow(fila5Data);
 
-      for (let c = 1; c <= 7; c++) {
+      for (let c = 1; c <= 6; c++) {
         const cell = row5.getCell(c);
         cell.fill = fillEncabezadoColumnas;
         cell.font = fontEncCols;
         cell.alignment = alignCenter;
         cell.border = borderThin;
       }
-      for (let c = 8; c < 8 + numColsDias; c++) {
+      for (let c = 7; c < 7 + numColsDias; c++) {
         const cell = row5.getCell(c);
         cell.fill = fillEncabezadoColumnas;
         cell.font = fontEncCols;
         cell.alignment = alignCenter;
         cell.border = borderThin;
       }
-
-      // ── Datos auxiliares ──
-      const fechaInicioMes = this.datePipe.transform(this.fechaInicial, 'dd/MM/yyyy') || '';
-      const fechaFinMes = this.datePipe.transform(this.fechaFinal, 'dd/MM/yyyy') || '';
-      const diasDelMes = this.columnasdinamicas.length;
 
       // ── FILAS DE DATOS ──
       this.datosReporte.forEach((empleado, index) => {
+        // Obtener la primera marcación para extraer datos de OT/OS
+        const primeraMarcacion = this.obtenerPrimeraMarcacionDatos(empleado);
+
+        // Fechas desde ordenTrabajo
+        const fechaInicioOT = primeraMarcacion?.ordenTrabajo?.fechaInicio
+          ? this.datePipe.transform(primeraMarcacion.ordenTrabajo.fechaInicio, 'dd/MM/yyyy') || ''
+          : '';
+        const fechaFinOT = primeraMarcacion?.ordenTrabajo?.fechaFin
+          ? this.datePipe.transform(primeraMarcacion.ordenTrabajo.fechaFin, 'dd/MM/yyyy') || ''
+          : '';
+
+        // Total de días entre fechaInicio y fechaFin de la OT
+        let totalDiasOT: number | string = '';
+        if (primeraMarcacion?.ordenTrabajo?.fechaInicio && primeraMarcacion?.ordenTrabajo?.fechaFin) {
+          const inicio = new Date(primeraMarcacion.ordenTrabajo.fechaInicio);
+          const fin = new Date(primeraMarcacion.ordenTrabajo.fechaFin);
+          totalDiasOT = Math.ceil((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        // codigoReferencial de ordenServicio para columna OS
+        const codigoReferencialOS = primeraMarcacion?.ordenServicio?.codigoReferencial || '';
+
         const filaData: any[] = [
           index + 1,
           empleado.dni,
           this.obtenerApellidos(empleado.personal),
           this.obtenerNombres(empleado.personal),
           '',  // CARGO
-          '',  // Notas
           '.'  // GUARDIAS
         ];
 
@@ -947,10 +964,8 @@ export class ReporteMarcacionComponent {
         this.columnasdinamicas.forEach(col => {
           const marcacion = empleado.marcaciones[col.fecha];
 
-          let letra = '';
-          if (marcacion?.entrada) {
-            letra = this.obtenerLetraPorOrden(empleado.orden);
-          }
+          // L: vacío (empresa no disponible aún)
+          const letra = '';
 
           let horas = 0;
           let horasTexto: string | number = '';
@@ -960,9 +975,10 @@ export class ReporteMarcacionComponent {
             totalHoras += horas;
           }
 
+          // OS: codigoReferencial de ordenServicio
           let ordenServicio = '';
           if (marcacion?.entrada) {
-            ordenServicio = this.obtenerCodigoOrdenServicio(empleado.orden);
+            ordenServicio = codigoReferencialOS;
           }
 
           filaData.push(letra, horasTexto, ordenServicio);
@@ -976,31 +992,31 @@ export class ReporteMarcacionComponent {
           : `PAGAR 0 HORAS EXTRA AL 25% DEL MES DE ${mesActual}`;
 
         filaData.push(
-          totalHoras > 0 ? totalHoras : 0,
-          horasExtraDisplay,
-          textoPagar,
-          '',
-          fechaInicioMes,
-          fechaFinMes,
-          diasDelMes,
-          'DIAS',
-          ''
+          totalHoras > 0 ? totalHoras : 0,   // TOTAL HORAS
+          horasExtraDisplay,                   // HORAS EXTRA
+          textoPagar,                          // PAGAR
+          '',                                  // MOTIVO
+          fechaInicioOT,                       // FECHA DE INICIO (de ordenTrabajo)
+          fechaFinOT,                          // FECHA DE FIN (de ordenTrabajo)
+          totalDiasOT,                         // TOTAL DE DÍAS (calculado de OT)
+          'DIAS',                              // MEDIDA
+          ''                                   // OBSERVACIONES
         );
 
         const row = ws.addRow(filaData);
 
         // ── Estilos fila de datos ──
 
-        // Columnas fijas 1-7
-        for (let c = 1; c <= 7; c++) {
+        // Columnas fijas 1-6
+        for (let c = 1; c <= 6; c++) {
           const cell = row.getCell(c);
           cell.border = borderThin;
-          cell.alignment = (c >= 3 && c <= 6) ? alignLeft : alignCenter;
+          cell.alignment = (c >= 3 && c <= 5) ? alignLeft : alignCenter;
         }
 
         // Columnas de días (L, HH, OS)
         for (let i = 0; i < numDias; i++) {
-          const colStart = 8 + i * 3;
+          const colStart = 7 + i * 3;
           const esFinDeSemana = this.columnasdinamicas[i].diaSemana === 'SÁB' ||
                                 this.columnasdinamicas[i].diaSemana === 'DOM';
 
@@ -1034,21 +1050,21 @@ export class ReporteMarcacionComponent {
       });
 
       // ── ANCHOS DE COLUMNA ──
-      ws.getColumn(1).width = 5;
-      ws.getColumn(2).width = 12;
-      ws.getColumn(3).width = 25;
-      ws.getColumn(4).width = 25;
-      ws.getColumn(5).width = 15;
-      ws.getColumn(6).width = 50;
-      ws.getColumn(7).width = 10;
+      ws.getColumn(1).width = 5;    // Nº
+      ws.getColumn(2).width = 12;   // DNI
+      ws.getColumn(3).width = 25;   // APELLIDOS
+      ws.getColumn(4).width = 25;   // NOMBRES
+      ws.getColumn(5).width = 15;   // CARGO
+      ws.getColumn(6).width = 10;   // GUARDIAS
 
       for (let i = 0; i < numDias; i++) {
-        const colStart = 8 + i * 3;
-        ws.getColumn(colStart).width = 8;
-        ws.getColumn(colStart + 1).width = 12;
-        ws.getColumn(colStart + 2).width = 15;
+        const colStart = 7 + i * 3;
+        ws.getColumn(colStart).width = 8;      // L
+        ws.getColumn(colStart + 1).width = 12;  // HH
+        ws.getColumn(colStart + 2).width = 15;  // OS
       }
 
+      // Anchos columnas adicionales
       const anchosAdicionales = [20, 18, 45, 20, 15, 15, 15, 10, 30];
       anchosAdicionales.forEach((ancho, idx) => {
         ws.getColumn(colInicioAdicionales + idx).width = ancho;
@@ -1081,6 +1097,20 @@ export class ReporteMarcacionComponent {
   }
 
   /* ================= MÉTODOS AUXILIARES ================= */
+
+  /**
+   * Obtiene los datos crudos de la primera marcación disponible del empleado
+   * para extraer información de ordenTrabajo y ordenServicio.
+   */
+  obtenerPrimeraMarcacionDatos(empleado: EmpleadoReporte): any | null {
+    for (const fecha of Object.keys(empleado.marcaciones)) {
+      const marc = empleado.marcaciones[fecha];
+      const datos = marc.datosEntrada || marc.datosSalida || marc.datosSalidaRefrigerio
+                    || marc.datosEntradaRefrigerio || marc.datosDesconocido;
+      if (datos) return datos;
+    }
+    return null;
+  }
 
   numeroALetraColumna(num: number): string {
     let letra = '';
