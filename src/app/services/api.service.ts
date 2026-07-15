@@ -5,7 +5,8 @@ import { Observable } from "rxjs";
 @Injectable({providedIn: 'root'})
 export class ApiService{
 
-    private baseUrl = 'https://7p4yx3l258.execute-api.us-east-1.amazonaws.com';
+   // private baseUrl = 'https://7p4yx3l258.execute-api.us-east-1.amazonaws.com';
+   private baseUrl ='https://shy3r9ti3f.execute-api.us-east-1.amazonaws.com'
 
     constructor(private https: HttpClient){}
 
@@ -1906,7 +1907,7 @@ export class ApiService{
     };
 
     return this.https.get(
-      'https://7p4yx3l258.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario/by_ot_and_date_range',
+      'https://shy3r9ti3f.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario/by_ot_and_date_range',
       { headers, params }
     );
   }
@@ -1916,7 +1917,7 @@ export class ApiService{
     const headers = this.getHttpHeaders();
 
     return this.https.post(
-      'https://7p4yx3l258.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario',
+      'https://shy3r9ti3f.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario',
       payload,
       { headers }
     );
@@ -1926,7 +1927,7 @@ export class ApiService{
     const headers = this.getHttpHeaders();
 
     return this.https.put(
-      `https://7p4yx3l258.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario/${id}`,
+      `https://shy3r9ti3f.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario/${id}`,
       payload,
       { headers }
     );

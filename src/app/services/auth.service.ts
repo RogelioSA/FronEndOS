@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from "@angular/common/http"; 
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { tap } from 'rxjs/operators';
@@ -15,7 +15,7 @@ interface PayloadJwtPersonalizado extends JwtPayload {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  private apiUrl = 'https://7p4yx3l258.execute-api.us-east-1.amazonaws.com/security';
+  private apiUrl = 'https://shy3r9ti3f.execute-api.us-east-1.amazonaws.com/security';
   private loginUrl = `${this.apiUrl}/Auth/login`;
   private loginDocumentoUrl = `${this.apiUrl}/Auth/login_document`; // 👈 Nuevo endpoint
 
