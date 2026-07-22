@@ -2,27 +2,27 @@
   <div class="row">
     <div class="col-12">
       <!-- Header Section -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
         <div>
           <h4 class="mb-1 fw-semibold text-dark">Personal</h4>
           <p class="text-muted small mb-0">Gestión y mantenimiento de personal</p>
         </div>
-      </div>
 
-      <!-- Botones de carga masiva -->
-      <div class="mb-3 d-flex gap-2">
-        <button 
-          class="btn btn-success btn-sm" 
-          (click)="abrirSubidaMasiva()"
-        >
-          <i class="fas fa-file-excel me-2"></i>Subida Masiva
-        </button>
-        <button 
-          class="btn btn-outline-success btn-sm" 
-          (click)="descargarFormatoMasivo()"
-        >
-          <i class="fas fa-download me-2"></i>Descargar Formato
-        </button>
+        <!-- Botones de carga masiva -->
+        <div class="d-flex gap-2 ms-auto">
+          <button 
+            class="btn btn-success btn-sm" 
+            (click)="abrirSubidaMasiva()"
+          >
+            <i class="fas fa-file-excel me-2"></i>Subida Masiva
+          </button>
+          <button 
+            class="btn btn-outline-success btn-sm" 
+            (click)="descargarFormatoMasivo()"
+          >
+            <i class="fas fa-download me-2"></i>Descargar Formato
+          </button>
+        </div>
       </div>
 
       <!-- Grid Container -->
