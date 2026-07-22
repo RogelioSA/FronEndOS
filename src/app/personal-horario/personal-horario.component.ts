@@ -508,6 +508,15 @@ export class PersonalHorarioComponent {
 
 
   async guardarHorarioIndividual(personalId: number, fecha: Date, horarioCabeceraId: number | null) {
+    await this.guardarHorarioIndividualConReintento(personalId, fecha, horarioCabeceraId, true);
+  }
+
+  private async guardarHorarioIndividualConReintento(
+    personalId: number,
+    fecha: Date,
+    horarioCabeceraId: number | null,
+    mostrarMensajeError = false
+  ) {
     console.log('💾 guardarHorarioIndividual - INICIO');
     console.log('💾 personalId:', personalId);
     console.log('💾 fecha:', fecha);
@@ -555,9 +564,95 @@ export class PersonalHorarioComponent {
       }
 
     } catch (error) {
-      console.error('❌ Error al guardar horario:', error);
-      this.showMessage('Error al guardar el horario');
+      console.warn('⚠️ Primer intento fallido al guardar horario, reintentando una vez:', error);
+
+      try {
+        await this.sincronizarIdHorario(personalId, fecha);
+        await this.esperar(300);
+        await this.persistirHorarioIndividual(personalId, fecha, horarioCabeceraId);
+      } catch (retryError) {
+        console.error('❌ Error al guardar horario después del reintento:', retryError);
+        if (mostrarMensajeError) {
+          this.showMessage('Error al guardar el horario');
+        }
+        throw retryError;
+      }
     }
+  }
+
+  private async persistirHorarioIndividual(personalId: number, fecha: Date, horarioCabeceraId: number | null) {
+    const fechaStr = formatDate(fecha, 'yyyy-MM-dd', 'en-US');
+    const key = `${personalId}_${fechaStr}`;
+    const horarioId = this.ordenTrabajoHorarioIds.get(key);
+
+    const payload = {
+      empresaId: this.empresaId,
+      ordenTrabajoCabeceraId: this.ordenCombo,
+      personalId: personalId,
+      fecha: fechaStr,
+      horarioCabeceraId: horarioCabeceraId
+    };
+
+    if (horarioId) {
+      const response = await firstValueFrom(
+        this.apiService.actualizarOrdenTrabajoHorario(horarioId, payload)
+      );
+      return response;
+    }
+
+    const response = await firstValueFrom(
+      this.apiService.guardarOrdenTrabajoHorario(payload)
+    );
+
+    if (response && response.id) {
+      this.ordenTrabajoHorarioIds.set(key, response.id);
+    }
+
+    return response;
+  }
+
+  private async sincronizarIdHorario(personalId: number, fecha: Date) {
+    if (!this.ordenCombo) {
+      return;
+    }
+
+    const fechaStr = formatDate(fecha, 'yyyy-MM-dd', 'en-US');
+    const response = await firstValueFrom(
+      this.apiService.obtenerHorariosPorOrdenYRango(this.ordenCombo, fechaStr, fechaStr)
+    );
+
+    const horarioExistente = response?.find((h: any) => h.personalId === personalId && h.fecha === fechaStr);
+    if (horarioExistente?.id) {
+      this.ordenTrabajoHorarioIds.set(`${personalId}_${fechaStr}`, horarioExistente.id);
+    }
+  }
+
+  private esperar(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private async ejecutarEnParaleloLimitado<T>(
+    items: T[],
+    limite: number,
+    tarea: (item: T) => Promise<void>
+  ): Promise<T[]> {
+    const fallidos: T[] = [];
+    let siguiente = 0;
+
+    const workers = Array.from({ length: Math.min(limite, items.length) }, async () => {
+      while (siguiente < items.length) {
+        const item = items[siguiente++];
+        try {
+          await tarea(item);
+        } catch (error) {
+          console.error('❌ Error en tarea masiva:', error);
+          fallidos.push(item);
+        }
+      }
+    });
+
+    await Promise.all(workers);
+    return fallidos;
   }
 
   async asignarHorarioATodoElRango(personalId: number, horarioCabeceraId: number) {
@@ -574,9 +669,13 @@ export class PersonalHorarioComponent {
     }
 
     try {
-      for (const col of this.columnasFechas) {
-        const fecha = col.date;
-        await this.guardarHorarioIndividual(personalId, fecha, horarioCabeceraId);
+      const tareas = this.columnasFechas.map(col => ({ personalId, fecha: col.date }));
+      const fallidos = await this.ejecutarEnParaleloLimitado(tareas, 8, tarea =>
+        this.guardarHorarioIndividualConReintento(tarea.personalId, tarea.fecha, horarioCabeceraId)
+      );
+
+      if (fallidos.length > 0) {
+        throw new Error(`No se pudieron asignar ${fallidos.length} día(s) del rango`);
       }
 
       console.log('✅ Horario asignado a todo el rango exitosamente');
@@ -599,20 +698,29 @@ export class PersonalHorarioComponent {
       return;
     }
 
-    this.blockUI.start('Asignando horario...');
+    const horarioId = this.horarioSeleccionadoMasivo;
+    const seleccionados = [...this.seleccionadosMain];
+    const tareas = seleccionados.flatMap(persona =>
+      this.columnasFechas.map(col => ({ persona, fecha: col.date, field: col.field }))
+    );
+
+    this.blockUI.start(`Asignando ${tareas.length} horario(s)...`);
 
     try {
-      for (const persona of this.seleccionadosMain) {
-        await this.asignarHorarioATodoElRango(persona.nEmpleado, this.horarioSeleccionadoMasivo);
-
-        // Actualizar en el grid
-        this.columnasFechas.forEach(col => {
-          persona[col.field] = this.horarioSeleccionadoMasivo;
-        });
-      }
+      const fallidos = await this.ejecutarEnParaleloLimitado(tareas, 8, async tarea => {
+        await this.guardarHorarioIndividualConReintento(tarea.persona.nEmpleado, tarea.fecha, horarioId);
+        tarea.persona[tarea.field] = horarioId;
+      });
 
       this.personalHorarios = [...this.personalHorarios];
-      this.showMessage(`Horario asignado a ${this.seleccionadosMain.length} persona(s)`);
+
+      if (fallidos.length > 0) {
+        const exitosos = tareas.length - fallidos.length;
+        this.showMessage(`Asignación parcial: ${exitosos} horario(s) asignado(s), ${fallidos.length} fallaron.`);
+        return;
+      }
+
+      this.showMessage(`Horario asignado a ${seleccionados.length} persona(s)`);
       this.seleccionadosMain = [];
       this.horarioSeleccionadoMasivo = null;
 
