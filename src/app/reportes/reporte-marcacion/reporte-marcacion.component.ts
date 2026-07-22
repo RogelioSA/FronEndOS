@@ -149,7 +149,21 @@ export class ReporteMarcacionComponent {
         this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)
       );
 
-      this.marcaciones = result;
+      this.marcaciones = result.map((marcacion: any) => ({
+        ...marcacion,
+        ordenServicio: marcacion.ordenServicio
+          ? {
+              ...marcacion.ordenServicio,
+              descripcion: marcacion.ordenServicio.descripcion ?? 'GENERAL'
+            }
+          : marcacion.ordenServicio,
+        ordenTrabajo: marcacion.ordenTrabajo
+          ? {
+              ...marcacion.ordenTrabajo,
+              descripcion: marcacion.ordenTrabajo.descripcion ?? 'OFICINA'
+            }
+          : marcacion.ordenTrabajo
+      }));
       this.procesarDatosParaReporte();
 
     } catch (error) {
