@@ -21,7 +21,7 @@ export class LoginComponent {
   isLoading = false;
 
   constructor(
-    private authService: AuthService, 
+    private authService: AuthService,
     private apiService: ApiService,
     private router: Router
   ) {}
@@ -35,28 +35,28 @@ export class LoginComponent {
   // Método para limpiar completamente localStorage, sessionStorage y cookies
   limpiarSesionCompleta(): void {
     console.log('Limpiando sesión anterior...');
-    
+
     // Limpiar localStorage
     localStorage.clear();
-    
+
     // Limpiar sessionStorage
     sessionStorage.clear();
-    
+
     // Limpiar todas las cookies
     this.eliminarTodasLasCookies();
-    
+
     console.log('Sesión limpiada completamente');
   }
 
   // Método para eliminar todas las cookies
   eliminarTodasLasCookies(): void {
     const cookies = document.cookie.split(';');
-    
+
     for (let i = 0; i < cookies.length; i++) {
       const cookie = cookies[i];
       const eqPos = cookie.indexOf('=');
       const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-      
+
       // Eliminar la cookie en diferentes paths y dominios
       document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
       document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=' + window.location.hostname;
@@ -95,7 +95,7 @@ export class LoginComponent {
       }
     } catch (error: any) {
       console.error('Error en el proceso de login:', error);
-      
+
       // Manejo de errores específico
       if (error.status === 401) {
         this.errorMessage = 'Credenciales incorrectas. Verifica tus datos.';
@@ -104,7 +104,7 @@ export class LoginComponent {
       } else {
         this.errorMessage = 'Login fallido. Verifica tus credenciales.';
       }
-      
+
       this.isLoading = false;
     }
   }
@@ -119,7 +119,7 @@ export class LoginComponent {
 
     // Guardar tipo como 'U' por defecto
     localStorage.setItem('tipo', 'U');
-    
+
     // Redirigir a la página de inicio
     this.router.navigate(['/inicio']);
   }
@@ -141,7 +141,7 @@ export class LoginComponent {
 
     // Paso 3: Buscar el usuario por email
     const emailNormalizado = this.email.toLowerCase().trim();
-    const usuarioEncontrado = usuarios.find((usuario: any) => 
+    const usuarioEncontrado = usuarios.find((usuario: any) =>
       usuario.email?.toLowerCase().trim() === emailNormalizado ||
       usuario.normalizedEmail?.toLowerCase().trim() === emailNormalizado
     );
@@ -149,10 +149,10 @@ export class LoginComponent {
     if (usuarioEncontrado) {
       // Paso 4: Guardar datos del usuario en localStorage
       this.guardarDatosUsuario(usuarioEncontrado);
-      
+
       // Paso 5: Seleccionar automáticamente la primera empresa
       await this.seleccionarPrimeraEmpresa(usuarioEncontrado.id);
-      
+
       // Paso 6: Redirigir a la página de inicio
       this.router.navigate(['/inicio']);
     } else {
@@ -162,10 +162,10 @@ export class LoginComponent {
     }
   }
 
-  async seleccionarPrimeraEmpresa(userId: number): Promise<void> {
+  async seleccionarPrimeraEmpresa(userId: string): Promise<void> {
     try {
       console.log('Obteniendo empresas del usuario:', userId);
-      
+
       // Obtener las empresas del usuario
       const usuariosEmpresas = await firstValueFrom(
         this.apiService.listarUsuarioEmpresaPorUsuario(userId)
@@ -216,7 +216,7 @@ export class LoginComponent {
     localStorage.setItem('user_id', usuario.id);
     localStorage.setItem('user_email', usuario.email);
     localStorage.setItem('user_name', usuario.userName);
-    
+
     console.log('Usuario ID guardado en localStorage:', usuario.id);
     console.log('Datos del usuario guardados correctamente');
   }

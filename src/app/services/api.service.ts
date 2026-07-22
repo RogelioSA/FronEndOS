@@ -1766,7 +1766,7 @@ export class ApiService{
 
 
   //usuarioempresa
-  listarUsuarioEmpresaPorUsuario(usuarioId: number): Observable<any> {
+  listarUsuarioEmpresaPorUsuario(usuarioId: string): Observable<any> {
     const headers = this.getHeaders();
     const url = `${this.baseUrl}/security/UsuarioEmpresa/usuario/${usuarioId}`;
     return this.https.get<any>(url, { headers });

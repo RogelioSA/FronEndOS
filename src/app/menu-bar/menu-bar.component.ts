@@ -286,7 +286,7 @@ export class MenuBarComponent {
 
       console.log('Cargando empresas para el usuario:', userId);
 
-      const obser = this.apiService.listarUsuarioEmpresaPorUsuario(Number(userId));
+      const obser = this.apiService.listarUsuarioEmpresaPorUsuario(userId);
       const result = await firstValueFrom(obser);
 
       this.usuariosEmpresas = result;
