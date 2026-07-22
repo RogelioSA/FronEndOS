@@ -134,6 +134,38 @@ export class ReporteMarcacionComponent {
     }
   }
 
+  private normalizarDescripcionOrdenes(marcacion: any): any {
+    const descripcionOrdenServicio = this.obtenerDescripcionConValorPorDefecto(
+      marcacion.ordenServicio,
+      'GENERAL'
+    );
+    const descripcionOrdenTrabajo = this.obtenerDescripcionConValorPorDefecto(
+      marcacion.ordenTrabajo,
+      'OFICINA'
+    );
+
+    return {
+      ...marcacion,
+      ordenServicio: {
+        ...(marcacion.ordenServicio ?? {}),
+        descripcion: descripcionOrdenServicio,
+        Descripcion: descripcionOrdenServicio
+      },
+      ordenTrabajo: {
+        ...(marcacion.ordenTrabajo ?? {}),
+        descripcion: descripcionOrdenTrabajo,
+        Descripcion: descripcionOrdenTrabajo
+      }
+    };
+  }
+
+  private obtenerDescripcionConValorPorDefecto(orden: any, valorPorDefecto: string): string {
+    const descripcion = [orden?.descripcion, orden?.Descripcion]
+      .find((valor) => typeof valor === 'string' && valor.trim());
+
+    return descripcion ?? valorPorDefecto;
+  }
+
   async traerMarcaciones() {
     this.blockUI.start('Cargando marcaciones...');
 
@@ -149,7 +181,7 @@ export class ReporteMarcacionComponent {
         this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)
       );
 
-      this.marcaciones = result;
+      this.marcaciones = result.map((marcacion: any) => this.normalizarDescripcionOrdenes(marcacion));
       this.procesarDatosParaReporte();
 
     } catch (error) {
