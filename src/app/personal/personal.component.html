@@ -9,13 +9,19 @@
         </div>
       </div>
 
-      <!-- Botón Subida Masiva -->
-      <div class="mb-3">
+      <!-- Botones de carga masiva -->
+      <div class="mb-3 d-flex gap-2">
         <button 
           class="btn btn-success btn-sm" 
           (click)="abrirSubidaMasiva()"
         >
           <i class="fas fa-file-excel me-2"></i>Subida Masiva
+        </button>
+        <button 
+          class="btn btn-outline-success btn-sm" 
+          (click)="descargarFormatoMasivo()"
+        >
+          <i class="fas fa-download me-2"></i>Descargar Formato
         </button>
       </div>
 
@@ -72,24 +78,15 @@
             <dxo-export [enabled]="true" [allowExportSelectedData]="true"></dxo-export>
             <dxo-selection mode="multiple" [showCheckBoxesMode]="'always'"></dxo-selection>
 
-            <dxi-column 
-              dataField="nCodigo" 
-              caption="ID" 
-              [width]="80" 
-              [allowEditing]="false" 
-              alignment="center"
-              cssClass="text-muted small"
-            ></dxi-column>
-
-            <dxi-column dataField="cNombres" caption="Nombres" [minWidth]="150">
-              <dxi-validation-rule type="required"></dxi-validation-rule>
-            </dxi-column>
-
             <dxi-column dataField="cApPater" caption="Ap. Paterno" [minWidth]="120" sortOrder="asc" [sortIndex]="0">
               <dxi-validation-rule type="required"></dxi-validation-rule>
             </dxi-column>
 
             <dxi-column dataField="cApMater" caption="Ap. Materno" [minWidth]="120">
+              <dxi-validation-rule type="required"></dxi-validation-rule>
+            </dxi-column>
+
+            <dxi-column dataField="cNombres" caption="Nombres" [minWidth]="150">
               <dxi-validation-rule type="required"></dxi-validation-rule>
             </dxi-column>
 
@@ -143,9 +140,9 @@
               <dxi-validation-rule type="required"></dxi-validation-rule>
             </dxi-column>
 
-            <dxi-column dataField="nDistritoId" caption="Distrito" [width]="130">
+            <dxi-column dataField="nCargoId" caption="Cargo" [width]="130">
               <dxo-lookup 
-                [dataSource]="distritos" 
+                [dataSource]="cargos" 
                 displayExpr="cNombre" 
                 valueExpr="nCodigo">
               </dxo-lookup>
@@ -159,6 +156,15 @@
                 valueExpr="id">
               </dxo-lookup>
             </dxi-column>
+
+            <dxi-column 
+              dataField="nCodigo" 
+              caption="ID" 
+              [width]="80" 
+              [allowEditing]="false" 
+              alignment="center"
+              cssClass="text-muted small"
+            ></dxi-column>
 
             <dxi-column 
               type="buttons" 

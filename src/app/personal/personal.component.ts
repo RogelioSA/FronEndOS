@@ -13,7 +13,7 @@ import * as XLSX from 'xlsx';
 export class PersonalComponent {
   existeAsignacion: boolean = false;
   personal: any[] = [];
-  cargos : [] = [];
+  cargos : any[] = [];
   areas : [] = [];
   contratoTipos : [] = [];
   situaciones : [] = [];
@@ -69,7 +69,7 @@ export class PersonalComponent {
         licencias,
         documentoTipos,
         sexo,
-        distritos,
+        cargos,
         horarios,
         politicasRegistro,
         usuarios,
@@ -80,7 +80,7 @@ export class PersonalComponent {
         this.apiService.getLicenciaConducir().pipe(catchError((error: any) => this.manejarErrorCargaInicial('licencias', error))),
         this.apiService.getDocumentoTipo().pipe(catchError((error: any) => this.manejarErrorCargaInicial('tipos de documento', error))),
         this.apiService.getSexo().pipe(catchError((error: any) => this.manejarErrorCargaInicial('sexo', error))),
-        this.apiService.getDistritos().pipe(catchError((error: any) => this.manejarErrorCargaInicial('distritos', error))),
+        this.apiService.getCargos().pipe(catchError((error: any) => this.manejarErrorCargaInicial('cargos', error))),
         this.apiService.getHorarios().pipe(catchError((error: any) => this.manejarErrorCargaInicial('horarios', error))),
         this.apiService.getRegistroAsistenciaPolitica().pipe(catchError((error: any) => this.manejarErrorCargaInicial('políticas de registro', error))),
         this.apiService.listarUsuarios().pipe(catchError((error: any) => this.manejarErrorCargaInicial('usuarios', error))),
@@ -92,7 +92,7 @@ export class PersonalComponent {
       this.licencias = licencias.map((l: any) => ({ nCodigo: l.id, cNombre: l.nombre }));
       this.documentoTipos = documentoTipos.map((d: any) => ({ nCodigo: d.id, cNombre: d.nombre }));
       this.sexo = sexo.map((s: any) => ({ nCodigo: s.id, cNombre: s.nombre }));
-      this.distritos = distritos.map((d: any) => ({ nCodigo: d.id, cNombre: d.nombre }));
+      this.cargos = cargos.map((c: any) => ({ nCodigo: c.id, cNombre: c.nombre }));
       this.horarios = horarios.map((h: any) => ({ id: h.id, nombre: h.nombre }));
       this.politicasRegistro = politicasRegistro.map((p: any) => ({
         id: p.id,
@@ -135,7 +135,7 @@ export class PersonalComponent {
         cSexo: p.sexo?.id,
         nLicenciaCategoria: p.licenciaConducir?.id,
         nDocumentoIdentidadTipo: p.documentoIdentidadTipo?.id,
-        nDistritoId: p.distrito?.id
+        nCargoId: p.cargo?.id ?? p.cargoId
       }))
       .sort((a: any, b: any) =>
         String(a.cApPater || '').localeCompare(String(b.cApPater || ''), 'es', { sensitivity: 'base' })
@@ -349,7 +349,7 @@ export class PersonalComponent {
       sexoId: getVal('cSexo'),
       licenciaConducirId: getVal('nLicenciaCategoria'),
       documentoIdentidadTipoId: getVal('nDocumentoIdentidadTipo'),
-      distritoId: getVal('nDistritoId')
+      cargoId: getVal('nCargoId')
     };
 
     console.log("Registro para actualizar:", registro);
@@ -409,7 +409,7 @@ export class PersonalComponent {
     const sexoId = normalizeId(getVal(['cSexo', 'sexoId', 'sexo'], null));
     const licenciaConducirId = normalizeId(getVal(['nLicenciaCategoria', 'licenciaConducirId', 'licencia'], null));
     const documentoIdentidadTipoId = normalizeId(getVal(['nDocumentoIdentidadTipo', 'documentoIdentidadTipoId', 'tipoDocumento'], null));
-    const distritoId = normalizeId(getVal(['nDistritoId', 'cDistritoId', 'distritoId', 'distrito'], null));
+    const cargoId = normalizeId(getVal(['nCargoId', 'cargoId', 'cargo'], null));
 
     const registro: any = {
       empresaId: 1,
@@ -424,7 +424,7 @@ export class PersonalComponent {
       sexoId,
       licenciaConducirId,
       documentoIdentidadTipoId,
-      distritoId
+      cargoId
     };
 
     console.log('Registro construido para enviar:', registro);
@@ -617,6 +617,88 @@ export class PersonalComponent {
       this.archivoSeleccionado = file;
       console.log('📁 Archivo seleccionado:', file.name);
     }
+  }
+
+
+  descargarFormatoMasivo() {
+    const encabezados = [
+      'CODIGO',
+      'APELLIDO/NOMBRES',
+      'NRO DOCUMENTO',
+      'SEXO',
+      'EMAIL',
+      'TELEFONO',
+      'FEC.NACIMIENTO'
+    ];
+
+    const primerRegistro = this.personal?.[0];
+    const filaEjemplo = primerRegistro
+      ? {
+          CODIGO: primerRegistro.nCodigo ?? '',
+          'APELLIDO/NOMBRES': this.construirApellidoNombres(primerRegistro),
+          'NRO DOCUMENTO': primerRegistro.cDNI ?? '',
+          SEXO: this.obtenerTextoSexo(primerRegistro.cSexo),
+          EMAIL: primerRegistro.cCorreo ?? '',
+          TELEFONO: primerRegistro.cCelular ?? '',
+          'FEC.NACIMIENTO': this.formatearFechaExcel(primerRegistro.dFechaNacimiento)
+        }
+      : {
+          CODIGO: '001',
+          'APELLIDO/NOMBRES': 'APELLIDO PATERNO APELLIDO MATERNO, NOMBRES',
+          'NRO DOCUMENTO': '12345678',
+          SEXO: 'M',
+          EMAIL: 'nombre.apellido@empresa.com',
+          TELEFONO: '999999999',
+          'FEC.NACIMIENTO': '01/01/1990'
+        };
+
+    const worksheet = XLSX.utils.json_to_sheet([filaEjemplo], { header: encabezados });
+    worksheet['!cols'] = [
+      { wch: 12 },
+      { wch: 35 },
+      { wch: 16 },
+      { wch: 10 },
+      { wch: 30 },
+      { wch: 14 },
+      { wch: 18 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Personal');
+    XLSX.writeFile(workbook, 'formato_subida_masiva_personal.xlsx');
+  }
+
+  private construirApellidoNombres(persona: any): string {
+    const apellidos = [persona.cApPater, persona.cApMater]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    const nombres = String(persona.cNombres || '').trim();
+
+    return apellidos && nombres ? `${apellidos}, ${nombres}` : `${apellidos}${nombres}`;
+  }
+
+  private obtenerTextoSexo(sexoId: any): string {
+    const sexo = this.sexo.find((s: any) => s.nCodigo === sexoId);
+    const nombreSexo = String(sexo?.cNombre || '').toUpperCase();
+
+    if (nombreSexo.startsWith('F')) return 'F';
+    if (nombreSexo.startsWith('M')) return 'M';
+
+    return sexoId === 2 ? 'F' : 'M';
+  }
+
+  private formatearFechaExcel(fecha: any): string {
+    if (!fecha) return '';
+
+    const date = fecha instanceof Date ? fecha : new Date(fecha);
+    if (isNaN(date.getTime())) return '';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
   }
 
   async procesarArchivoExcel() {
