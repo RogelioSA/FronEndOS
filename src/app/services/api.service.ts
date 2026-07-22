@@ -155,6 +155,12 @@ export class ApiService{
       });
     }
 
+    asignarCargoPersonal(asignacion: any): Observable<any> {
+      return this.https.post(`${this.baseUrl}/rrhh/Cargo`, asignacion, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
     actualizarCargo(id: number, cargo: any): Observable<any> {
       return this.https.put(`${this.baseUrl}/rrhh/Cargo/${id}`, cargo, {
         headers: this.getHttpHeaders()
