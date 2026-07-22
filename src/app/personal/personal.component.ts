@@ -730,13 +730,7 @@ export class PersonalComponent {
 
       // 🔹 FILTRAR por DNI válido
       const dataFiltrada = data.filter((fila: any) => {
-        const dni = String(
-          fila['NRO DOCUMENTO'] ||
-          fila['NRO.DOCUMENTO'] ||
-          fila['DOCUMENTO'] ||
-          fila['DNI'] ||
-          ''
-        ).trim();
+        const dni = this.obtenerDniFila(fila);
         return dni && dni.length === 8;
       });
 
@@ -753,13 +747,7 @@ export class PersonalComponent {
       // 🔹 PASO 1: Crear mapa de DNIs del Excel
       const dnisEnExcel = new Map<string, any>();
       dataFiltrada.forEach((fila: any) => {
-        const dni = String(
-          fila['NRO DOCUMENTO'] ||
-          fila['NRO.DOCUMENTO'] ||
-          fila['DOCUMENTO'] ||
-          fila['DNI'] ||
-          ''
-        ).trim();
+        const dni = this.obtenerDniFila(fila);
         if (dni && dni.length === 8) {
           dnisEnExcel.set(dni, fila);
         }
@@ -784,7 +772,7 @@ export class PersonalComponent {
 
           const datosInactivar = {
             ...persona,
-            bEstado: false
+            estado: false
           };
 
           await firstValueFrom(this.apiService.updatePersonal(persona.nCodigo, datosInactivar));
@@ -802,13 +790,7 @@ export class PersonalComponent {
 
       for (let i = 0; i < dataFiltrada.length; i++) {
         const fila = dataFiltrada[i];
-        const dni = String(
-          fila['NRO DOCUMENTO'] ||
-          fila['NRO.DOCUMENTO'] ||
-          fila['DOCUMENTO'] ||
-          fila['DNI'] ||
-          ''
-        ).trim();
+        const dni = this.obtenerDniFila(fila);
 
         try {
           // Buscar si ya existe
@@ -818,13 +800,13 @@ export class PersonalComponent {
 
           if (registroExistente) {
             // ✏️ ACTUALIZAR si estado es false
-            if (registroExistente.bEstado === false) {
+            if (registroExistente.lEstado === false || registroExistente.estado === false) {
               console.log(`✏️ Actualizando DNI ${dni} - Cambiando estado a true`);
 
               // Crear objeto con todos los datos del registro existente + estado true
               const datosActualizados = {
                 ...registroExistente,
-                bEstado: true
+                estado: true
               };
 
               // Usar tu API de edición existente
@@ -922,7 +904,7 @@ export class PersonalComponent {
               const obj: any = {};
               headers.forEach((header, index) => {
                 if (header) {
-                  obj[header] = row[index];
+                  obj[String(header).trim()] = row[index];
                 }
               });
               return obj;
@@ -942,18 +924,60 @@ export class PersonalComponent {
     });
   }
 
+
+  private obtenerValorFila(fila: any, columnas: string[]): any {
+    const entradas = Object.entries(fila || {});
+
+    for (const columna of columnas) {
+      const columnaNormalizada = this.normalizarTextoColumna(columna);
+      const entrada = entradas.find(([key]) =>
+        this.normalizarTextoColumna(key) === columnaNormalizada
+      );
+
+      if (entrada && entrada[1] !== undefined && entrada[1] !== null) {
+        return entrada[1];
+      }
+    }
+
+    return '';
+  }
+
+  private normalizarTextoColumna(valor: string): string {
+    return String(valor || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  }
+
+
+  private obtenerDniFila(fila: any): string {
+    return String(this.obtenerValorFila(fila, ['NRO DOCUMENTO', 'NRO.DOCUMENTO', 'DOCUMENTO', 'DNI']) || '').trim();
+  }
+
+  private obtenerEmailFila(fila: any): string {
+    const emailCorporativo = String(this.obtenerValorFila(fila, ['EMAIL CORPORATIVO']) || '').trim();
+
+    if (emailCorporativo) {
+      return emailCorporativo;
+    }
+
+    return String(this.obtenerValorFila(fila, ['EMAIL PERSONAL', 'EMAIL']) || '').trim();
+  }
+
   async procesarRegistroPersonal(fila: any, numeroFila: number): Promise<void> {
     console.log(`\n📝 Paso 0 - Parseando datos de la fila ${numeroFila}`);
 
     // Parsear nombre completo
-    const nombreCompleto = fila['APELLIDO/NOMBRES'] || '';
+    const nombreCompleto = this.obtenerValorFila(fila, ['APELLIDO/NOMBRES', 'APELLIDOS/NOMBRES']) || '';
     const partesNombre = this.parsearNombreCompleto(nombreCompleto);
 
     // Parsear fecha de nacimiento
-    const fechaNacimiento = this.parsearFecha(fila['FEC.NACIMIENTO']);
+    const fechaNacimiento = this.parsearFecha(this.obtenerValorFila(fila, ['FEC.NACIMIENTO', 'FECHA NACIMIENTO', 'FEC NACIMIENTO']));
 
     // Obtener DNI
-    const dni = String(fila['NRO DOCUMENTO'] || '').trim();
+    const dni = this.obtenerDniFila(fila);
 
     if (!dni || dni.length !== 8) {
       throw new Error(`DNI inválido: "${dni}". Debe tener 8 dígitos.`);
@@ -963,17 +987,17 @@ export class PersonalComponent {
     const personaExistente = this.personal.find((p: any) => p.cDNI === dni);
 
     // Generar email si no existe
-    let email = (fila['EMAIL'] || '').trim();
+    let email = this.obtenerEmailFila(fila);
     if (!email) {
       email = this.generarEmail(partesNombre.nombres, partesNombre.apellidoPaterno);
       console.log(`⚠️ Email generado automáticamente: ${email}`);
     }
 
-    const telefono = String(fila['TELEFONO'] || '').trim();
-    const codigo = String(fila['CODIGO'] || '').trim();
+    const telefono = String(this.obtenerValorFila(fila, ['TELEFONO', 'TELÉFONO']) || '').trim();
+    const codigo = String(this.obtenerValorFila(fila, ['CODIGO', 'CÓDIGO']) || '').trim();
 
     // Determinar sexo
-    const sexoTexto = String(fila['SEXO'] || '').toUpperCase().trim();
+    const sexoTexto = String(this.obtenerValorFila(fila, ['SEXO']) || '').toUpperCase().trim();
     let sexoId = this.determinarSexoId(sexoTexto);
 
     console.log('📋 Datos parseados:', {
@@ -1239,7 +1263,28 @@ export class PersonalComponent {
         return new Date(date.y, date.m - 1, date.d).toISOString();
       }
 
-      // Si es string, intentar parsear
+      // Si es string en formato peruano dd/mm/yyyy o dd-mm-yyyy
+      if (typeof fecha === 'string') {
+        const fechaTexto = fecha.trim();
+        const partes = fechaTexto.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+
+        if (partes) {
+          const dia = Number(partes[1]);
+          const mes = Number(partes[2]);
+          const anio = Number(partes[3]);
+          const fechaLocal = new Date(anio, mes - 1, dia);
+
+          if (
+            fechaLocal.getFullYear() === anio &&
+            fechaLocal.getMonth() === mes - 1 &&
+            fechaLocal.getDate() === dia
+          ) {
+            return fechaLocal.toISOString();
+          }
+        }
+      }
+
+      // Si es string ISO u otro formato reconocido por el navegador
       const d = new Date(fecha);
       if (!isNaN(d.getTime())) {
         return d.toISOString();
