@@ -628,7 +628,8 @@ export class PersonalComponent {
       'SEXO',
       'MAIL',
       'TELEFONO',
-      'FEC.NACIMIENTO'
+      'FEC.NACIMIENTO',
+      'CARGO'
     ];
 
     const primerRegistro = this.personal?.[0];
@@ -640,7 +641,8 @@ export class PersonalComponent {
           SEXO: this.obtenerTextoSexo(primerRegistro.cSexo),
           MAIL: primerRegistro.cCorreo ?? '',
           TELEFONO: primerRegistro.cCelular ?? '',
-          'FEC.NACIMIENTO': this.formatearFechaExcel(primerRegistro.dFechaNacimiento)
+          'FEC.NACIMIENTO': this.formatearFechaExcel(primerRegistro.dFechaNacimiento),
+          CARGO: this.obtenerTextoCargo(primerRegistro.nCargoId)
         }
       : {
           CODIGO: '001',
@@ -649,7 +651,8 @@ export class PersonalComponent {
           SEXO: 'M',
           MAIL: 'nombre.apellido@empresa.com',
           TELEFONO: '999999999',
-          'FEC.NACIMIENTO': '01/01/1990'
+          'FEC.NACIMIENTO': '01/01/1990',
+          CARGO: 'ASISTENTE DE ALMACEN'
         };
 
     const worksheet = XLSX.utils.json_to_sheet([filaEjemplo], { header: encabezados });
@@ -660,7 +663,8 @@ export class PersonalComponent {
       { wch: 10 },
       { wch: 30 },
       { wch: 14 },
-      { wch: 18 }
+      { wch: 18 },
+      { wch: 30 }
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -686,6 +690,11 @@ export class PersonalComponent {
     if (nombreSexo.startsWith('M')) return 'M';
 
     return sexoId === 2 ? 'F' : 'M';
+  }
+
+  private obtenerTextoCargo(cargoId: any): string {
+    const cargo = this.cargos.find((c: any) => Number(c.nCodigo) === Number(cargoId));
+    return String(cargo?.cNombre || '').trim();
   }
 
   private formatearFechaExcel(fecha: any): string {
@@ -784,7 +793,10 @@ export class PersonalComponent {
         }
       }
 
-      // 🔹 PASO 4: Procesar registros del Excel
+      // 🔹 PASO 4: Refrescar catálogo de cargos para hacer match con la columna CARGO del Excel
+      await this.cargarCargosParaSubidaMasiva();
+
+      // 🔹 PASO 5: Procesar registros del Excel
       let actualizados = 0;
       let creados = 0;
 
@@ -965,6 +977,62 @@ export class PersonalComponent {
     return this.limpiarTextoCelda(this.obtenerValorFila(fila, ['MAIL', 'EMAIL']));
   }
 
+  private obtenerCargoFila(fila: any): string {
+    return this.limpiarTextoCelda(this.obtenerValorFila(fila, ['CARGO']));
+  }
+
+  private normalizarNombreCargo(valor: any): string {
+    return this.normalizarTextoColumna(String(valor || ''));
+  }
+
+  private async cargarCargosParaSubidaMasiva(): Promise<void> {
+    const cargos = await firstValueFrom(this.apiService.getCargos());
+    this.cargos = (cargos || []).map((c: any) => ({
+      nCodigo: c.id,
+      cNombre: c.nombre,
+      estado: c.estado
+    }));
+    console.log(`✅ Cargos cargados para subida masiva: ${this.cargos.length}`);
+  }
+
+  private buscarCargoPorNombre(nombreCargo: string): any | null {
+    const nombreNormalizado = this.normalizarNombreCargo(nombreCargo);
+    if (!nombreNormalizado) return null;
+
+    return this.cargos.find((cargo: any) =>
+      cargo.estado !== false && this.normalizarNombreCargo(cargo.cNombre) === nombreNormalizado
+    ) || null;
+  }
+
+  private async asignarCargoDesdeExcel(personalId: number, fila: any, numeroFila: number): Promise<void> {
+    const nombreCargoExcel = this.obtenerCargoFila(fila);
+    if (!nombreCargoExcel) {
+      console.log(`ℹ️ Fila ${numeroFila}: sin valor en columna CARGO, no se asigna cargo.`);
+      return;
+    }
+
+    const cargo = this.buscarCargoPorNombre(nombreCargoExcel);
+    if (!cargo) {
+      throw new Error(`Cargo no encontrado para "${nombreCargoExcel}"`);
+    }
+
+    const asignacionCargoPayload = {
+      empresaId: 1,
+      personalId,
+      cargoId: Number(cargo.nCodigo)
+    };
+
+    console.log('📤 Enviando payload de asignación de Cargo:', asignacionCargoPayload);
+
+    try {
+      await firstValueFrom(this.apiService.asignarCargoPersonal(asignacionCargoPayload));
+      console.log(`✅ Cargo asignado: ${String(cargo.cNombre || '').trim()} (ID: ${cargo.nCodigo})`);
+    } catch (error: any) {
+      console.error('❌ Error al asignar Cargo:', error);
+      throw new Error(`Error al asignar Cargo: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+  }
+
   async procesarRegistroPersonal(fila: any, numeroFila: number): Promise<void> {
     console.log(`\n📝 Paso 0 - Parseando datos de la fila ${numeroFila}`);
 
@@ -1143,6 +1211,10 @@ export class PersonalComponent {
       console.error('❌ Error al crear Personal:', error);
       throw new Error(`Error al crear Personal: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
     }
+
+    // PASO 6: Asignar Cargo desde la nueva columna CARGO del Excel
+    console.log('\n🔵 Paso 6 - Asignando Cargo desde Excel...');
+    await this.asignarCargoDesdeExcel(personaId, fila, numeroFila);
 
     console.log(`\n✅✅✅ REGISTRO COMPLETO - Fila ${numeroFila} procesada exitosamente\n`);
   }
