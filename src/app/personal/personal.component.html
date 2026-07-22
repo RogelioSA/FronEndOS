@@ -9,13 +9,19 @@
         </div>
       </div>
 
-      <!-- Botón Subida Masiva -->
-      <div class="mb-3">
+      <!-- Botones de carga masiva -->
+      <div class="mb-3 d-flex gap-2">
         <button 
           class="btn btn-success btn-sm" 
           (click)="abrirSubidaMasiva()"
         >
           <i class="fas fa-file-excel me-2"></i>Subida Masiva
+        </button>
+        <button 
+          class="btn btn-outline-success btn-sm" 
+          (click)="descargarFormatoMasivo()"
+        >
+          <i class="fas fa-download me-2"></i>Descargar Formato
         </button>
       </div>
 

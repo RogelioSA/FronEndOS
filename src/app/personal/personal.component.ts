@@ -619,6 +619,88 @@ export class PersonalComponent {
     }
   }
 
+
+  descargarFormatoMasivo() {
+    const encabezados = [
+      'CODIGO',
+      'APELLIDO/NOMBRES',
+      'NRO DOCUMENTO',
+      'SEXO',
+      'EMAIL',
+      'TELEFONO',
+      'FEC.NACIMIENTO'
+    ];
+
+    const primerRegistro = this.personal?.[0];
+    const filaEjemplo = primerRegistro
+      ? {
+          CODIGO: primerRegistro.nCodigo ?? '',
+          'APELLIDO/NOMBRES': this.construirApellidoNombres(primerRegistro),
+          'NRO DOCUMENTO': primerRegistro.cDNI ?? '',
+          SEXO: this.obtenerTextoSexo(primerRegistro.cSexo),
+          EMAIL: primerRegistro.cCorreo ?? '',
+          TELEFONO: primerRegistro.cCelular ?? '',
+          'FEC.NACIMIENTO': this.formatearFechaExcel(primerRegistro.dFechaNacimiento)
+        }
+      : {
+          CODIGO: '001',
+          'APELLIDO/NOMBRES': 'APELLIDO PATERNO APELLIDO MATERNO, NOMBRES',
+          'NRO DOCUMENTO': '12345678',
+          SEXO: 'M',
+          EMAIL: 'nombre.apellido@empresa.com',
+          TELEFONO: '999999999',
+          'FEC.NACIMIENTO': '01/01/1990'
+        };
+
+    const worksheet = XLSX.utils.json_to_sheet([filaEjemplo], { header: encabezados });
+    worksheet['!cols'] = [
+      { wch: 12 },
+      { wch: 35 },
+      { wch: 16 },
+      { wch: 10 },
+      { wch: 30 },
+      { wch: 14 },
+      { wch: 18 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Personal');
+    XLSX.writeFile(workbook, 'formato_subida_masiva_personal.xlsx');
+  }
+
+  private construirApellidoNombres(persona: any): string {
+    const apellidos = [persona.cApPater, persona.cApMater]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    const nombres = String(persona.cNombres || '').trim();
+
+    return apellidos && nombres ? `${apellidos}, ${nombres}` : `${apellidos}${nombres}`;
+  }
+
+  private obtenerTextoSexo(sexoId: any): string {
+    const sexo = this.sexo.find((s: any) => s.nCodigo === sexoId);
+    const nombreSexo = String(sexo?.cNombre || '').toUpperCase();
+
+    if (nombreSexo.startsWith('F')) return 'F';
+    if (nombreSexo.startsWith('M')) return 'M';
+
+    return sexoId === 2 ? 'F' : 'M';
+  }
+
+  private formatearFechaExcel(fecha: any): string {
+    if (!fecha) return '';
+
+    const date = fecha instanceof Date ? fecha : new Date(fecha);
+    if (isNaN(date.getTime())) return '';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  }
+
   async procesarArchivoExcel() {
     if (!this.archivoSeleccionado) {
       console.error('❌ No hay archivo seleccionado');
