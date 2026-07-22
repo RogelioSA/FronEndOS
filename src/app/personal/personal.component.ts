@@ -626,7 +626,7 @@ export class PersonalComponent {
       'APELLIDO/NOMBRES',
       'NRO DOCUMENTO',
       'SEXO',
-      'EMAIL',
+      'MAIL',
       'TELEFONO',
       'FEC.NACIMIENTO'
     ];
@@ -638,7 +638,7 @@ export class PersonalComponent {
           'APELLIDO/NOMBRES': this.construirApellidoNombres(primerRegistro),
           'NRO DOCUMENTO': primerRegistro.cDNI ?? '',
           SEXO: this.obtenerTextoSexo(primerRegistro.cSexo),
-          EMAIL: primerRegistro.cCorreo ?? '',
+          MAIL: primerRegistro.cCorreo ?? '',
           TELEFONO: primerRegistro.cCelular ?? '',
           'FEC.NACIMIENTO': this.formatearFechaExcel(primerRegistro.dFechaNacimiento)
         }
@@ -647,7 +647,7 @@ export class PersonalComponent {
           'APELLIDO/NOMBRES': 'APELLIDO PATERNO APELLIDO MATERNO, NOMBRES',
           'NRO DOCUMENTO': '12345678',
           SEXO: 'M',
-          EMAIL: 'nombre.apellido@empresa.com',
+          MAIL: 'nombre.apellido@empresa.com',
           TELEFONO: '999999999',
           'FEC.NACIMIENTO': '01/01/1990'
         };
@@ -952,18 +952,17 @@ export class PersonalComponent {
   }
 
 
+
+  private limpiarTextoCelda(valor: any): string {
+    return String(valor || '').trim().replace(/^'+/, '');
+  }
+
   private obtenerDniFila(fila: any): string {
     return String(this.obtenerValorFila(fila, ['NRO DOCUMENTO', 'NRO.DOCUMENTO', 'DOCUMENTO', 'DNI']) || '').trim();
   }
 
   private obtenerEmailFila(fila: any): string {
-    const emailCorporativo = String(this.obtenerValorFila(fila, ['EMAIL CORPORATIVO']) || '').trim();
-
-    if (emailCorporativo) {
-      return emailCorporativo;
-    }
-
-    return String(this.obtenerValorFila(fila, ['EMAIL PERSONAL', 'EMAIL']) || '').trim();
+    return this.limpiarTextoCelda(this.obtenerValorFila(fila, ['MAIL', 'EMAIL']));
   }
 
   async procesarRegistroPersonal(fila: any, numeroFila: number): Promise<void> {
