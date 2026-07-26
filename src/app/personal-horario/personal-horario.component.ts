@@ -700,26 +700,34 @@ export class PersonalHorarioComponent {
 
     const horarioId = this.horarioSeleccionadoMasivo;
     const seleccionados = [...this.seleccionadosMain];
-    const tareas = seleccionados.flatMap(persona =>
-      this.columnasFechas.map(col => ({ persona, fecha: col.date, field: col.field }))
-    );
+    const tareas = seleccionados.map(persona => ({
+      persona,
+      asignaciones: this.columnasFechas.map(col => ({
+        id: 0,
+        fecha: formatDate(col.date, 'yyyy-MM-dd', 'en-US'),
+        horarioCabeceraId: horarioId
+      }))
+    }));
+    const totalHorarios = tareas.reduce((total, tarea) => total + tarea.asignaciones.length, 0);
 
-    this.blockUI.start(`Asignando ${tareas.length} horario(s)...`);
+    this.blockUI.start(`Asignando ${totalHorarios} horario(s)...`);
 
     try {
-      const fallidos = await this.ejecutarConReprocesoDeFallidos(tareas, async (tarea, intento) => {
-        if (intento > 1) {
-          await this.sincronizarIdHorario(tarea.persona.nEmpleado, tarea.fecha);
+      // El API de rango recibe una solicitud por persona. Las personas se procesan
+      // en paralelo y únicamente se reprocesa la solicitud completa que falle.
+      const fallidos = await this.ejecutarConReprocesoDeFallidos(tareas, async tarea => {
+        await this.guardarHorariosPorRango(tarea.persona.nEmpleado, tarea.asignaciones);
+
+        for (const col of this.columnasFechas) {
+          tarea.persona[col.field] = horarioId;
         }
-        await this.guardarHorarioIndividualConReintento(tarea.persona.nEmpleado, tarea.fecha, horarioId, false, 1);
-        tarea.persona[tarea.field] = horarioId;
       });
 
       this.personalHorarios = [...this.personalHorarios];
 
       if (fallidos.length > 0) {
-        const exitosos = tareas.length - fallidos.length;
-        this.showMessage(`Asignación parcial: ${exitosos} horario(s) asignado(s), ${fallidos.length} fallaron.`);
+        const exitosos = seleccionados.length - fallidos.length;
+        this.showMessage(`Asignación parcial: ${exitosos} persona(s) actualizada(s), ${fallidos.length} fallaron.`);
         return;
       }
 
@@ -733,6 +741,21 @@ export class PersonalHorarioComponent {
     } finally {
       this.blockUI.stop();
     }
+  }
+
+  private async guardarHorariosPorRango(
+    personalId: number,
+    asignacionFechas: { id: number; fecha: string; horarioCabeceraId: number }[]
+  ): Promise<any> {
+    const payload = {
+      empresaId: this.empresaId,
+      ordenTrabajoCabeceraId: this.ordenCombo,
+      personalId,
+      asignacionFechas
+    };
+
+    console.log('📤 Payload masivo por persona:', JSON.stringify(payload, null, 2));
+    return firstValueFrom(this.apiService.guardarOrdenTrabajoHorarioRango(payload));
   }
 
   enviarPersonalHorario() {
@@ -929,6 +952,12 @@ private async asignarHorariosDesdeExcel(
     }
   }
 
+  const tareas: {
+    personaId: number;
+    row: any;
+    asignaciones: { id: number; fecha: string; horarioCabeceraId: number }[];
+  }[] = [];
+
   for (const [personaId, info] of mapPersonaIdToExcelInfo.entries()) {
     const nombreTurno = info.turno.trim().toUpperCase();
     const horario = mapaHorarioPorNombre.get(nombreTurno);
@@ -947,7 +976,9 @@ private async asignarHorariosDesdeExcel(
       continue;
     }
 
-    // Recorremos día a día desde inicio hasta fin
+    const asignaciones: { id: number; fecha: string; horarioCabeceraId: number }[] = [];
+
+    // Armamos todas las fechas de esta persona para enviarlas en una solicitud.
     const cursor = new Date(info.inicio.getFullYear(), info.inicio.getMonth(), info.inicio.getDate());
     const fin = new Date(info.fin.getFullYear(), info.fin.getMonth(), info.fin.getDate());
 
@@ -957,16 +988,33 @@ private async asignarHorariosDesdeExcel(
         const field = 'd' + formatDate(cursor, 'yyyyMMdd', 'en-US');
 
         if (row.hasOwnProperty(field)) {
-          // Actualizamos la celda en el modelo
-          row[field] = horarioId;
-
-          // Persistimos usando la misma lógica centralizada
-          await this.guardarHorarioIndividual(personaId, new Date(cursor), horarioId);
+          asignaciones.push({
+            id: 0,
+            fecha: formatDate(cursor, 'yyyy-MM-dd', 'en-US'),
+            horarioCabeceraId: horarioId
+          });
         }
       }
 
       cursor.setDate(cursor.getDate() + 1);
     }
+
+    if (asignaciones.length > 0) {
+      tareas.push({ personaId, row, asignaciones });
+    }
+  }
+
+  const fallidos = await this.ejecutarConReprocesoDeFallidos(tareas, async tarea => {
+    await this.guardarHorariosPorRango(tarea.personaId, tarea.asignaciones);
+
+    for (const asignacion of tarea.asignaciones) {
+      const field = 'd' + asignacion.fecha.replace(/-/g, '');
+      tarea.row[field] = asignacion.horarioCabeceraId;
+    }
+  });
+
+  if (fallidos.length > 0) {
+    throw new Error(`No se pudo actualizar el horario de ${fallidos.length} persona(s) del Excel`);
   }
 
   // Forzamos refresh del grid

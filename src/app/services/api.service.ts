@@ -1929,6 +1929,17 @@ export class ApiService{
     );
   }
 
+  // Guardar o actualizar varios días de una persona en una sola solicitud
+  guardarOrdenTrabajoHorarioRango(payload: any): Observable<any> {
+    const headers = this.getHttpHeaders();
+
+    return this.https.post(
+      'https://shy3r9ti3f.execute-api.us-east-1.amazonaws.com/OrdenTrabajoHorario/range',
+      payload,
+      { headers }
+    );
+  }
+
   actualizarOrdenTrabajoHorario(id: number, payload: any): Observable<any> {
     const headers = this.getHttpHeaders();
 
