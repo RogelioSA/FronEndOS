@@ -10,6 +10,7 @@ import { ContratoTipoComponent } from './contrato-tipo/contrato-tipo.component';
 import { CargoComponent } from './cargo/cargo.component';
 import { PersonalSituacionComponent } from './personal-situacion/personal-situacion.component';
 import { PersonalComponent } from './personal/personal.component';
+import { PersonalMantenimientoComponent } from './personal-mantenimiento/personal-mantenimiento.component';
 import { MenuComponent } from './menu/menu.component';
 import { InicioComponent } from './inicio/inicio.component';
 import { RolMenuComponent } from './rol-menu/rol-menu.component';
@@ -75,6 +76,7 @@ const routes: Routes = [
   { path: 'mantenimiento/cargo', component: CargoComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/personalEstado', component: PersonalSituacionComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/personal', component: PersonalComponent, canActivate: [AuthGuard]  },
+  { path: 'mantenimiento/personalMantenimiento', component: PersonalMantenimientoComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/personal/personalHorario', component: PersonalHorarioComponent, canActivate: [AuthGuard]  },
   { path: 'seguridad/menu', component: MenuComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/ordenServicio/tipoServicio', component: TipoServicioComponent, canActivate: [AuthGuard]  },

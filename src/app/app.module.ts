@@ -16,6 +16,7 @@ import { CondicionContractualComponent } from './condicion-contractual/condicion
 import { ContratoTipoComponent } from './contrato-tipo/contrato-tipo.component';
 import { CargoComponent } from './cargo/cargo.component';
 import { PersonalComponent } from './personal/personal.component';
+import { PersonalMantenimientoComponent } from './personal-mantenimiento/personal-mantenimiento.component';
 import { PersonalSituacionComponent } from './personal-situacion/personal-situacion.component';
 import { DxTreeListModule, DxTreeListTypes } from 'devextreme-angular/ui/tree-list';
 import { InicioComponent } from './inicio/inicio.component';
@@ -78,6 +79,7 @@ import { MarcacionDatosComponent } from './marcacion-datos/marcacion-datos.compo
         ContratoTipoComponent,
         CargoComponent,
         PersonalComponent,
+        PersonalMantenimientoComponent,
         PersonalSituacionComponent,
         InicioComponent,
         RolMenuComponent,
