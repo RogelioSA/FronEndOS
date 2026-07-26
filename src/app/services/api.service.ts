@@ -197,6 +197,12 @@ export class ApiService{
         });
     }
 
+    getPersonalDetalle(): Observable<any> {
+      return this.https.get(`${this.baseUrl}/rrhh/Personal`, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
     createPersonal(personal: any): Observable<any> {
       return this.https.post(`${this.baseUrl}/general/Persona`, personal, {
         headers: this.getHttpHeaders()
