@@ -100,7 +100,7 @@
               ></dxi-validation-rule>
             </dxi-column>
 
-            <dxi-column dataField="cCorreo" caption="Correo Electrónico" [minWidth]="200" [allowSearch]="true">
+            <dxi-column dataField="cCorreo" caption="Correo Electrónico" [minWidth]="100" [allowSearch]="true">
               <dxi-validation-rule type="required"></dxi-validation-rule>
               <dxi-validation-rule type="email"></dxi-validation-rule>
             </dxi-column>
@@ -109,7 +109,7 @@
               <dxi-validation-rule type="required"></dxi-validation-rule>
             </dxi-column>
 
-            <dxi-column dataField="cSexo" caption="Sexo" [width]="90" alignment="center" [allowSearch]="false">
+            <dxi-column dataField="cSexo" caption="Sexo" [width]="90" alignment="center" [allowSearch]="false" [visible]="false">
               <dxo-lookup
                 [dataSource]="sexo"
                 displayExpr="cNombre"
@@ -122,7 +122,7 @@
               <dxi-validation-rule type="required"></dxi-validation-rule>
             </dxi-column>
 
-            <dxi-column dataField="nLicenciaCategoria" caption="Licencia" [width]="100" alignment="center" [allowSearch]="false">
+            <dxi-column dataField="nLicenciaCategoria" caption="Licencia" [width]="100" alignment="center" [allowSearch]="false" [visible]="false">
               <dxo-lookup
                 [dataSource]="licencias"
                 displayExpr="cNombre"
@@ -140,7 +140,7 @@
               <dxi-validation-rule type="required"></dxi-validation-rule>
             </dxi-column>
 
-            <dxi-column dataField="nCargoId" caption="Cargo" [width]="130" [allowSearch]="true">
+            <dxi-column dataField="nCargoId" caption="Cargo" [width]="220" [allowSearch]="true">
               <dxo-lookup
                 [dataSource]="cargos"
                 displayExpr="cNombre"
