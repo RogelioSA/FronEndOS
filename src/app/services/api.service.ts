@@ -1940,7 +1940,7 @@ export class ApiService{
     const headers = this.getHttpHeaders();
 
     return this.https.post(
-      'https://shy3r9ti3f.execute-api.us-east-1.amazonaws.com/OrdenTrabajoHorario/range',
+      'https://shy3r9ti3f.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario/range',
       payload,
       { headers }
     );
