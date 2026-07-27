@@ -136,7 +136,7 @@ export class PersonalMantenimientoComponent {
         cSexo: p.persona?.sexo?.id ?? p.persona?.sexoId,
         nLicenciaCategoria: p.persona?.licenciaConducir?.id ?? p.persona?.licenciaConducirId,
         nDocumentoIdentidadTipo: p.persona?.documentoIdentidadTipo?.id ?? p.persona?.documentoIdentidadTipoId,
-        nCargoId: p.personalCargoExterno?.id
+        nCargoId: p.personalCargoExterno?.cargoId
       }))
       .sort((a: any, b: any) =>
         String(a.cApPater || '').localeCompare(String(b.cApPater || ''), 'es', { sensitivity: 'base' })
