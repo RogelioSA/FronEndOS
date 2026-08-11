@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef } from '@angular/core';
 import { formatDate } from '@angular/common';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import * as XLSX from 'xlsx';
 
@@ -15,6 +15,10 @@ export class PersonalHorarioComponent {
   // Datos
   personalHorarios: any[] = [];
   personalDisponibles: any[] = [];
+  catalogoPersonal: any[] = [];
+  cargos: any[] = [];
+  private catalogoPersonalCargado = false;
+  private cargaCatalogoPersonalEnCurso: Promise<void> | null = null;
   horarios: any[] = [];
   ordenes: any[] = [];
   ordenSeleccionadaCompleta: any = null;
@@ -55,6 +59,7 @@ export class PersonalHorarioComponent {
     this.obtenerEmpresaId();
     await this.llenarHorarios();
     await this.cargarOrdenesTrabajo();
+    await this.cargarCatalogoPersonal();
   }
 
   obtenerEmpresaId() {
@@ -182,6 +187,8 @@ export class PersonalHorarioComponent {
       console.log('📋 Horarios disponibles:', this.horarios);
 
       this.buildDateColumns(this.fechaDesde, this.fechaHasta);
+      // Reutiliza la carga inicial; si aún está en curso, espera la misma promesa.
+      await this.cargarCatalogoPersonal();
       await this.cargarPersonalAsignado();
       await this.cargarPersonalDisponible();
       await this.cargarHorariosAsignados();
@@ -212,6 +219,82 @@ export class PersonalHorarioComponent {
     return dias[d.getDay()];
   }
 
+  private async cargarCatalogoPersonal(): Promise<void> {
+    if (this.catalogoPersonalCargado) {
+      return;
+    }
+
+    if (this.cargaCatalogoPersonalEnCurso) {
+      return this.cargaCatalogoPersonalEnCurso;
+    }
+
+    this.cargaCatalogoPersonalEnCurso = this.consultarCatalogoPersonal();
+
+    try {
+      await this.cargaCatalogoPersonalEnCurso;
+      this.catalogoPersonalCargado = true;
+    } finally {
+      this.cargaCatalogoPersonalEnCurso = null;
+    }
+  }
+
+  private async consultarCatalogoPersonal(): Promise<void> {
+    const [personalDetalle, cargos] = await firstValueFrom(
+      forkJoin([
+        this.apiService.getPersonalDetalle(),
+        this.apiService.getCargos()
+      ])
+    );
+
+    this.cargos = (cargos || []).map((cargo: any) => ({
+      id: Number(cargo.id),
+      nombre: String(cargo.nombre || 'Sin cargo').trim()
+    }));
+
+    const cargosPorId = new Map<number, string>(
+      this.cargos.map((cargo: any) => [cargo.id, cargo.nombre] as [number, string])
+    );
+
+    this.catalogoPersonal = (personalDetalle || [])
+      .map((personal: any) => {
+        const persona = personal.persona || {};
+        // Las asignaciones existentes trabajan con personaId, no con el ID del registro Personal.
+        const personaId = Number(persona.id ?? personal.personaId ?? personal.id);
+        const cargoId = Number(
+          personal.personalCargoExterno?.cargoId ??
+          personal.personalCargoExterno?.cargo?.id ??
+          personal.cargoId ??
+          0
+        );
+
+        const apellidos = [persona.apellidoPaterno, persona.apellidoMaterno]
+          .filter(Boolean)
+          .join(' ')
+          .trim();
+        const nombres = String(persona.nombres || '').trim();
+        const nombreCompleto =
+          persona.nombreCompleto ||
+          [apellidos, nombres].filter(Boolean).join(', ') ||
+          'Sin nombre';
+
+        return {
+          nEmpleado: personaId,
+          personalId: Number(personal.id),
+          cEmpleado: nombreCompleto,
+          documentoIdentidad: persona.documentoIdentidad,
+          cargoId,
+          cCargo:
+            personal.personalCargoExterno?.cargo?.nombre ||
+            cargosPorId.get(cargoId) ||
+            'Sin cargo'
+        };
+      })
+      .filter((personal: any) => Number.isFinite(personal.nEmpleado))
+      .sort((a: any, b: any) =>
+        a.cEmpleado.localeCompare(b.cEmpleado, 'es', { sensitivity: 'base' })
+      );
+  }
+
   async cargarPersonalAsignado() {
     if (!this.ordenSeleccionadaCompleta || !this.ordenSeleccionadaCompleta.personales) {
       this.personalHorarios = [];
@@ -220,20 +303,24 @@ export class PersonalHorarioComponent {
     }
 
     const personalesOT = this.ordenSeleccionadaCompleta.personales;
-    const todosPersonal: any[] = await firstValueFrom(this.apiService.getPersonal());
 
     this.ordenTrabajoPersonalIds.clear();
 
     this.personalHorarios = personalesOT.map((pOT: any) => {
-      const personaData = todosPersonal.find((p: any) => p.id === pOT.personaId);
+      const personaData = this.catalogoPersonal.find(
+        (personal: any) => personal.nEmpleado === Number(pOT.personaId)
+      );
 
       if (pOT.id) {
-        this.ordenTrabajoPersonalIds.set(pOT.personaId, pOT.id);
+        this.ordenTrabajoPersonalIds.set(Number(pOT.personaId), pOT.id);
       }
 
       const row: any = {
-        nEmpleado: pOT.personaId,
-        cEmpleado: pOT.nombreCompleto || personaData?.nombreCompleto || 'Desconocido',
+        nEmpleado: Number(pOT.personaId),
+        cEmpleado: pOT.nombreCompleto || personaData?.cEmpleado || 'Desconocido',
+        cargoId: personaData?.cargoId || 0,
+        cCargo: personaData?.cCargo || 'Sin cargo',
+        documentoIdentidad: personaData?.documentoIdentidad,
         esLider: pOT.esLider
       };
 
@@ -269,21 +356,27 @@ export class PersonalHorarioComponent {
       );
 
       console.log('✅ Horarios asignados recibidos:', response);
+      const horarios = this.extraerListaHorarios(response);
 
       // Limpiar el mapa antes de llenarlo
       this.ordenTrabajoHorarioIds.clear();
 
       // Mapear los horarios a las celdas correspondientes
-      for (const horario of response) {
-        const personalId = horario.personalId;
-        const [year, month, day] = horario.fecha.split('-').map(Number);
-        const fecha = new Date(year, month - 1, day); // esto usa la hora local sin desplazamiento UTC
-        const field = 'd' + formatDate(fecha, 'yyyyMMdd', 'en-US', '+0000');
+      for (const horario of horarios) {
+        const personalId = Number(horario.personalId);
+        const fechaTexto = String(horario.fecha || '').slice(0, 10);
+        const partesFecha = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fechaTexto);
+
+        if (!Number.isFinite(personalId) || !partesFecha) {
+          console.warn('⚠️ Horario ignorado por formato inválido:', horario);
+          continue;
+        }
+
+        const field = `d${partesFecha[1]}${partesFecha[2]}${partesFecha[3]}`;
 
         // Guardar el ID del registro para futuros PUT
-        const key = `${personalId}_${formatDate(fecha, 'yyyy-MM-dd', 'en-US')}`;
+        const key = `${personalId}_${fechaTexto}`;
         this.ordenTrabajoHorarioIds.set(key, horario.id);
-        console.log(field);
         const persona = this.personalHorarios.find(p => p.nEmpleado === personalId);
         if (persona && persona.hasOwnProperty(field)) {
           persona[field] = horario.horarioCabeceraId;
@@ -294,24 +387,44 @@ export class PersonalHorarioComponent {
       console.log(this.personalHorarios);
       console.log('✅ Horarios aplicados al grid');
 
-    } catch (error) {
-      console.error('❌ Error al cargar horarios asignados:', error);
+    } catch (error: any) {
+      if (typeof error?.status === 'number') {
+        console.error('❌ Error HTTP al consultar horarios asignados:', {
+          status: error.status,
+          url: error.url,
+          detalle: error.error
+        });
+      } else {
+        console.error('❌ El servicio respondió, pero no se pudo procesar la respuesta:', error);
+      }
     }
+  }
+
+  private extraerListaHorarios(response: any): any[] {
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    if (response == null) {
+      return [];
+    }
+
+    for (const propiedad of ['data', 'items', 'result', 'value', '$values']) {
+      if (Array.isArray(response[propiedad])) {
+        return response[propiedad];
+      }
+    }
+
+    throw new Error('El formato de respuesta de OrdenTrabajoHorario no contiene una lista.');
   }
 
   async cargarPersonalDisponible() {
     try {
-      const todosPersonal: any[] = await firstValueFrom(this.apiService.getPersonal());
-
       const asignadosIds = this.personalHorarios.map(p => p.nEmpleado);
 
-      this.personalDisponibles = todosPersonal
-        .filter(p => !asignadosIds.includes(p.id))
-        .map(p => ({
-          nEmpleado: p.id,
-          cEmpleado: p.nombreCompleto || `${p.nombre} ${p.apellidoPaterno || ''}`.trim(),
-          documentoIdentidad: p.documentoIdentidad   // 👈 DNI guardado aquí
-        })).sort((a, b) => a.cEmpleado.localeCompare(b.cEmpleado));  // 👈 ORDENADO
+      this.personalDisponibles = this.catalogoPersonal.filter(
+        personal => !asignadosIds.includes(personal.nEmpleado)
+      );
 
       console.log('✅ Personal disponible cargado:', this.personalDisponibles);
 
@@ -356,6 +469,9 @@ export class PersonalHorarioComponent {
         const row: any = {
           nEmpleado: persona.nEmpleado,
           cEmpleado: persona.cEmpleado,
+          cargoId: persona.cargoId,
+          cCargo: persona.cCargo,
+          documentoIdentidad: persona.documentoIdentidad,
           esLider: false
         };
 
@@ -411,7 +527,10 @@ export class PersonalHorarioComponent {
 
         this.personalDisponibles.push({
           nEmpleado: persona.nEmpleado,
-          cEmpleado: persona.cEmpleado
+          cEmpleado: persona.cEmpleado,
+          cargoId: persona.cargoId,
+          cCargo: persona.cCargo,
+          documentoIdentidad: persona.documentoIdentidad
         });
       }
 
@@ -597,7 +716,10 @@ export class PersonalHorarioComponent {
       this.apiService.obtenerHorariosPorOrdenYRango(this.ordenCombo, fechaStr, fechaStr)
     );
 
-    const horarioExistente = response?.find((h: any) => h.personalId === personalId && h.fecha === fechaStr);
+    const horarios = this.extraerListaHorarios(response);
+    const horarioExistente = horarios.find((h: any) =>
+      Number(h.personalId) === personalId && String(h.fecha || '').slice(0, 10) === fechaStr
+    );
     if (horarioExistente?.id) {
       this.ordenTrabajoHorarioIds.set(`${personalId}_${fechaStr}`, horarioExistente.id);
     }

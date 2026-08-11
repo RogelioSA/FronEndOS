@@ -2,6 +2,23 @@ import { HttpClient, HttpHeaders, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 
+interface PersonaUpdateRequest {
+  id: number;
+  empresaId: number;
+  nombres: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  fechaNacimiento: string;
+  documentoIdentidad: string;
+  correo: string;
+  celular: string;
+  estado: boolean;
+  sexoId: number;
+  distritoId: number;
+  licenciaConducirId: number;
+  documentoIdentidadTipoId: number;
+}
+
 @Injectable({providedIn: 'root'})
 export class ApiService{
 
@@ -156,7 +173,28 @@ export class ApiService{
     }
 
     asignarCargoPersonal(asignacion: any): Observable<any> {
-      return this.https.post(`${this.baseUrl}/rrhh/Cargo`, asignacion, {
+      return this.https.post(`${this.baseUrl}/rrhh/PersonalCargoExterno`, asignacion, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
+    crearPersonalCargoExterno(data: {
+      empresaId: number;
+      personalId: number;
+      cargoId: number;
+    }): Observable<any> {
+      return this.https.post(`${this.baseUrl}/rrhh/PersonalCargoExterno`, data, {
+        headers: this.getHttpHeaders()
+      });
+    }
+
+    actualizarPersonalCargoExterno(id: number, data: {
+      id: number;
+      empresaId: number;
+      personalId: number;
+      cargoId: number;
+    }): Observable<any> {
+      return this.https.put(`${this.baseUrl}/rrhh/PersonalCargoExterno/${id}`, data, {
         headers: this.getHttpHeaders()
       });
     }
@@ -217,9 +255,49 @@ export class ApiService{
     }
 
     updatePersonal(id: number, data: any): Observable<any> {
+      const obtenerNumero = (valores: any[], valorPorDefecto: number): number => {
+        for (const valor of valores) {
+          if (valor !== undefined && valor !== null && valor !== '') {
+            const numero = Number(valor);
+            if (Number.isFinite(numero)) return numero;
+          }
+        }
+        return valorPorDefecto;
+      };
+
+      const fechaNacimiento = data?.fechaNacimiento ?? data?.dFechaNacimiento ?? '2000-01-01T00:00:00.000Z';
+
+      // Construir exclusivamente el DTO requerido por PUT /general/Persona/{id}.
+      const request: PersonaUpdateRequest = {
+        id: Number(id),
+        empresaId: obtenerNumero([data?.empresaId, data?.persona?.empresaId], 1),
+        nombres: String(data?.nombres ?? data?.cNombres ?? data?.persona?.nombres ?? '').trim(),
+        apellidoPaterno: String(data?.apellidoPaterno ?? data?.cApPater ?? data?.persona?.apellidoPaterno ?? '').trim(),
+        apellidoMaterno: String(data?.apellidoMaterno ?? data?.cApMater ?? data?.persona?.apellidoMaterno ?? '').trim(),
+        fechaNacimiento: fechaNacimiento instanceof Date ? fechaNacimiento.toISOString() : String(fechaNacimiento),
+        documentoIdentidad: String(data?.documentoIdentidad ?? data?.cDNI ?? data?.persona?.documentoIdentidad ?? '').trim(),
+        correo: String(data?.correo ?? data?.cCorreo ?? data?.persona?.correo ?? '').trim(),
+        celular: String(data?.celular ?? data?.cCelular ?? data?.persona?.celular ?? '').trim(),
+        estado: Boolean(data?.estado ?? data?.lEstado ?? data?.persona?.estado ?? true),
+        sexoId: obtenerNumero([data?.sexoId, data?.cSexo, data?.persona?.sexoId, data?.persona?.sexo?.id], 0),
+        distritoId: obtenerNumero([data?.distritoId, data?.persona?.distritoId, data?.persona?.distrito?.id], 1),
+        licenciaConducirId: obtenerNumero([
+          data?.licenciaConducirId,
+          data?.nLicenciaCategoria,
+          data?.persona?.licenciaConducirId,
+          data?.persona?.licenciaConducir?.id
+        ], 0),
+        documentoIdentidadTipoId: obtenerNumero([
+          data?.documentoIdentidadTipoId,
+          data?.nDocumentoIdentidadTipo,
+          data?.persona?.documentoIdentidadTipoId,
+          data?.persona?.documentoIdentidadTipo?.id
+        ], 0)
+      };
+
       return this.https.put(
         `${this.baseUrl}/general/Persona/${id}`,
-        data,
+        request,
         { headers: this.getHttpHeaders() }
       );
     }

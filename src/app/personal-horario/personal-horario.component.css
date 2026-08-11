@@ -169,3 +169,14 @@
 ::ng-deep .dx-datagrid-rowsview .dx-row {
   height: 24px !important;
 }
+
+/* Resaltar los encabezados de agrupación por cargo en ambas tablas */
+::ng-deep .dx-datagrid-rowsview .dx-group-row > td {
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+::ng-deep .dx-datagrid-rowsview .dx-group-row > td * {
+  color: #000000 !important;
+  font-weight: 800 !important;
+}

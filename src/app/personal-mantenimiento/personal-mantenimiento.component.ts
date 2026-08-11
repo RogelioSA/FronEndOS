@@ -136,7 +136,8 @@ export class PersonalMantenimientoComponent {
         cSexo: p.persona?.sexo?.id ?? p.persona?.sexoId,
         nLicenciaCategoria: p.persona?.licenciaConducir?.id ?? p.persona?.licenciaConducirId,
         nDocumentoIdentidadTipo: p.persona?.documentoIdentidadTipo?.id ?? p.persona?.documentoIdentidadTipoId,
-        nCargoId: p.personalCargoExterno?.cargoId
+        nCargoId: p.personalCargoExterno?.cargoId,
+        personalCargoExternoId: p.personalCargoExterno?.id ?? null
       }))
       .sort((a: any, b: any) =>
         String(a.cApPater || '').localeCompare(String(b.cApPater || ''), 'es', { sensitivity: 'base' })
@@ -320,7 +321,7 @@ export class PersonalMantenimientoComponent {
     console.log(event);
   }
 
-  actualizar(event: any) {
+  async actualizar(event: any) {
     console.log('onRowUpdating event completo:', event);
 
     const oldData = event.oldData || {};
@@ -349,21 +350,29 @@ export class PersonalMantenimientoComponent {
       estado: getVal('lEstado'),
       sexoId: getVal('cSexo'),
       licenciaConducirId: getVal('nLicenciaCategoria'),
-      documentoIdentidadTipoId: getVal('nDocumentoIdentidadTipo'),
-      cargoId: getVal('nCargoId')
+      documentoIdentidadTipoId: getVal('nDocumentoIdentidadTipo')
     };
+
+    const cargoId = Number(getVal('nCargoId'));
+    const personalCargoExternoId = oldData.personalCargoExternoId ?? null;
+    const empresaId = Number(oldData.empresaId ?? 1);
 
     console.log("Registro para actualizar:", registro);
 
-    this.apiService.updatePersonal(id, registro).subscribe({
-      next: (response) => {
-        console.log("✅ Personal actualizado:", response);
-        this.traerPersonal();
-      },
-      error: (err) => {
-        console.error("❌ Error al actualizar:", err);
-      }
-    });
+    try {
+      const response = await firstValueFrom(this.apiService.updatePersonal(id, registro));
+      await this.guardarPersonalCargoExterno(
+        Number(id),
+        cargoId,
+        personalCargoExternoId,
+        empresaId
+      );
+      console.log("✅ Personal actualizado:", response);
+      await this.traerPersonal();
+    } catch (err) {
+      console.error("❌ Error al actualizar:", err);
+      throw err;
+    }
   }
 
 
@@ -738,16 +747,15 @@ export class PersonalMantenimientoComponent {
       console.log('🔍 Columnas detectadas:', Object.keys(data[0]));
       console.log('🔍 Primer registro:', data[0]);
 
-      // 🔹 FILTRAR por DNI válido
+      // Procesar solo personal vigente y con documento válido.
       const dataFiltrada = data.filter((fila: any) => {
-        const dni = this.obtenerDniFila(fila);
-        return dni && dni.length === 8;
+        return this.esSituacionVigente(fila) && this.esDocumentoValidoFila(fila);
       });
 
       console.log(`📊 Registros válidos: ${dataFiltrada.length} de ${data.length}`);
 
       if (dataFiltrada.length === 0) {
-        this.erroresProcesamiento.push('No se encontraron registros con DNI válido de 8 dígitos');
+        this.erroresProcesamiento.push('No se encontraron registros vigentes con documento válido');
         this.procesandoArchivo = false;
         return;
       }
@@ -758,7 +766,7 @@ export class PersonalMantenimientoComponent {
       const dnisEnExcel = new Map<string, any>();
       dataFiltrada.forEach((fila: any) => {
         const dni = this.obtenerDniFila(fila);
-        if (dni && dni.length === 8) {
+        if (this.esDocumentoValidoFila(fila)) {
           dnisEnExcel.set(dni, fila);
         }
       });
@@ -827,13 +835,20 @@ export class PersonalMantenimientoComponent {
                 this.apiService.updatePersonal(registroExistente.nCodigo, datosActualizados)
               );
 
-              actualizados++;
-              this.registrosExitosos++;
-            } else {
-              console.log(`ℹ️ DNI ${dni} ya activo - Sin cambios`);
-              this.registrosExitosos++;
-            }
-          } else {
+               actualizados++;
+             } else {
+               console.log(`ℹ️ DNI ${dni} ya activo - Actualizando cargo`);
+             }
+
+             await this.asignarCargoDesdeExcel(
+               Number(registroExistente.nCodigo),
+               fila,
+               i + 1,
+               registroExistente.personalCargoExternoId ?? null,
+               Number(registroExistente.empresaId ?? 1)
+             );
+             this.registrosExitosos++;
+           } else {
             // ➕ CREAR nuevo
             console.log(`➕ Creando DNI ${dni}`);
             await this.procesarRegistroPersonal(fila, i + 1);
@@ -975,7 +990,62 @@ export class PersonalMantenimientoComponent {
   }
 
   private obtenerEmailFila(fila: any): string {
+    const emailCorporativo = this.limpiarTextoCelda(
+      this.obtenerValorFila(fila, ['EMAIL CORPORATIVO'])
+    );
+    if (emailCorporativo) return emailCorporativo;
+
+    const emailPersonal = this.limpiarTextoCelda(
+      this.obtenerValorFila(fila, ['EMAIL PERSONAL'])
+    );
+    if (emailPersonal) return emailPersonal;
+
     return this.limpiarTextoCelda(this.obtenerValorFila(fila, ['MAIL', 'EMAIL']));
+  }
+
+  private esSituacionVigente(fila: any): boolean {
+    const tieneColumnaSituacion = Object.keys(fila || {}).some(
+      key => this.normalizarTextoColumna(key) === 'SITUACION'
+    );
+
+    // Compatibilidad con la plantilla anterior, que no incluía SITUACION.
+    if (!tieneColumnaSituacion) return true;
+
+    const situacion = this.normalizarTextoColumna(
+      this.obtenerValorFila(fila, ['SITUACION'])
+    );
+    return situacion === 'VIG';
+  }
+
+  private obtenerDocumentoIdentidadTipoId(fila: any): number {
+    const tipoDocumento = this.normalizarTextoColumna(
+      this.obtenerValorFila(fila, ['T.DOC.', 'T.DOC', 'TIPO DOCUMENTO', 'TIPO DE DOCUMENTO'])
+    );
+
+    // La plantilla anterior no incluía T.DOC. y trabajaba siempre con DNI.
+    return !tipoDocumento || tipoDocumento === 'DNI' ? 1 : 2;
+  }
+
+  private esDocumentoValidoFila(fila: any): boolean {
+    const documento = this.obtenerDniFila(fila);
+    if (!documento) return false;
+
+    return this.obtenerDocumentoIdentidadTipoId(fila) === 1
+      ? /^\d{8}$/.test(documento)
+      : true;
+  }
+
+  private obtenerSexoInicial(fila: any): 'M' | 'F' {
+    const sexo = this.normalizarTextoColumna(
+      this.obtenerValorFila(fila, ['SEXO'])
+    );
+    const inicial = sexo.charAt(0);
+
+    if (inicial === 'M' || inicial === 'F') {
+      return inicial;
+    }
+
+    throw new Error(`Sexo inválido: "${sexo}". Se esperaba Masculino/M o Femenino/F.`);
   }
 
   private obtenerCargoFila(fila: any): string {
@@ -1005,7 +1075,46 @@ export class PersonalMantenimientoComponent {
     ) || null;
   }
 
-  private async asignarCargoDesdeExcel(personalId: number, fila: any, numeroFila: number): Promise<void> {
+  private async guardarPersonalCargoExterno(
+    personalId: number,
+    cargoId: number,
+    personalCargoExternoId: number | null,
+    empresaId: number
+  ): Promise<void> {
+    if (!Number.isFinite(cargoId) || cargoId <= 0) {
+      throw new Error('El cargo es obligatorio para guardar el personal.');
+    }
+
+    if (personalCargoExternoId != null) {
+      const payload = {
+        id: Number(personalCargoExternoId),
+        empresaId: Number(empresaId),
+        personalId: Number(personalId),
+        cargoId: Number(cargoId)
+      };
+
+      await firstValueFrom(
+        this.apiService.actualizarPersonalCargoExterno(Number(personalCargoExternoId), payload)
+      );
+      return;
+    }
+
+    await firstValueFrom(
+      this.apiService.crearPersonalCargoExterno({
+        empresaId: Number(empresaId),
+        personalId: Number(personalId),
+        cargoId: Number(cargoId)
+      })
+    );
+  }
+
+  private async asignarCargoDesdeExcel(
+    personalId: number,
+    fila: any,
+    numeroFila: number,
+    personalCargoExternoId: number | null = null,
+    empresaId: number = 1
+  ): Promise<void> {
     const nombreCargoExcel = this.obtenerCargoFila(fila);
     if (!nombreCargoExcel) {
       console.log(`ℹ️ Fila ${numeroFila}: sin valor en columna CARGO, no se asigna cargo.`);
@@ -1017,16 +1126,13 @@ export class PersonalMantenimientoComponent {
       throw new Error(`Cargo no encontrado para "${nombreCargoExcel}"`);
     }
 
-    const asignacionCargoPayload = {
-      empresaId: 1,
-      personalId,
-      cargoId: Number(cargo.nCodigo)
-    };
-
-    console.log('📤 Enviando payload de asignación de Cargo:', asignacionCargoPayload);
-
     try {
-      await firstValueFrom(this.apiService.asignarCargoPersonal(asignacionCargoPayload));
+      await this.guardarPersonalCargoExterno(
+        Number(personalId),
+        Number(cargo.nCodigo),
+        personalCargoExternoId,
+        Number(empresaId)
+      );
       console.log(`✅ Cargo asignado: ${String(cargo.cNombre || '').trim()} (ID: ${cargo.nCodigo})`);
     } catch (error: any) {
       console.error('❌ Error al asignar Cargo:', error);
@@ -1044,11 +1150,13 @@ export class PersonalMantenimientoComponent {
     // Parsear fecha de nacimiento
     const fechaNacimiento = this.parsearFecha(this.obtenerValorFila(fila, ['FEC.NACIMIENTO', 'FECHA NACIMIENTO', 'FEC NACIMIENTO']));
 
-    // Obtener DNI
+    // Obtener documento y tipo de documento
     const dni = this.obtenerDniFila(fila);
+    const documentoIdentidadTipoId = this.obtenerDocumentoIdentidadTipoId(fila);
 
-    if (!dni || dni.length !== 8) {
-      throw new Error(`DNI inválido: "${dni}". Debe tener 8 dígitos.`);
+    if (!this.esDocumentoValidoFila(fila)) {
+      const detalle = documentoIdentidadTipoId === 1 ? 'El DNI debe tener 8 dígitos.' : 'El documento es obligatorio.';
+      throw new Error(`Documento inválido: "${dni}". ${detalle}`);
     }
 
     // 🔍 VERIFICAR SI EL DNI YA EXISTE EN LA TABLA
@@ -1064,9 +1172,9 @@ export class PersonalMantenimientoComponent {
     const telefono = String(this.obtenerValorFila(fila, ['TELEFONO', 'TELÉFONO']) || '').trim();
     const codigo = String(this.obtenerValorFila(fila, ['CODIGO', 'CÓDIGO']) || '').trim();
 
-    // Determinar sexo
-    const sexoTexto = String(this.obtenerValorFila(fila, ['SEXO']) || '').toUpperCase().trim();
-    let sexoId = this.determinarSexoId(sexoTexto);
+    // El servicio recibe la inicial M/F; se conserva sexoId por compatibilidad.
+    const sexoInicial = this.obtenerSexoInicial(fila);
+    const sexoId = this.determinarSexoId(sexoInicial);
 
     console.log('📋 Datos parseados:', {
       nombres: partesNombre.nombres,
@@ -1076,7 +1184,9 @@ export class PersonalMantenimientoComponent {
       email,
       telefono,
       fechaNacimiento,
+      sexo: sexoInicial,
       sexoId,
+      documentoIdentidadTipoId,
       codigo
     });
 
@@ -1093,7 +1203,7 @@ export class PersonalMantenimientoComponent {
       sexoId: sexoId,
       distritoId: 1,
       licenciaConducirId: 1,
-      documentoIdentidadTipoId: 1
+      documentoIdentidadTipoId: documentoIdentidadTipoId
     };
 
     let personaId: number;
@@ -1109,6 +1219,13 @@ export class PersonalMantenimientoComponent {
 
       try {
         await firstValueFrom(this.apiService.updatePersonal(personaId, personaPayload));
+        await this.asignarCargoDesdeExcel(
+          Number(personaId),
+          fila,
+          numeroFila,
+          personaExistente.personalCargoExternoId ?? null,
+          Number(personaExistente.empresaId ?? 1)
+        );
         console.log('✅ Persona actualizada correctamente');
         console.log(`\n✅✅✅ REGISTRO ACTUALIZADO - Fila ${numeroFila} procesada exitosamente\n`);
         return; // ✅ TERMINAR AQUÍ
@@ -1205,8 +1322,9 @@ export class PersonalMantenimientoComponent {
 
     console.log('📤 Enviando payload de Personal:', personalPayload);
 
+    let personalCreado: any;
     try {
-      await firstValueFrom(this.apiService.crearPersonal(personalPayload));
+      personalCreado = await firstValueFrom(this.apiService.crearPersonal(personalPayload));
       console.log('✅ Registro de Personal creado exitosamente');
     } catch (error: any) {
       console.error('❌ Error al crear Personal:', error);
@@ -1215,7 +1333,8 @@ export class PersonalMantenimientoComponent {
 
     // PASO 6: Asignar Cargo desde la nueva columna CARGO del Excel
     console.log('\n🔵 Paso 6 - Asignando Cargo desde Excel...');
-    await this.asignarCargoDesdeExcel(personaId, fila, numeroFila);
+    const personalIdCargo = Number(personalCreado?.id ?? personaId);
+    await this.asignarCargoDesdeExcel(personalIdCargo, fila, numeroFila, null, 1);
 
     console.log(`\n✅✅✅ REGISTRO COMPLETO - Fila ${numeroFila} procesada exitosamente\n`);
   }

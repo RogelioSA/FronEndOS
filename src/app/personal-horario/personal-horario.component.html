@@ -142,7 +142,15 @@
                 ></dxo-search-panel>
 
                 <dxo-scrolling mode="virtual"></dxo-scrolling>
+                <dxo-grouping [autoExpandAll]="true"></dxo-grouping>
+                <dxo-group-panel [visible]="false"></dxo-group-panel>
                 <dxi-column type="selection" [width]="50"></dxi-column>
+                <dxi-column
+                  dataField="cCargo"
+                  caption="Cargo"
+                  [groupIndex]="0"
+                  sortOrder="asc"
+                ></dxi-column>
                 <dxi-column dataField="cEmpleado" caption="Nombre"></dxi-column>
               </dx-data-grid>
             </div>
@@ -258,12 +266,29 @@
                 ></dxo-search-panel>
 
                 <dxo-scrolling mode="standard"></dxo-scrolling>
+                <dxo-grouping [autoExpandAll]="true"></dxo-grouping>
+                <dxo-group-panel [visible]="false"></dxo-group-panel>
+                <dxo-summary>
+                  <dxi-group-item
+                    column="cEmpleado"
+                    summaryType="count"
+                    displayFormat="{0}"
+                  ></dxi-group-item>
+                </dxo-summary>
                 <dxo-editing
                   mode="cell"
                   [allowUpdating]="true"
                 ></dxo-editing>
 
                 <dxi-column type="selection" [width]="50" [fixed]="true"></dxi-column>
+
+                <dxi-column
+                  dataField="cCargo"
+                  caption="Cargo"
+                  [groupIndex]="0"
+                  sortOrder="asc"
+                  [allowEditing]="false"
+                ></dxi-column>
 
                 <dxi-column
                   dataField="cEmpleado"
