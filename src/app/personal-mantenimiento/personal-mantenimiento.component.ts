@@ -137,7 +137,8 @@ export class PersonalMantenimientoComponent {
         nLicenciaCategoria: p.persona?.licenciaConducir?.id ?? p.persona?.licenciaConducirId,
         nDocumentoIdentidadTipo: p.persona?.documentoIdentidadTipo?.id ?? p.persona?.documentoIdentidadTipoId,
         nCargoId: p.personalCargoExterno?.cargoId,
-        personalCargoExternoId: p.personalCargoExterno?.id ?? null
+        personalCargoExternoId: p.personalCargoExterno?.id ?? null,
+        costoHombre: Number(p.personalCargoExterno?.costoHombre ?? 0)
       }))
       .sort((a: any, b: any) =>
         String(a.cApPater || '').localeCompare(String(b.cApPater || ''), 'es', { sensitivity: 'base' })
@@ -354,6 +355,8 @@ export class PersonalMantenimientoComponent {
     };
 
     const cargoId = Number(getVal('nCargoId'));
+    const costoHombreIngresado = Number(getVal('costoHombre', 0));
+    const costoHombre = Number.isFinite(costoHombreIngresado) ? costoHombreIngresado : 0;
     const personalCargoExternoId = oldData.personalCargoExternoId ?? null;
     const empresaId = Number(oldData.empresaId ?? 1);
 
@@ -365,7 +368,8 @@ export class PersonalMantenimientoComponent {
         Number(id),
         cargoId,
         personalCargoExternoId,
-        empresaId
+        empresaId,
+        costoHombre
       );
       console.log("✅ Personal actualizado:", response);
       await this.traerPersonal();
@@ -804,6 +808,8 @@ export class PersonalMantenimientoComponent {
 
       // 🔹 PASO 4: Refrescar catálogo de cargos para hacer match con la columna CARGO del Excel
       await this.cargarCargosParaSubidaMasiva();
+      // Refrescar usuarios una sola vez antes de validar/crear cuentas.
+      await this.traerUsuarios();
 
       // 🔹 PASO 5: Procesar registros del Excel
       let actualizados = 0;
@@ -845,7 +851,8 @@ export class PersonalMantenimientoComponent {
                fila,
                i + 1,
                registroExistente.personalCargoExternoId ?? null,
-               Number(registroExistente.empresaId ?? 1)
+               Number(registroExistente.empresaId ?? 1),
+               Number(registroExistente.costoHombre ?? 0)
              );
              this.registrosExitosos++;
            } else {
@@ -1052,6 +1059,21 @@ export class PersonalMantenimientoComponent {
     return this.limpiarTextoCelda(this.obtenerValorFila(fila, ['CARGO']));
   }
 
+  private obtenerCostoHombreFila(fila: any): number | null {
+    const valor = this.obtenerValorFila(fila, ['COSTO EMPRESA DIA', 'COSTO HOMBRE']);
+    if (valor === undefined || valor === null || valor === '') return null;
+
+    const numero = typeof valor === 'number'
+      ? valor
+      : Number(String(valor).trim().replace(',', '.'));
+
+    if (!Number.isFinite(numero)) {
+      throw new Error(`Costo empresa día inválido: "${valor}".`);
+    }
+
+    return numero;
+  }
+
   private normalizarNombreCargo(valor: any): string {
     return this.normalizarTextoColumna(String(valor || ''));
   }
@@ -1075,11 +1097,60 @@ export class PersonalMantenimientoComponent {
     ) || null;
   }
 
+  private async obtenerOCrearCargo(nombreCargo: string): Promise<any> {
+    const cargoExistente = this.buscarCargoPorNombre(nombreCargo);
+    if (cargoExistente) return cargoExistente;
+
+    const nombre = this.limpiarTextoCelda(nombreCargo);
+    if (!nombre) {
+      throw new Error('El nombre del cargo es obligatorio.');
+    }
+
+    console.log(`ℹ️ El cargo "${nombre}" no existe; se creará mediante POST /rrhh/Cargo.`);
+
+    try {
+      const cargoCreado: any = await firstValueFrom(
+        this.apiService.crearCargo({
+          nombre,
+          estado: true
+        })
+      );
+
+      let cargoId = Number(cargoCreado?.id);
+
+      // Algunos servicios de creación no retornan el ID; en ese caso se recarga
+      // el catálogo y se recupera el registro recién creado por su nombre.
+      if (!Number.isFinite(cargoId) || cargoId <= 0) {
+        await this.cargarCargosParaSubidaMasiva();
+        const cargoRecargado = this.buscarCargoPorNombre(nombre);
+        if (!cargoRecargado) {
+          throw new Error('El servicio creó el cargo, pero no fue posible obtener su ID.');
+        }
+        return cargoRecargado;
+      }
+
+      const nuevoCargo = {
+        nCodigo: cargoId,
+        cNombre: String(cargoCreado?.nombre || nombre).trim(),
+        estado: cargoCreado?.estado ?? true
+      };
+
+      // Mantener el catálogo local actualizado para las siguientes filas del Excel.
+      this.cargos.push(nuevoCargo);
+      console.log(`✅ Cargo creado: ${nuevoCargo.cNombre} (ID: ${nuevoCargo.nCodigo})`);
+      return nuevoCargo;
+    } catch (error: any) {
+      console.error('❌ Error al crear Cargo:', error);
+      throw new Error(`Error al crear Cargo "${nombre}": ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+  }
+
   private async guardarPersonalCargoExterno(
     personalId: number,
     cargoId: number,
     personalCargoExternoId: number | null,
-    empresaId: number
+    empresaId: number,
+    costoHombre: number
   ): Promise<void> {
     if (!Number.isFinite(cargoId) || cargoId <= 0) {
       throw new Error('El cargo es obligatorio para guardar el personal.');
@@ -1090,7 +1161,8 @@ export class PersonalMantenimientoComponent {
         id: Number(personalCargoExternoId),
         empresaId: Number(empresaId),
         personalId: Number(personalId),
-        cargoId: Number(cargoId)
+        cargoId: Number(cargoId),
+        costoHombre: Number(costoHombre)
       };
 
       await firstValueFrom(
@@ -1103,7 +1175,8 @@ export class PersonalMantenimientoComponent {
       this.apiService.crearPersonalCargoExterno({
         empresaId: Number(empresaId),
         personalId: Number(personalId),
-        cargoId: Number(cargoId)
+        cargoId: Number(cargoId),
+        costoHombre: Number(costoHombre)
       })
     );
   }
@@ -1113,7 +1186,8 @@ export class PersonalMantenimientoComponent {
     fila: any,
     numeroFila: number,
     personalCargoExternoId: number | null = null,
-    empresaId: number = 1
+    empresaId: number = 1,
+    costoHombreActual: number = 0
   ): Promise<void> {
     const nombreCargoExcel = this.obtenerCargoFila(fila);
     if (!nombreCargoExcel) {
@@ -1121,17 +1195,17 @@ export class PersonalMantenimientoComponent {
       return;
     }
 
-    const cargo = this.buscarCargoPorNombre(nombreCargoExcel);
-    if (!cargo) {
-      throw new Error(`Cargo no encontrado para "${nombreCargoExcel}"`);
-    }
+    const cargo = await this.obtenerOCrearCargo(nombreCargoExcel);
 
     try {
+      const costoHombreExcel = this.obtenerCostoHombreFila(fila);
+      const costoHombre = costoHombreExcel ?? Number(costoHombreActual || 0);
       await this.guardarPersonalCargoExterno(
         Number(personalId),
         Number(cargo.nCodigo),
         personalCargoExternoId,
-        Number(empresaId)
+        Number(empresaId),
+        costoHombre
       );
       console.log(`✅ Cargo asignado: ${String(cargo.cNombre || '').trim()} (ID: ${cargo.nCodigo})`);
     } catch (error: any) {
@@ -1224,7 +1298,8 @@ export class PersonalMantenimientoComponent {
           fila,
           numeroFila,
           personaExistente.personalCargoExternoId ?? null,
-          Number(personaExistente.empresaId ?? 1)
+          Number(personaExistente.empresaId ?? 1),
+          Number(personaExistente.costoHombre ?? 0)
         );
         console.log('✅ Persona actualizada correctamente');
         console.log(`\n✅✅✅ REGISTRO ACTUALIZADO - Fila ${numeroFila} procesada exitosamente\n`);
@@ -1249,61 +1324,55 @@ export class PersonalMantenimientoComponent {
       throw new Error(`Error al crear Persona: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
     }
 
-    // PASO 2: Crear Usuario
-    console.log('\n🔵 Paso 2 - Creando Usuario...');
-    const password = this.generarPassword(codigo, partesNombre.apellidoPaterno, partesNombre.nombres);
-    console.log('🔐 Password generado:', password);
+    // PASO 2: Reutilizar el usuario por userName o crearlo si no existe.
+    console.log('\n🔵 Paso 2 - Validando Usuario...');
+    const resultadoUsuario = await this.obtenerOCrearUsuario(
+      email,
+      telefono,
+      codigo,
+      partesNombre
+    );
+    const usuarioId = resultadoUsuario.id;
 
-    const usuarioPayload = {
-      email: email,
-      password: password,
-      phoneNumber: telefono || '000000000'
-    };
+    // PASO 3: La relación se crea únicamente junto con un usuario nuevo.
+    if (!resultadoUsuario.existente) {
+      console.log('\n🔵 Paso 3 - Asignando acceso a empresa...');
+      const usuarioEmpresaPayload = {
+        usuarioId: usuarioId,
+        empresaId: 1,
+        actual: true
+      };
 
-    console.log('📤 Enviando payload de Usuario:', usuarioPayload);
+      console.log('📤 Enviando payload de UsuarioEmpresa:', usuarioEmpresaPayload);
 
-    let usuarioCreado: any;
-    try {
-      usuarioCreado = await firstValueFrom(this.apiService.crearUsuario(usuarioPayload));
-      console.log('✅ Usuario creado:', usuarioCreado);
-    } catch (error: any) {
-      console.error('❌ Error al crear Usuario:', error);
-      throw new Error(`Error al crear Usuario: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+      try {
+        await firstValueFrom(this.apiService.createUsuarioEmpresa(usuarioEmpresaPayload));
+        console.log('✅ Acceso a empresa asignado');
+      } catch (error: any) {
+        console.error('❌ Error al asignar acceso a empresa:', error);
+        throw new Error(`Error al asignar acceso a empresa: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+      }
+    } else {
+      console.log(`ℹ️ UsuarioEmpresa ya existente para ${email}; no se ejecutará POST /security/UsuarioEmpresa.`);
     }
 
-    const usuarioId = Number(usuarioCreado.id);
+    // PASO 4: El rol se asigna únicamente junto con un usuario nuevo.
+    if (!resultadoUsuario.existente) {
+      console.log('\n🔵 Paso 4 - Asignando rol al usuario...');
+      const roleName = 'MARCACION';
+      const usuariosIds = [String(usuarioId)];
 
-    // PASO 3: Dar acceso a empresa
-    console.log('\n🔵 Paso 3 - Asignando acceso a empresa...');
-    const usuarioEmpresaPayload = {
-      usuarioId: usuarioId,
-      empresaId: 1,
-      actual: true
-    };
+      console.log('📤 Asignando rol:', { roleName, usuariosIds });
 
-    console.log('📤 Enviando payload de UsuarioEmpresa:', usuarioEmpresaPayload);
-
-    try {
-      await firstValueFrom(this.apiService.createUsuarioEmpresa(usuarioEmpresaPayload));
-      console.log('✅ Acceso a empresa asignado');
-    } catch (error: any) {
-      console.error('❌ Error al asignar acceso a empresa:', error);
-      throw new Error(`Error al asignar acceso a empresa: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
-    }
-
-    // PASO 4: Asignar rol al usuario
-    console.log('\n🔵 Paso 4 - Asignando rol al usuario...');
-    const roleName = 'MARCACION';
-    const usuariosIds = [String(usuarioId)];
-
-    console.log('📤 Asignando rol:', { roleName, usuariosIds });
-
-    try {
-      await firstValueFrom(this.apiService.asignarRolUsuario(roleName, usuariosIds));
-      console.log('✅ Rol asignado al usuario');
-    } catch (error: any) {
-      console.error('❌ Error al asignar rol:', error);
-      throw new Error(`Error al asignar rol: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+      try {
+        await firstValueFrom(this.apiService.asignarRolUsuario(roleName, usuariosIds));
+        console.log('✅ Rol asignado al usuario');
+      } catch (error: any) {
+        console.error('❌ Error al asignar rol:', error);
+        throw new Error(`Error al asignar rol: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+      }
+    } else {
+      console.log(`ℹ️ El usuario ${email} ya tiene el rol MARCACION; no se ejecutará POST /security/RolUsuario/MARCACION.`);
     }
 
     // PASO 5: Crear Personal (asignación)
@@ -1339,63 +1408,107 @@ export class PersonalMantenimientoComponent {
     console.log(`\n✅✅✅ REGISTRO COMPLETO - Fila ${numeroFila} procesada exitosamente\n`);
   }
 
+  private normalizarEmail(email: any): string {
+    return String(email || '').trim().toLowerCase();
+  }
+
+  private async obtenerOCrearUsuario(
+    email: string,
+    telefono: string,
+    codigo: string,
+    partesNombre: any
+  ): Promise<{ id: string | number; existente: boolean }> {
+    const emailNormalizado = this.normalizarEmail(email);
+    const usuarioExistente = this.usuarios.find(
+      (usuario: any) => this.normalizarEmail(usuario.userName) === emailNormalizado
+    );
+
+    if (usuarioExistente) {
+      const usuarioId = usuarioExistente.id;
+      if (usuarioId === undefined || usuarioId === null || usuarioId === '') {
+        throw new Error(`El usuario existente "${email}" no tiene un ID válido.`);
+      }
+
+      console.log(`ℹ️ Usuario ya existente para ${email}; no se ejecutará POST /security/Usuario.`);
+      return { id: usuarioId, existente: true };
+    }
+
+    const password = this.generarPassword(codigo, partesNombre.apellidoPaterno, partesNombre.nombres);
+    const usuarioPayload = {
+      email,
+      password,
+      phoneNumber: telefono || '000000000'
+    };
+
+    try {
+      const usuarioCreado: any = await firstValueFrom(
+        this.apiService.crearUsuario(usuarioPayload)
+      );
+      const usuarioId = usuarioCreado?.id;
+
+      if (usuarioId === undefined || usuarioId === null || usuarioId === '') {
+        throw new Error('El servicio no devolvió un ID de usuario válido.');
+      }
+
+      // Mantener actualizado el catálogo durante el procesamiento del mismo archivo.
+      this.usuarios.push({
+        id: usuarioId,
+        userName: usuarioCreado?.userName || email,
+        email: usuarioCreado?.email || email,
+        displayName: usuarioCreado?.userName || email
+      });
+
+      console.log('✅ Usuario creado:', usuarioCreado);
+      return { id: usuarioId, existente: false };
+    } catch (error: any) {
+      console.error('❌ Error al crear Usuario:', error);
+      throw new Error(`Error al crear Usuario: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+    }
+  }
+
   // 🆕 Método auxiliar para crear usuario completo con asignaciones
   private async crearUsuarioCompleto(
     email: string,
     telefono: string,
     codigo: string,
     partesNombre: any
-  ): Promise<number> { // ✅ Retorna number
-    console.log('\n🔵 Creando Usuario...');
-    const password = this.generarPassword(codigo, partesNombre.apellidoPaterno, partesNombre.nombres);
-    console.log('🔐 Password generado:', password);
+  ): Promise<string | number> {
+    const resultadoUsuario = await this.obtenerOCrearUsuario(email, telefono, codigo, partesNombre);
+    const usuarioId = resultadoUsuario.id;
 
-    const usuarioPayload = {
-      email: email,
-      password: password,
-      phoneNumber: telefono || '000000000'
-    };
+    // Asignar acceso a empresa solamente cuando se acaba de crear el usuario.
+    if (!resultadoUsuario.existente) {
+      console.log('\n🔵 Asignando acceso a empresa...');
+      const usuarioEmpresaPayload = {
+        usuarioId: usuarioId,
+        empresaId: 1,
+        actual: true
+      };
 
-    console.log('📤 Enviando payload de Usuario:', usuarioPayload);
+      console.log('📤 Enviando payload de UsuarioEmpresa:', usuarioEmpresaPayload);
 
-    let usuarioCreado: any;
-    try {
-      usuarioCreado = await firstValueFrom(this.apiService.crearUsuario(usuarioPayload));
-      console.log('✅ Usuario creado:', usuarioCreado);
-    } catch (error: any) {
-      console.error('❌ Error al crear Usuario:', error);
-      throw new Error(`Error al crear Usuario: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+      try {
+        await firstValueFrom(this.apiService.createUsuarioEmpresa(usuarioEmpresaPayload));
+        console.log('✅ Acceso a empresa asignado');
+      } catch (error: any) {
+        console.error('❌ Error al asignar acceso a empresa:', error);
+        throw new Error(`Error al asignar acceso a empresa: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+      }
     }
 
-    const usuarioId = Number(usuarioCreado.id); // ✅ Siempre como number
+    // Asignar el rol solamente cuando se acaba de crear el usuario.
+    if (!resultadoUsuario.existente) {
+      console.log('\n🔵 Asignando rol al usuario...');
+      try {
+        await firstValueFrom(this.apiService.asignarRolUsuario('MARCACION', [String(usuarioId)]));
 
-    // Asignar acceso a empresa
-    console.log('\n🔵 Asignando acceso a empresa...');
-    const usuarioEmpresaPayload = {
-      usuarioId: usuarioId,
-      empresaId: 1,
-      actual: true
-    };
-
-    console.log('📤 Enviando payload de UsuarioEmpresa:', usuarioEmpresaPayload);
-
-    try {
-      await firstValueFrom(this.apiService.createUsuarioEmpresa(usuarioEmpresaPayload));
-      console.log('✅ Acceso a empresa asignado');
-    } catch (error: any) {
-      console.error('❌ Error al asignar acceso a empresa:', error);
-      throw new Error(`Error al asignar acceso a empresa: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
-    }
-
-    // Asignar rol
-    console.log('\n🔵 Asignando rol al usuario...');
-    try {
-      await firstValueFrom(this.apiService.asignarRolUsuario('MARCACION', [String(usuarioId)]));
-
-      console.log('✅ Rol asignado al usuario');
-    } catch (error: any) {
-      console.error('❌ Error al asignar rol:', error);
-      throw new Error(`Error al asignar rol: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+        console.log('✅ Rol asignado al usuario');
+      } catch (error: any) {
+        console.error('❌ Error al asignar rol:', error);
+        throw new Error(`Error al asignar rol: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
+      }
+    } else {
+      console.log(`ℹ️ El usuario ${email} ya tiene el rol MARCACION; no se ejecutará POST /security/RolUsuario/MARCACION.`);
     }
 
     return usuarioId; // ✅ Retorna number

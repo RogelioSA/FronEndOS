@@ -182,6 +182,7 @@ export class ApiService{
       empresaId: number;
       personalId: number;
       cargoId: number;
+      costoHombre: number;
     }): Observable<any> {
       return this.https.post(`${this.baseUrl}/rrhh/PersonalCargoExterno`, data, {
         headers: this.getHttpHeaders()
@@ -193,6 +194,7 @@ export class ApiService{
       empresaId: number;
       personalId: number;
       cargoId: number;
+      costoHombre: number;
     }): Observable<any> {
       return this.https.put(`${this.baseUrl}/rrhh/PersonalCargoExterno/${id}`, data, {
         headers: this.getHttpHeaders()

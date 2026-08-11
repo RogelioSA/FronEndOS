@@ -149,6 +149,16 @@
               <dxi-validation-rule type="required"></dxi-validation-rule>
             </dxi-column>
 
+            <dxi-column
+              dataField="costoHombre"
+              caption="Costo Hombre"
+              dataType="number"
+              [visible]="false"
+              [editorOptions]="{ step: 0.01, showSpinButtons: true, format: '#,##0.00' }"
+            >
+              <dxo-form-item [visible]="true"></dxo-form-item>
+            </dxi-column>
+
             <dxi-column dataField="lEstado" caption="Estado" alignment="center" [width]="90" [allowSearch]="false">
               <dxo-lookup
                 [dataSource]="[{id: true, nombre: 'Activo'}, {id: false, nombre: 'Inactivo'}]"
