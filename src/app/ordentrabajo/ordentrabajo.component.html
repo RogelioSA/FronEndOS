@@ -11,6 +11,7 @@
           (onRowUpdating)="actualizarOrdenTrabajo($event)"
           (onRowInserting)="insertarOrdenTrabajo($event)"
           (onRowRemoving)="eliminarOrdenTrabajo($event)"
+          (onRowPrepared)="prepararFila($event)"
           [columnHidingEnabled]="true"
           [rowAlternationEnabled]="true"
           [showColumnLines]="true"
@@ -39,6 +40,7 @@
             caption="ID" 
             [width]="70" 
             [allowEditing]="false" 
+            [visible]="false"
             alignment="center"
           ></dxi-column>
           
@@ -80,6 +82,8 @@
             caption="Fecha Inicio"
             dataType="date"
             [width]="150"
+            sortOrder="desc"
+            [sortIndex]="0"
           >
             <dxi-validation-rule 
               type="required" 
