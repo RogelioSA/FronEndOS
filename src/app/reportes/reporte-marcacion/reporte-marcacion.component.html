@@ -54,9 +54,21 @@
 
     <div class="row g-1 mt-2 justify-content-md-center mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="encabezado-reporte d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0">Reporte de marcaciones</h3>
-                <div class="d-flex gap-2">
+                <div class="acciones-reporte d-flex gap-2">
+                    <div class="buscador-personal input-group" role="search">
+                        <span class="input-group-text" aria-hidden="true">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input
+                            type="search"
+                            class="form-control"
+                            placeholder="Buscar por DNI o personal"
+                            aria-label="Buscar personal por DNI o nombre"
+                            [(ngModel)]="textoBusquedaPersonal"
+                            (ngModelChange)="aplicarFiltroPersonal()">
+                    </div>
                     <dx-button
                         text="Descargar Excel"
                         stylingMode="contained"
@@ -229,6 +241,11 @@
                         <tr *ngIf="datosReporte.length === 0">
                             <td [attr.colspan]="calcularColspan()" class="text-center text-muted">
                                 No hay datos para mostrar en el rango de fechas seleccionado
+                            </td>
+                        </tr>
+                        <tr *ngIf="datosReporte.length > 0 && datosAgrupados.length === 0">
+                            <td [attr.colspan]="calcularColspan()" class="text-center text-muted">
+                                No se encontró personal que coincida con la búsqueda
                             </td>
                         </tr>
                     </tbody>

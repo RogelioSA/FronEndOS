@@ -59,6 +59,7 @@ export class ReporteMarcacionComponent {
   marcaciones: any[] = [];
   datosReporte: EmpleadoReporte[] = [];
   datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
+  textoBusquedaPersonal: string = '';
   columnasdinamicas: any[] = [];
   ordenesTrabajo: { id: number; cOrdenInterna: string; adjuntoId?: number }[] = [];
   ordenTrabajoSeleccionada: number | null = null;
@@ -270,8 +271,15 @@ export class ReporteMarcacionComponent {
 
   agruparDatosPorOrden() {
     const grupos = new Map<string, EmpleadoReporte[]>();
+    const terminoBusqueda = this.normalizarTextoBusqueda(this.textoBusquedaPersonal);
+    const empleadosFiltrados = terminoBusqueda
+      ? this.datosReporte.filter((empleado) =>
+          this.normalizarTextoBusqueda(empleado.dni).includes(terminoBusqueda) ||
+          this.normalizarTextoBusqueda(empleado.personal).includes(terminoBusqueda)
+        )
+      : this.datosReporte;
 
-    this.datosReporte.forEach((empleado) => {
+    empleadosFiltrados.forEach((empleado) => {
       if (!grupos.has(empleado.orden)) {
         grupos.set(empleado.orden, []);
       }
@@ -282,6 +290,18 @@ export class ReporteMarcacionComponent {
       orden,
       empleados,
     }));
+  }
+
+  aplicarFiltroPersonal() {
+    this.agruparDatosPorOrden();
+  }
+
+  private normalizarTextoBusqueda(valor: string): string {
+    return (valor ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLocaleLowerCase();
   }
 
   generarColumnasFechas() {
