@@ -81,13 +81,15 @@ export class PersonalHorarioComponent {
         this.apiService.listarOrdenTrabajoCabeceraSimplificado()
       );
 
-      this.ordenes = response.map((ot: any) => ({
-        nCodigo: ot.id,
-        cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`,
-        fechaInicio: ot.fechaInicio,
-        fechaFin: ot.fechaFin || ot.fechaCompromiso,
-        datosCompletos: ot
-      }));
+      this.ordenes = response
+        .filter((ot: any) => ot.estado === 1)
+        .map((ot: any) => ({
+          nCodigo: ot.id,
+          cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`,
+          fechaInicio: ot.fechaInicio,
+          fechaFin: ot.fechaFin || ot.fechaCompromiso,
+          datosCompletos: ot
+        }));
 
       console.log('Órdenes de trabajo cargadas:', this.ordenes);
 
