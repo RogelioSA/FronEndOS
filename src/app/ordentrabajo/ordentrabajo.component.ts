@@ -29,6 +29,10 @@ export class OrdentrabajoComponent implements OnInit {
   ordenesTrabajo: any[] = [];
   ordenesServicio: any[] = [];
   gruposTrabajo: any[] = [];
+  readonly estados = [
+    { id: 1, nombre: 'Activo' },
+    { id: 0, nombre: 'Cerrado' }
+  ];
 
   // EmpresaId por defecto (ajústalo según tu aplicación)
   private readonly DEFAULT_EMPRESA_ID = 1;
