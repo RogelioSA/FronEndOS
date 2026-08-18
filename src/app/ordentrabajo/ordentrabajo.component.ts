@@ -10,7 +10,7 @@ interface OrdenTrabajoCabecera {
   nombre: string;
   descripcion: string;
   fechaInicio: string;
-  fechaCompromiso: string;
+  fechaCompromiso: string | null;
   fechaFin: string | null;
   grupoTrabajoId: number;
   ordenTrabajoCabeceraPadreId: number | null;
@@ -44,38 +44,14 @@ export class OrdentrabajoComponent implements OnInit {
   }
 
   prepararFila(e: any): void {
-    if (e.rowType !== 'data' || !e.data?.fechaCompromiso) {
+    if (e.rowType !== 'data') {
       return;
     }
 
-    const fechaCompromiso = this.obtenerFechaSinHora(e.data.fechaCompromiso);
-    const fechaActual = this.obtenerFechaSinHora(new Date());
-
-    if (!fechaCompromiso || !fechaActual) {
-      return;
-    }
-
+    e.rowElement.classList.remove('estado-activo', 'estado-cerrado');
     e.rowElement.classList.add(
-      fechaCompromiso.getTime() >= fechaActual.getTime()
-        ? 'fecha-compromiso-vigente'
-        : 'fecha-compromiso-vencida'
+      Number(e.data.estado) === 1 ? 'estado-activo' : 'estado-cerrado'
     );
-  }
-
-  private obtenerFechaSinHora(valor: string | Date): Date | null {
-    const partesFecha = typeof valor === 'string'
-      ? valor.match(/^(\d{4})-(\d{2})-(\d{2})/)
-      : null;
-    const fecha = partesFecha
-      ? new Date(+partesFecha[1], +partesFecha[2] - 1, +partesFecha[3])
-      : new Date(valor);
-
-    if (Number.isNaN(fecha.getTime())) {
-      return null;
-    }
-
-    fecha.setHours(0, 0, 0, 0);
-    return fecha;
   }
 
   async cargarDatos() {
@@ -115,7 +91,7 @@ export class OrdentrabajoComponent implements OnInit {
       nombre: rowData.nombre,
       descripcion: rowData.descripcion || '',
       fechaInicio: rowData.fechaInicio,
-      fechaCompromiso: rowData.fechaCompromiso,
+      fechaCompromiso: rowData.fechaFin || null,
       fechaFin: rowData.fechaFin || null,
       grupoTrabajoId: rowData.grupoTrabajoId,
       ordenTrabajoCabeceraPadreId: rowData.ordenTrabajoCabeceraPadreId || null,

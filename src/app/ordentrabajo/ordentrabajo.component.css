@@ -1,17 +1,17 @@
-::ng-deep #gridContainer .dx-data-row.fecha-compromiso-vigente > td {
+::ng-deep #gridContainer .dx-data-row.estado-activo > td {
   background-color: #d4edda;
   color: #155724;
 }
 
-::ng-deep #gridContainer .dx-data-row.fecha-compromiso-vencida > td {
+::ng-deep #gridContainer .dx-data-row.estado-cerrado > td {
   background-color: #d7b899;
   color: #4b2e1f;
 }
 
-::ng-deep #gridContainer .dx-data-row.fecha-compromiso-vigente:hover > td {
+::ng-deep #gridContainer .dx-data-row.estado-activo:hover > td {
   background-color: #c3e6cb;
 }
 
-::ng-deep #gridContainer .dx-data-row.fecha-compromiso-vencida:hover > td {
+::ng-deep #gridContainer .dx-data-row.estado-cerrado:hover > td {
   background-color: #c9a47f;
 }
