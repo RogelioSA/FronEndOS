@@ -130,9 +130,15 @@
             dataField="estado" 
             caption="Estado"
             dataType="number"
-            [width]="90"
+            [width]="110"
             alignment="center"
-          ></dxi-column>
+          >
+            <dxo-lookup
+              [dataSource]="estados"
+              valueExpr="id"
+              displayExpr="nombre"
+            ></dxo-lookup>
+          </dxi-column>
 
           <dxi-column type="buttons" [width]="110" [fixed]="true" fixedPosition="right">
             <dxi-button name="edit" icon="edit" hint="Editar"></dxi-button>
