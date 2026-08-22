@@ -1,0 +1,59 @@
+<main class="attendance-page">
+  <section class="attendance-card" aria-labelledby="attendance-title">
+    <header class="attendance-header">
+      <span class="eyebrow">ORDEN DE TRABAJO</span>
+      <h1 id="attendance-title">Control de Asistencia</h1>
+      <p>Seleccione su orden y registre su marcación</p>
+    </header>
+
+    <div class="form-field">
+      <label for="workOrder">Orden de Trabajo (OT)</label>
+      <select id="workOrder" [(ngModel)]="ordenTrabajoId" [disabled]="isLoadingOrders || isProcessing">
+        <option [ngValue]="null">{{ isLoadingOrders ? 'Cargando órdenes...' : '-- Seleccione una Orden de Trabajo --' }}</option>
+        <option *ngFor="let orden of ordenesTrabajo" [ngValue]="orden.id">
+          OT-{{ orden.id }}: {{ orden.nombre }}
+        </option>
+      </select>
+    </div>
+
+    <div class="marking-layout">
+      <button class="mark-button entry" type="button" (click)="marcarAsistencia(0)" [disabled]="isProcessing">
+        <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+        INGRESO
+      </button>
+
+      <div class="camera-wrapper">
+        <video #videoElement autoplay playsinline muted></video>
+        <canvas #canvasElement hidden></canvas>
+        <div class="face-guide" aria-hidden="true"></div>
+        <div class="camera-message" *ngIf="cameraError">{{ cameraError }}</div>
+      </div>
+
+      <button class="mark-button exit" type="button" (click)="marcarAsistencia(1)" [disabled]="isProcessing">
+        SALIDA
+        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="location" [class.error]="locationError">
+      <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+      <span>{{ locationError || coordinates || 'Obteniendo ubicación...' }}</span>
+    </div>
+
+    <div class="form-field">
+      <label for="observation">Observación <span>(opcional)</span></label>
+      <textarea id="observation" rows="3" [(ngModel)]="observacion" [disabled]="isProcessing"
+        placeholder="Escriba alguna novedad, incidencia o detalle de la jornada..."></textarea>
+    </div>
+
+    <div class="feedback" *ngIf="mensaje" [class.error]="esError" role="status">
+      <i class="fas" [ngClass]="esError ? 'fa-exclamation-circle' : 'fa-check-circle'" aria-hidden="true"></i>
+      {{ mensaje }}
+    </div>
+
+    <div class="processing" *ngIf="isProcessing">
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      Capturando foto y registrando marcación...
+    </div>
+  </section>
+</main>
