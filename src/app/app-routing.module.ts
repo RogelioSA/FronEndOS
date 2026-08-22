@@ -56,6 +56,7 @@ import { CuentaCorrienteComponent } from './cuenta-corriente/cuenta-corriente.co
 import { PersonalMarcacionComponent } from './personal-marcacion/personal-marcacion.component';
 import { UsuarioComponent } from './usuario/usuario.component';
 import { MarcacionDatosComponent } from './marcacion-datos/marcacion-datos.component';
+import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionespecifica.component';
  
 const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -120,6 +121,7 @@ const routes: Routes = [
   { path: 'general/mismarcaciones', component: PersonalMarcacionComponent, canActivate: [AuthGuard]},
   { path: 'mantenimiento/usuario', component: UsuarioComponent, canActivate: [AuthGuard]},
   { path: 'reporte/marcacion-datos', component: MarcacionDatosComponent, canActivate: [AuthGuard]},
+  { path: 'procesos/marcacion-especifica', component: MarcacionespecificaComponent, canActivate: [AuthGuard]},
 
 ];
 

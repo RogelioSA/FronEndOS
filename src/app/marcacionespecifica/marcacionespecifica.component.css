@@ -1,0 +1,59 @@
+:host { display: block; }
+
+.attendance-page {
+  min-height: calc(100vh - 64px);
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  background: radial-gradient(circle at top, #eef6ff 0, #f1f5f9 48%, #e8eef5 100%);
+  color: #1e293b;
+}
+
+.attendance-card {
+  width: min(100%, 780px);
+  padding: 34px;
+  border: 1px solid rgba(148, 163, 184, .24);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .12);
+}
+
+.attendance-header { text-align: center; margin-bottom: 28px; }
+.attendance-header .eyebrow { color: #2563eb; font-size: .72rem; font-weight: 800; letter-spacing: .16em; }
+.attendance-header h1 { margin: 5px 0 4px; font-size: clamp(1.65rem, 4vw, 2.15rem); font-weight: 750; }
+.attendance-header p { margin: 0; color: #64748b; }
+
+.form-field { margin-bottom: 24px; }
+.form-field label { display: block; margin-bottom: 8px; font-size: .9rem; font-weight: 700; }
+.form-field label span { color: #94a3b8; font-weight: 500; }
+.form-field select, .form-field textarea {
+  width: 100%; padding: 13px 15px; border: 1px solid #cbd5e1; border-radius: 12px;
+  background: #f8fafc; color: #334155; outline: none; transition: .2s;
+}
+.form-field select:focus, .form-field textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, .14); }
+.form-field textarea { resize: vertical; }
+
+.marking-layout { display: grid; grid-template-columns: 1fr 230px 1fr; align-items: center; gap: 20px; margin: 8px 0 18px; }
+.camera-wrapper { position: relative; aspect-ratio: 1; overflow: hidden; border: 5px solid #e2e8f0; border-radius: 24px; background: #0f172a; box-shadow: inset 0 0 30px #0008; }
+.camera-wrapper video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.face-guide { position: absolute; inset: 15%; border: 2px dashed rgba(255,255,255,.7); border-radius: 48%; }
+.camera-message { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; background: #0f172ae8; color: #fda4af; text-align: center; font-size: .8rem; }
+
+.mark-button { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 58px; border: 0; border-radius: 14px; color: white; font-weight: 800; box-shadow: 0 10px 22px rgba(15,23,42,.15); transition: transform .2s, filter .2s; }
+.mark-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(.94); }
+.mark-button:disabled { cursor: not-allowed; opacity: .55; }
+.mark-button.entry { background: #059669; }
+.mark-button.exit { background: #e11d48; }
+
+.location { display: flex; justify-content: center; align-items: center; gap: 7px; min-height: 34px; margin-bottom: 20px; color: #047857; font-size: .82rem; }
+.location.error, .feedback.error { color: #be123c; }
+.feedback, .processing { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px; border-radius: 10px; background: #ecfdf5; color: #047857; font-weight: 600; }
+.feedback.error { background: #fff1f2; }
+.processing { margin-top: 10px; background: #eff6ff; color: #1d4ed8; }
+
+@media (max-width: 700px) {
+  .attendance-card { padding: 24px 18px; }
+  .marking-layout { grid-template-columns: 1fr 1fr; }
+  .camera-wrapper { grid-column: 1 / -1; grid-row: 1; width: min(230px, 80vw); justify-self: center; }
+  .mark-button { grid-row: 2; }
+}
