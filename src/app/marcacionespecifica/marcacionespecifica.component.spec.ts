@@ -31,4 +31,16 @@ describe('MarcacionespecificaComponent', () => {
     buttons[1].click();
     expect(spy.calls.allArgs()).toEqual([[0], [1]]);
   });
+
+  it('should only load active work orders', async () => {
+    const apiService = TestBed.inject(ApiService) as any;
+    spyOn(apiService, 'listarOrdenTrabajoCabeceraSimplificado').and.returnValue(of([
+      { id: 1, nombre: 'OT activa', descripcion: 'Trabajo activo', estado: 1 },
+      { id: 2, nombre: 'OT cerrada', descripcion: 'Trabajo cerrado', estado: 0 }
+    ]));
+
+    await component.cargarOrdenesTrabajo();
+
+    expect(component.ordenesTrabajo.map(orden => orden.id)).toEqual([1]);
+  });
 });

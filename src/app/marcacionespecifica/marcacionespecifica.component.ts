@@ -7,6 +7,7 @@ interface OrdenTrabajo {
   id: number;
   nombre: string;
   descripcion?: string;
+  estado: number;
 }
 
 @Component({
@@ -97,7 +98,10 @@ export class MarcacionespecificaComponent implements OnInit, OnDestroy {
       const response = await firstValueFrom(
         this.apiService.listarOrdenTrabajoCabeceraSimplificado()
       );
-      this.ordenesTrabajo = Array.isArray(response) ? response : (response?.data ?? []);
+      const ordenes = Array.isArray(response) ? response : (response?.data ?? []);
+      this.ordenesTrabajo = ordenes.filter(
+        (orden: OrdenTrabajo) => Number(orden.estado) === 1
+      );
     } catch (error) {
       console.error('Error al cargar órdenes de trabajo:', error);
       this.mostrarMensaje('No se pudieron cargar las órdenes de trabajo.', true);

@@ -11,9 +11,15 @@
       <select id="workOrder" [(ngModel)]="ordenTrabajoId" [disabled]="isLoadingOrders || isProcessing">
         <option [ngValue]="null">{{ isLoadingOrders ? 'Cargando órdenes...' : '-- Seleccione una Orden de Trabajo --' }}</option>
         <option *ngFor="let orden of ordenesTrabajo" [ngValue]="orden.id">
-          OT-{{ orden.id }}: {{ orden.nombre }}
+          {{ orden.nombre }} - {{ orden.descripcion }}
         </option>
       </select>
+    </div>
+
+    <div class="form-field">
+      <label for="observation">Observación <span>(opcional)</span></label>
+      <textarea id="observation" rows="3" [(ngModel)]="observacion" [disabled]="isProcessing"
+        placeholder="Escriba alguna novedad, incidencia o detalle de la jornada..."></textarea>
     </div>
 
     <div class="marking-layout">
@@ -38,12 +44,6 @@
     <div class="location" [class.error]="locationError">
       <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
       <span>{{ locationError || coordinates || 'Obteniendo ubicación...' }}</span>
-    </div>
-
-    <div class="form-field">
-      <label for="observation">Observación <span>(opcional)</span></label>
-      <textarea id="observation" rows="3" [(ngModel)]="observacion" [disabled]="isProcessing"
-        placeholder="Escriba alguna novedad, incidencia o detalle de la jornada..."></textarea>
     </div>
 
     <div class="feedback" *ngIf="mensaje" [class.error]="esError" role="status">
