@@ -56,6 +56,8 @@ interface DetalleMarcacion {
 })
 export class ReporteMarcacionComponent {
 
+  private readonly ordenTrabajoOficinaId = 0;
+
   marcaciones: any[] = [];
   datosReporte: EmpleadoReporte[] = [];
   datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
@@ -124,11 +126,17 @@ export class ReporteMarcacionComponent {
         this.apiService.listarOrdenTrabajoCabeceraSimplificado()
       );
 
-      this.ordenesTrabajo = response.map((ot: any) => ({
-        id: ot.id,
-        cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`,
-        adjuntoId: ot.adjuntoId
-      }));
+      this.ordenesTrabajo = [
+        {
+          id: this.ordenTrabajoOficinaId,
+          cOrdenInterna: 'OFICINA'
+        },
+        ...response.map((ot: any) => ({
+          id: ot.id,
+          cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`,
+          adjuntoId: ot.adjuntoId
+        }))
+      ];
     } catch (error) {
       console.error('❌ Error al cargar órdenes de trabajo:', error);
       this.showMessage('Error al cargar las órdenes de trabajo');
@@ -200,8 +208,10 @@ export class ReporteMarcacionComponent {
     const marcacionesFiltradas = this.marcaciones.filter(m => {
       const fechaJornal = new Date(m.fecha);
       const cumpleFecha = fechaJornal >= fechaIni && fechaJornal <= fechaFin;
-      const cumpleOrdenTrabajo = !this.ordenTrabajoSeleccionada ||
-      m.ordenTrabajo?.id === this.ordenTrabajoSeleccionada;
+      const cumpleOrdenTrabajo = this.ordenTrabajoSeleccionada == null ||
+        (this.ordenTrabajoSeleccionada === this.ordenTrabajoOficinaId
+          ? m.ordenTrabajo?.id == null
+          : m.ordenTrabajo?.id === this.ordenTrabajoSeleccionada);
       return cumpleFecha && cumpleOrdenTrabajo;
     });
 

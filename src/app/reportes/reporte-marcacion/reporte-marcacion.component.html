@@ -3,7 +3,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <div class="row g-1 mt-2 justify-content-md-center mb-4 align-items-end">
-        <div class="col-3">
+        <div class="col-6">
             <div class="dx-field-label">Orden de Trabajo:</div>
             <div class="dx-field-value">
                 <dx-select-box
@@ -16,7 +16,7 @@
                 ></dx-select-box>
             </div>
         </div>
-        <div class="col-3">
+        <div class="col-2">
             <div class="dx-field-label">Fecha Inicial</div>
             <div class="dx-field-value">
                 <dx-date-box type="date" [value]="now" [(ngModel)]="fechaInicial" name="fechaInicial"
@@ -24,7 +24,7 @@
                 </dx-date-box>
             </div>
         </div>
-        <div class="col-3">
+        <div class="col-2">
             <div class="dx-field-label">Fecha Final</div>
             <div class="dx-field-value">
                 <dx-date-box type="date" [value]="now" [(ngModel)]="fechaFinal" name="fechaFinal"
