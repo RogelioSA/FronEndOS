@@ -251,13 +251,21 @@ export class ReporteMarcacionComponent {
 
       switch(tipoEvento) {
         case 0:
-          empleado.marcaciones[fechaKey].entrada = hora || '';
-          empleado.marcaciones[fechaKey].tardanza = marcacion.esTardanza;
-          empleado.marcaciones[fechaKey].datosEntrada = marcacion;
+          // Si existen varias entradas conservamos la primera del jornal.
+          if (!empleado.marcaciones[fechaKey].datosEntrada ||
+              new Date(marcacion.fecha).getTime() < new Date(empleado.marcaciones[fechaKey].datosEntrada.fecha).getTime()) {
+            empleado.marcaciones[fechaKey].entrada = hora || '';
+            empleado.marcaciones[fechaKey].tardanza = marcacion.esTardanza;
+            empleado.marcaciones[fechaKey].datosEntrada = marcacion;
+          }
           break;
         case 1:
-          empleado.marcaciones[fechaKey].salida = hora || '';
-          empleado.marcaciones[fechaKey].datosSalida = marcacion;
+          // Si existen varias salidas conservamos la última del jornal.
+          if (!empleado.marcaciones[fechaKey].datosSalida ||
+              new Date(marcacion.fecha).getTime() > new Date(empleado.marcaciones[fechaKey].datosSalida.fecha).getTime()) {
+            empleado.marcaciones[fechaKey].salida = hora || '';
+            empleado.marcaciones[fechaKey].datosSalida = marcacion;
+          }
           break;
         case 2:
           empleado.marcaciones[fechaKey].salidaRefrigerio = hora || '';
@@ -886,6 +894,7 @@ export class ReporteMarcacionComponent {
       const fillEncabezadoColumnas: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF70AD47' } };
       const fillFinDeSemana: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
       const fillTotales: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } };
+      const fillMarcacionIncompleta: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
 
       const fontBlanco: Partial<ExcelJS.Font> = { bold: true, color: { argb: 'FFFFFFFF' } };
       const fontTitulo: Partial<ExcelJS.Font> = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
@@ -1013,9 +1022,6 @@ export class ReporteMarcacionComponent {
           totalDiasOT = Math.ceil((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
         }
 
-        // codigoReferencial de ordenServicio para columna OS
-        const codigoReferencialOS = primeraMarcacion?.ordenServicio?.codigoReferencial || '';
-
         const filaData: any[] = [
           index + 1,
           empleado.dni,
@@ -1025,33 +1031,40 @@ export class ReporteMarcacionComponent {
           '.'  // GUARDIAS
         ];
 
-        let totalHoras = 0;
+        let totalMinutos = 0;
+        const celdasMarcacionIncompleta: number[] = [];
 
-        this.columnasdinamicas.forEach(col => {
+        this.columnasdinamicas.forEach((col, diaIndex) => {
           const marcacion = empleado.marcaciones[col.fecha];
 
-          // L: vacío (empresa no disponible aún)
-          const letra = '';
+          const datosOrden = marcacion
+            ? (marcacion.datosEntrada || marcacion.datosSalida)
+            : null;
+          // L identifica la labor mediante los primeros cinco caracteres de la descripción de la OT.
+          const letra = datosOrden?.ordenTrabajo?.descripcion?.slice(0, 5) || '';
 
-          let horas = 0;
           let horasTexto: string | number = '';
-          if (marcacion?.entrada && marcacion?.salida) {
-            horas = this.calcularHorasNumerico(marcacion.entrada, marcacion.salida);
-            horasTexto = horas > 0 ? horas : '';
-            totalHoras += horas;
+          if (marcacion?.datosEntrada || marcacion?.datosSalida) {
+            const minutosTrabajados = this.calcularMinutosTareo(marcacion);
+            if (minutosTrabajados === null) {
+              horasTexto = -1;
+              celdasMarcacionIncompleta.push(8 + diaIndex * 3);
+            } else {
+              horasTexto = this.minutosAHorasDecimales(minutosTrabajados);
+              totalMinutos += minutosTrabajados;
+            }
           }
 
-          // OS: codigoReferencial de ordenServicio
-          let ordenServicio = '';
-          if (marcacion?.entrada) {
-            ordenServicio = codigoReferencialOS;
-          }
+          // OS corresponde al nombre de la Orden de Trabajo de ese mismo jornal.
+          const ordenServicio = datosOrden?.ordenTrabajo?.nombre || '';
 
           filaData.push(letra, horasTexto, ordenServicio);
         });
 
         // Columnas adicionales
-        const horasExtra = totalHoras - 192;
+        // Se totalizan minutos antes de convertirlos para evitar acumular errores de redondeo diarios.
+        const totalHoras = this.minutosAHorasDecimales(totalMinutos);
+        const horasExtra = Math.round(Math.max(0, totalHoras - 192) * 100) / 100;
         const horasExtraDisplay = horasExtra > 0 ? horasExtra : 0;
         const textoPagar = horasExtra > 0
           ? `PAGAR ${horasExtra} HORAS EXTRA AL 25% DEL MES DE ${mesActual}`
@@ -1070,6 +1083,12 @@ export class ReporteMarcacionComponent {
         );
 
         const row = ws.addRow(filaData);
+
+        celdasMarcacionIncompleta.forEach(columna => {
+          const cell = row.getCell(columna);
+          cell.fill = fillMarcacionIncompleta;
+          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        });
 
         // ── Estilos fila de datos ──
 
@@ -1090,7 +1109,7 @@ export class ReporteMarcacionComponent {
             const cell = row.getCell(c);
             cell.alignment = alignCenter;
             cell.border = borderThin;
-            if (esFinDeSemana) {
+            if (esFinDeSemana && cell.value !== -1) {
               cell.fill = fillFinDeSemana;
             }
           }
@@ -1251,6 +1270,36 @@ export class ReporteMarcacionComponent {
     } catch (error) {
       return 0;
     }
+  }
+
+  /**
+   * Calcula los minutos de HH usando exclusivamente el par entrada/salida del
+   * mismo grupo (personal, fecha jornal, OS y OT). El agrupamiento se realiza
+   * en procesarDatosParaReporte antes de llegar a este método.
+   */
+  calcularMinutosTareo(marcacion: MarcacionPorDia): number | null {
+    const entrada = marcacion.datosEntrada;
+    const salida = marcacion.datosSalida;
+
+    if (!entrada?.fecha || !salida?.fecha) {
+      return null;
+    }
+
+    const fechaEntrada = new Date(entrada.fecha).getTime();
+    const fechaSalida = new Date(salida.fecha).getTime();
+    const minutosDescanso = Number(entrada.minutosDescanso ?? salida.minutosDescanso ?? 0);
+
+    if (!Number.isFinite(fechaEntrada) || !Number.isFinite(fechaSalida) ||
+        !Number.isFinite(minutosDescanso)) {
+      return null;
+    }
+
+    const diferenciaMinutos = (fechaSalida - fechaEntrada) / (1000 * 60) - minutosDescanso;
+    return diferenciaMinutos >= 0 ? diferenciaMinutos : null;
+  }
+
+  private minutosAHorasDecimales(minutos: number): number {
+    return Math.round((minutos / 60) * 100) / 100;
   }
 
   obtenerCodigoOrdenServicio(orden: string): string {
