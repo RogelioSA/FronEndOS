@@ -115,6 +115,10 @@ export class MarcacionespecificaComponent implements OnInit, OnDestroy {
       this.mostrarMensaje('Seleccione una orden de trabajo antes de marcar.', true);
       return;
     }
+    if (!this.observacion.trim()) {
+      this.mostrarMensaje('Ingrese una observación antes de marcar.', true);
+      return;
+    }
     if (!this.coordinates) {
       this.mostrarMensaje('Espere a que se obtenga una ubicación válida.', true);
       return;
@@ -149,6 +153,7 @@ export class MarcacionespecificaComponent implements OnInit, OnDestroy {
         eventoTipo
       };
 
+      console.log('Body enviado a /rrhh/RegistroAsistencia/regularizar:', payload);
       await firstValueFrom(this.apiService.registrarMarcacionEspecifica(payload));
       this.mostrarMensaje(`¡${eventoTipo === 0 ? 'Ingreso' : 'Salida'} registrado correctamente!`, false);
       this.observacion = '';

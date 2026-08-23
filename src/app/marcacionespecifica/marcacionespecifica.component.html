@@ -17,8 +17,9 @@
     </div>
 
     <div class="form-field">
-      <label for="observation">Observación <span>(opcional)</span></label>
-      <textarea id="observation" rows="3" [(ngModel)]="observacion" [disabled]="isProcessing"
+      <label for="observation">Observación <span class="required-indicator">(obligatorio)</span></label>
+      <textarea id="observation" name="observation" rows="3" [(ngModel)]="observacion"
+        [disabled]="isProcessing" required aria-required="true"
         placeholder="Escriba alguna novedad, incidencia o detalle de la jornada..."></textarea>
     </div>
 

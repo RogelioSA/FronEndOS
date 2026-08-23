@@ -43,4 +43,14 @@ describe('MarcacionespecificaComponent', () => {
 
     expect(component.ordenesTrabajo.map(orden => orden.id)).toEqual([1]);
   });
+
+  it('should require an observation before marking attendance', async () => {
+    component.ordenTrabajoId = 1;
+    component.observacion = '   ';
+
+    await component.marcarAsistencia(0);
+
+    expect(component.esError).toBeTrue();
+    expect(component.mensaje).toBe('Ingrese una observación antes de marcar.');
+  });
 });
