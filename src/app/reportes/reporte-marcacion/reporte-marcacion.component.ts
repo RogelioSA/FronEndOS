@@ -360,10 +360,14 @@ export class ReporteMarcacionComponent {
   }
 
   obtenerOrdenInfo(marcacion: any): string {
+    if (marcacion.ordenTrabajo?.id == null && marcacion.ordenServicio?.id == null) {
+      return 'OFICINA';
+    }
+
     const codigoOrdenServicio = marcacion.ordenServicio?.codigoOrdenInterna || marcacion.ordenServicio?.codigoReferencial;
     const nombreOT = marcacion.ordenTrabajo?.nombre;
     const descripcionOT = marcacion.ordenTrabajo?.descripcion;
-    const nombreOrdenTrabajo = `${nombreOT} - ${descripcionOT}`;
+    const nombreOrdenTrabajo = [nombreOT, descripcionOT].filter(Boolean).join(' - ');
 
     const partes = [];
     if (codigoOrdenServicio) {
