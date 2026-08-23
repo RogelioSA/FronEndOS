@@ -854,7 +854,12 @@ export class ReporteMarcacionComponent {
 
   /* ================= DESCARGAR REPORTE FORMATO TAREO (ExcelJS con estilos) ================= */
   async descargarReporteTareo() {
-    if (!this.datosReporte || this.datosReporte.length === 0) {
+    const empleadosTareo = (this.datosReporte || []).filter(empleado => {
+      const marcacion = this.obtenerPrimeraMarcacionDatos(empleado);
+      return marcacion?.ordenServicio?.id != null || marcacion?.ordenTrabajo?.id != null;
+    });
+
+    if (empleadosTareo.length === 0) {
       this.showMessage('No hay datos para exportar');
       return;
     }
@@ -1002,25 +1007,16 @@ export class ReporteMarcacionComponent {
       }
 
       // ── FILAS DE DATOS ──
-      this.datosReporte.forEach((empleado, index) => {
-        // Obtener la primera marcación para extraer datos de OT/OS
-        const primeraMarcacion = this.obtenerPrimeraMarcacionDatos(empleado);
-
-        // Fechas desde ordenTrabajo
-        const fechaInicioOT = primeraMarcacion?.ordenTrabajo?.fechaInicio
-          ? this.datePipe.transform(primeraMarcacion.ordenTrabajo.fechaInicio, 'dd/MM/yyyy') || ''
+      empleadosTareo.forEach((empleado, index) => {
+        // El periodo real se obtiene del primer y último jornal marcado.
+        const periodoMarcaciones = this.obtenerPeriodoMarcaciones(empleado);
+        const fechaInicioMarcaciones = periodoMarcaciones
+          ? this.formatearFechaJornal(periodoMarcaciones.fechaInicio)
           : '';
-        const fechaFinOT = primeraMarcacion?.ordenTrabajo?.fechaFin
-          ? this.datePipe.transform(primeraMarcacion.ordenTrabajo.fechaFin, 'dd/MM/yyyy') || ''
+        const fechaFinMarcaciones = periodoMarcaciones
+          ? this.formatearFechaJornal(periodoMarcaciones.fechaFin)
           : '';
-
-        // Total de días entre fechaInicio y fechaFin de la OT
-        let totalDiasOT: number | string = '';
-        if (primeraMarcacion?.ordenTrabajo?.fechaInicio && primeraMarcacion?.ordenTrabajo?.fechaFin) {
-          const inicio = new Date(primeraMarcacion.ordenTrabajo.fechaInicio);
-          const fin = new Date(primeraMarcacion.ordenTrabajo.fechaFin);
-          totalDiasOT = Math.ceil((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
-        }
+        const totalDiasMarcaciones = periodoMarcaciones?.totalDias ?? '';
 
         const filaData: any[] = [
           index + 1,
@@ -1075,9 +1071,9 @@ export class ReporteMarcacionComponent {
           horasExtraDisplay,                   // HORAS EXTRA
           textoPagar,                          // PAGAR
           '',                                  // MOTIVO
-          fechaInicioOT,                       // FECHA DE INICIO (de ordenTrabajo)
-          fechaFinOT,                          // FECHA DE FIN (de ordenTrabajo)
-          totalDiasOT,                         // TOTAL DE DÍAS (calculado de OT)
+          fechaInicioMarcaciones,              // FECHA DE INICIO (primera marcación)
+          fechaFinMarcaciones,                 // FECHA DE FIN (última marcación)
+          totalDiasMarcaciones,                // TOTAL DE DÍAS (rango inclusivo)
           'DIAS',                              // MEDIDA
           ''                                   // OBSERVACIONES
         );
@@ -1189,12 +1185,51 @@ export class ReporteMarcacionComponent {
    */
   obtenerPrimeraMarcacionDatos(empleado: EmpleadoReporte): any | null {
     for (const fecha of Object.keys(empleado.marcaciones)) {
-      const marc = empleado.marcaciones[fecha];
-      const datos = marc.datosEntrada || marc.datosSalida || marc.datosSalidaRefrigerio
-                    || marc.datosEntradaRefrigerio || marc.datosDesconocido;
+      const datos = this.obtenerDatosMarcacion(empleado.marcaciones[fecha]);
       if (datos) return datos;
     }
     return null;
+  }
+
+  obtenerPeriodoMarcaciones(empleado: EmpleadoReporte): {
+    fechaInicio: string;
+    fechaFin: string;
+    totalDias: number;
+  } | null {
+    const fechas = Object.entries(empleado.marcaciones)
+      .filter(([, marcacion]) => this.obtenerDatosMarcacion(marcacion) !== null)
+      .map(([fecha]) => fecha)
+      .sort();
+
+    if (fechas.length === 0) {
+      return null;
+    }
+
+    const fechaInicio = fechas[0];
+    const fechaFin = fechas[fechas.length - 1];
+    const inicioUtc = this.fechaJornalAUtc(fechaInicio);
+    const finUtc = this.fechaJornalAUtc(fechaFin);
+
+    return {
+      fechaInicio,
+      fechaFin,
+      totalDias: Math.floor((finUtc - inicioUtc) / (1000 * 60 * 60 * 24)) + 1
+    };
+  }
+
+  private obtenerDatosMarcacion(marcacion: MarcacionPorDia): any | null {
+    return marcacion.datosEntrada || marcacion.datosSalida || marcacion.datosSalidaRefrigerio
+      || marcacion.datosEntradaRefrigerio || marcacion.datosDesconocido || null;
+  }
+
+  private fechaJornalAUtc(fecha: string): number {
+    const [anio, mes, dia] = fecha.split('-').map(Number);
+    return Date.UTC(anio, mes - 1, dia);
+  }
+
+  private formatearFechaJornal(fecha: string): string {
+    const [anio, mes, dia] = fecha.split('-');
+    return `${dia}/${mes}/${anio}`;
   }
 
   numeroALetraColumna(num: number): string {
