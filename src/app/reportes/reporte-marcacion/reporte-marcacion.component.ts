@@ -57,8 +57,11 @@ interface DetalleMarcacion {
 export class ReporteMarcacionComponent {
 
   private readonly ordenTrabajoOficinaId = 0;
+  private readonly ordenTrabajoVacacionesId = 37;
+  private readonly codigosAusencia = new Set(['VAC', 'LIC', 'DM', 'DP']);
 
   marcaciones: any[] = [];
+  vacaciones = new Map<string, string>();
   datosReporte: EmpleadoReporte[] = [];
   datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
   textoBusquedaPersonal: string = '';
@@ -78,6 +81,7 @@ export class ReporteMarcacionComponent {
   detalleMarcacion: DetalleMarcacion | null = null;
   editandoMarcacion: boolean = false;
   mostrarRegularizacionNueva: boolean = false;
+  cruceVacacionesSeleccionado: boolean = false;
   contextoRegularizacionNueva: { empleado: EmpleadoReporte; fecha: string; tipoEvento: number } | null = null;
   regularizacion = {
     jornal: '',
@@ -186,11 +190,26 @@ export class ReporteMarcacionComponent {
         throw new Error('Fechas inválidas');
       }
 
-      const result = await firstValueFrom(
-        this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)
-      );
+      const [result, horarios] = await Promise.all([
+        firstValueFrom(this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)),
+        firstValueFrom(
+          this.apiService.obtenerHorariosPorOrdenYRango(
+            this.ordenTrabajoVacacionesId,
+            fechaInicio,
+            fechaFin.slice(0, 10)
+          )
+        )
+      ]);
 
       this.marcaciones = result.map((marcacion: any) => this.normalizarDescripcionOrdenes(marcacion));
+      this.vacaciones = new Map(
+        (Array.isArray(horarios) ? horarios : horarios?.data ?? [])
+          .map((horario: any): [string, string] => [
+            this.crearClaveVacacion(horario.personalId, horario.fecha),
+            horario?.horarioCabecera?.nombre?.trim().toUpperCase() ?? ''
+          ])
+          .filter(([clave, codigo]: [string, string]) => !!clave && this.codigosAusencia.has(codigo))
+      );
       this.procesarDatosParaReporte();
 
     } catch (error) {
@@ -423,6 +442,39 @@ export class ReporteMarcacionComponent {
     }
   }
 
+  esVacacion(empleado: EmpleadoReporte, fecha: string): boolean {
+    return this.vacaciones.has(this.crearClaveVacacion(empleado.personalId, fecha));
+  }
+
+  obtenerCodigoAusencia(empleado: EmpleadoReporte, fecha: string): string {
+    return this.vacaciones.get(this.crearClaveVacacion(empleado.personalId, fecha)) ?? '';
+  }
+
+  tieneMarcacionEnFecha(empleado: EmpleadoReporte, fecha: string): boolean {
+    const marcacion = empleado.marcaciones[fecha];
+    return !!marcacion && Object.keys(marcacion).some((propiedad) =>
+      propiedad.startsWith('datos') && !!(marcacion as any)[propiedad]
+    );
+  }
+
+  obtenerTextoCelda(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): string {
+    const valor = this.obtenerMarcacionPorTipo(empleado, fecha, tipoEvento);
+    if (!valor && this.esVacacion(empleado, fecha) && !this.tieneMarcacionEnFecha(empleado, fecha) &&
+        (tipoEvento === 0 || tipoEvento === 1)) {
+      return this.obtenerCodigoAusencia(empleado, fecha);
+    }
+    return valor;
+  }
+
+  esCruceVacaciones(empleado: EmpleadoReporte, fecha: string): boolean {
+    return this.esVacacion(empleado, fecha) && this.tieneMarcacionEnFecha(empleado, fecha);
+  }
+
+  private crearClaveVacacion(personalId: number, fecha: string): string {
+    const fechaNormalizada = typeof fecha === 'string' ? fecha.slice(0, 10) : '';
+    return personalId && fechaNormalizada ? `${personalId}|${fechaNormalizada}` : '';
+  }
+
   tieneMarcacionPorTipo(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): boolean {
     const marcacion = empleado.marcaciones[fecha];
     if (!marcacion) return false;
@@ -535,6 +587,7 @@ export class ReporteMarcacionComponent {
   }
 
   onCellClick(empleado: EmpleadoReporte, fecha: string, tipoEvento: number) {
+    this.cruceVacacionesSeleccionado = this.esCruceVacaciones(empleado, fecha);
     const tieneMarcacion = this.tieneMarcacionPorTipo(empleado, fecha, tipoEvento);
 
     if (tieneMarcacion) {
@@ -584,6 +637,7 @@ export class ReporteMarcacionComponent {
     this.contextoRegularizacionNueva = null;
     this.editandoMarcacion = false;
     this.detalleMarcacion = null;
+    this.cruceVacacionesSeleccionado = false;
     this.regularizacion = {
       jornal: '',
       evento: 0,
@@ -707,6 +761,7 @@ export class ReporteMarcacionComponent {
     this.detalleMarcacion = null;
     this.editandoMarcacion = false;
     this.rostroUrl = null;
+    this.cruceVacacionesSeleccionado = false;
   }
 
   obtenerTipoEventoTexto(tipoEvento: number): string {
