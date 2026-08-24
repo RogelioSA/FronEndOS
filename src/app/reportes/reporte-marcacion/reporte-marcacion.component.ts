@@ -59,9 +59,11 @@ export class ReporteMarcacionComponent {
   private readonly ordenTrabajoOficinaId = 0;
   private readonly ordenTrabajoVacacionesId = 37;
   private readonly codigosAusencia = new Set(['VAC', 'LIC', 'DM', 'DP']);
+  private readonly nombreOrdenAusencias = 'VARIOS';
 
   marcaciones: any[] = [];
   vacaciones = new Map<string, string>();
+  personalPorId = new Map<number, any>();
   datosReporte: EmpleadoReporte[] = [];
   datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
   textoBusquedaPersonal: string = '';
@@ -190,7 +192,7 @@ export class ReporteMarcacionComponent {
         throw new Error('Fechas inválidas');
       }
 
-      const [result, horarios] = await Promise.all([
+      const [result, horarios, personalDetalle] = await Promise.all([
         firstValueFrom(this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)),
         firstValueFrom(
           this.apiService.obtenerHorariosPorOrdenYRango(
@@ -198,7 +200,8 @@ export class ReporteMarcacionComponent {
             fechaInicio,
             fechaFin.slice(0, 10)
           )
-        )
+        ),
+        firstValueFrom(this.apiService.getPersonalDetalle())
       ]);
 
       this.marcaciones = result.map((marcacion: any) => this.normalizarDescripcionOrdenes(marcacion));
@@ -209,6 +212,15 @@ export class ReporteMarcacionComponent {
             horario?.horarioCabecera?.nombre?.trim().toUpperCase() ?? ''
           ])
           .filter(([clave, codigo]: [string, string]) => !!clave && this.codigosAusencia.has(codigo))
+      );
+      const listaPersonal = Array.isArray(personalDetalle) ? personalDetalle : personalDetalle?.data ?? [];
+      this.personalPorId = new Map(
+        listaPersonal
+          .map((personal: any): [number, any] => [
+            Number(personal?.persona?.id ?? personal?.personaId ?? personal?.id),
+            personal
+          ])
+          .filter(([personalId]: [number, any]) => Number.isFinite(personalId))
       );
       this.procesarDatosParaReporte();
 
@@ -301,9 +313,35 @@ export class ReporteMarcacionComponent {
       }
     });
 
+    this.agregarPersonalConAusenciasSinMarcacion(empleadosMap);
+
     this.datosReporte = Array.from(empleadosMap.values());
     this.agruparDatosPorOrden();
     console.log("✅ Datos procesados para reporte:", this.datosReporte);
+  }
+
+  private agregarPersonalConAusenciasSinMarcacion(empleadosMap: Map<string, EmpleadoReporte>): void {
+    const personalIncluido = new Set(
+      Array.from(empleadosMap.values()).map((empleado) => empleado.personalId)
+    );
+
+    this.vacaciones.forEach((_codigo, clave) => {
+      const personalId = Number(clave.split('|')[0]);
+      if (!Number.isFinite(personalId) || personalIncluido.has(personalId)) {
+        return;
+      }
+
+      const personalDetalle = this.personalPorId.get(personalId);
+      const persona = personalDetalle?.persona;
+      empleadosMap.set(`ausencia-${personalId}`, {
+        orden: this.nombreOrdenAusencias,
+        dni: persona?.documentoIdentidad || 'N/A',
+        personal: this.obtenerNombreCompleto(personalDetalle, persona),
+        personalId,
+        marcaciones: {}
+      });
+      personalIncluido.add(personalId);
+    });
   }
 
   agruparDatosPorOrden() {
