@@ -150,7 +150,8 @@ export class MarcacionespecificaComponent implements OnInit, OnDestroy {
         observacion: this.observacion.trim(),
         ordenTrabajoId: Number(this.ordenTrabajoId),
         obseracion: this.observacion.trim(),
-        eventoTipo
+        eventoTipo,
+        tipoRegularizacion: 1
       };
 
       console.log('Body enviado a /rrhh/RegistroAsistencia/regularizar:', payload);

@@ -14,7 +14,14 @@ describe('MarcacionespecificaComponent', () => {
       declarations: [MarcacionespecificaComponent],
       imports: [FormsModule],
       providers: [
-        { provide: ApiService, useValue: { listarOrdenTrabajoCabeceraSimplificado: () => of([]) } },
+        {
+          provide: ApiService,
+          useValue: {
+            listarOrdenTrabajoCabeceraSimplificado: () => of([]),
+            subirAdjunto: () => of({ id: 10 }),
+            registrarMarcacionEspecifica: () => of({ id: 20 })
+          }
+        },
         { provide: AuthService, useValue: { getClaims: () => ({ nCodigo: 1 }) } }
       ]
     }).compileComponents();
@@ -52,5 +59,22 @@ describe('MarcacionespecificaComponent', () => {
 
     expect(component.esError).toBeTrue();
     expect(component.mensaje).toBe('Ingrese una observación antes de marcar.');
+  });
+
+  it('should send tipoRegularizacion with default value 1', async () => {
+    const apiService = TestBed.inject(ApiService) as any;
+    const registrarSpy = spyOn(apiService, 'registrarMarcacionEspecifica').and.returnValue(of({ id: 20 }));
+    spyOn<any>(component, 'capturePhoto').and.returnValue('data:image/jpeg;base64,AA==');
+    component.ordenTrabajoId = 1;
+    component.observacion = 'Trabajo realizado';
+    component.coordinates = '-12.0000000, -77.0000000';
+    component.latitude = -12;
+    component.longitude = -77;
+
+    await component.marcarAsistencia(0);
+
+    expect(registrarSpy).toHaveBeenCalledWith(jasmine.objectContaining({
+      tipoRegularizacion: 1
+    }));
   });
 });
