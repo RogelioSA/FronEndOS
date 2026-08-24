@@ -167,18 +167,22 @@
                                         [ngClass]="{
                                             'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
                                             'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
-                                            'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 0)
+                                            'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 0),
+                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha),
+                                            'vacaciones-con-marcacion': esCruceVacaciones(empleado, col.fecha)
                                         }"
                                         (click)="onCellClick(empleado, col.fecha, 0)"
                                         style="cursor: pointer;">
-                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 0) }}
+                                        {{ obtenerTextoCelda(empleado, col.fecha, 0) }}
                                     </td>
                                     <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
-                                                    'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1)}"
+                                                    'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1),
+                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha),
+                                            'vacaciones-con-marcacion': esCruceVacaciones(empleado, col.fecha)}"
                                         (click)="onCellClick(empleado, col.fecha, 1)"
                                         style="cursor: pointer;">
-                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 1) }}
+                                        {{ obtenerTextoCelda(empleado, col.fecha, 1) }}
                                     </td>
                                 </ng-container>
                             </ng-container>
@@ -191,11 +195,13 @@
                                         [ngClass]="{
                                             'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
                                             'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
-                                            'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 0)
+                                            'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 0),
+                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha),
+                                            'vacaciones-con-marcacion': esCruceVacaciones(empleado, col.fecha)
                                         }"
                                         (click)="onCellClick(empleado, col.fecha, 0)"
                                         style="cursor: pointer;">
-                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 0) }}
+                                        {{ obtenerTextoCelda(empleado, col.fecha, 0) }}
                                     </td>
 
                                     <!-- Salida Refrigerio (2) -->
@@ -219,10 +225,12 @@
                                     <!-- Salida (1) -->
                                     <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
-                                                    'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1)}"
+                                                    'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1),
+                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha),
+                                            'vacaciones-con-marcacion': esCruceVacaciones(empleado, col.fecha)}"
                                         (click)="onCellClick(empleado, col.fecha, 1)"
                                         style="cursor: pointer;">
-                                        {{ obtenerMarcacionPorTipo(empleado, col.fecha, 1) }}
+                                        {{ obtenerTextoCelda(empleado, col.fecha, 1) }}
                                     </td>
 
                                     <!-- Desconocido (99) -->
@@ -376,6 +384,10 @@
 
             <ng-template #regularizacionForm>
                 <div class="regularizacion-form">
+                    <div *ngIf="cruceVacacionesSeleccionado" class="alert alert-warning cruce-vacaciones-alerta" role="alert">
+                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                        <strong>CRUCE DE MARCACION CON VACACIONES</strong>
+                    </div>
                     <div class="info-line stacked">
                         <span class="info-label">Jornal:</span>
                         <input
