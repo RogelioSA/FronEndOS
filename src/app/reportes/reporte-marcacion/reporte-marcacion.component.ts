@@ -56,7 +56,14 @@ interface DetalleMarcacion {
 })
 export class ReporteMarcacionComponent {
 
+  private readonly ordenTrabajoOficinaId = 0;
+  private readonly ordenTrabajoVacacionesId = 37;
+  private readonly codigosAusencia = new Set(['VAC', 'LIC', 'DM', 'DP']);
+  private readonly nombreOrdenAusencias = 'VARIOS';
+
   marcaciones: any[] = [];
+  vacaciones = new Map<string, string>();
+  personalPorId = new Map<number, any>();
   datosReporte: EmpleadoReporte[] = [];
   datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
   textoBusquedaPersonal: string = '';
@@ -76,6 +83,7 @@ export class ReporteMarcacionComponent {
   detalleMarcacion: DetalleMarcacion | null = null;
   editandoMarcacion: boolean = false;
   mostrarRegularizacionNueva: boolean = false;
+  cruceVacacionesSeleccionado: boolean = false;
   contextoRegularizacionNueva: { empleado: EmpleadoReporte; fecha: string; tipoEvento: number } | null = null;
   regularizacion = {
     jornal: '',
@@ -124,11 +132,17 @@ export class ReporteMarcacionComponent {
         this.apiService.listarOrdenTrabajoCabeceraSimplificado()
       );
 
-      this.ordenesTrabajo = response.map((ot: any) => ({
-        id: ot.id,
-        cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`,
-        adjuntoId: ot.adjuntoId
-      }));
+      this.ordenesTrabajo = [
+        {
+          id: this.ordenTrabajoOficinaId,
+          cOrdenInterna: 'OFICINA'
+        },
+        ...response.map((ot: any) => ({
+          id: ot.id,
+          cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`,
+          adjuntoId: ot.adjuntoId
+        }))
+      ];
     } catch (error) {
       console.error('❌ Error al cargar órdenes de trabajo:', error);
       this.showMessage('Error al cargar las órdenes de trabajo');
@@ -178,11 +192,36 @@ export class ReporteMarcacionComponent {
         throw new Error('Fechas inválidas');
       }
 
-      const result = await firstValueFrom(
-        this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)
-      );
+      const [result, horarios, personalDetalle] = await Promise.all([
+        firstValueFrom(this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)),
+        firstValueFrom(
+          this.apiService.obtenerHorariosPorOrdenYRango(
+            this.ordenTrabajoVacacionesId,
+            fechaInicio,
+            fechaFin.slice(0, 10)
+          )
+        ),
+        firstValueFrom(this.apiService.getPersonalDetalle())
+      ]);
 
       this.marcaciones = result.map((marcacion: any) => this.normalizarDescripcionOrdenes(marcacion));
+      this.vacaciones = new Map(
+        (Array.isArray(horarios) ? horarios : horarios?.data ?? [])
+          .map((horario: any): [string, string] => [
+            this.crearClaveVacacion(horario.personalId, horario.fecha),
+            horario?.horarioCabecera?.nombre?.trim().toUpperCase() ?? ''
+          ])
+          .filter(([clave, codigo]: [string, string]) => !!clave && this.codigosAusencia.has(codigo))
+      );
+      const listaPersonal = Array.isArray(personalDetalle) ? personalDetalle : personalDetalle?.data ?? [];
+      this.personalPorId = new Map(
+        listaPersonal
+          .map((personal: any): [number, any] => [
+            Number(personal?.persona?.id ?? personal?.personaId ?? personal?.id),
+            personal
+          ])
+          .filter(([personalId]: [number, any]) => Number.isFinite(personalId))
+      );
       this.procesarDatosParaReporte();
 
     } catch (error) {
@@ -200,8 +239,10 @@ export class ReporteMarcacionComponent {
     const marcacionesFiltradas = this.marcaciones.filter(m => {
       const fechaJornal = new Date(m.fecha);
       const cumpleFecha = fechaJornal >= fechaIni && fechaJornal <= fechaFin;
-      const cumpleOrdenTrabajo = !this.ordenTrabajoSeleccionada ||
-      m.ordenTrabajo?.id === this.ordenTrabajoSeleccionada;
+      const cumpleOrdenTrabajo = this.ordenTrabajoSeleccionada == null ||
+        (this.ordenTrabajoSeleccionada === this.ordenTrabajoOficinaId
+          ? m.ordenTrabajo?.id == null
+          : m.ordenTrabajo?.id === this.ordenTrabajoSeleccionada);
       return cumpleFecha && cumpleOrdenTrabajo;
     });
 
@@ -241,13 +282,21 @@ export class ReporteMarcacionComponent {
 
       switch(tipoEvento) {
         case 0:
-          empleado.marcaciones[fechaKey].entrada = hora || '';
-          empleado.marcaciones[fechaKey].tardanza = marcacion.esTardanza;
-          empleado.marcaciones[fechaKey].datosEntrada = marcacion;
+          // Si existen varias entradas conservamos la primera del jornal.
+          if (!empleado.marcaciones[fechaKey].datosEntrada ||
+              new Date(marcacion.fecha).getTime() < new Date(empleado.marcaciones[fechaKey].datosEntrada.fecha).getTime()) {
+            empleado.marcaciones[fechaKey].entrada = hora || '';
+            empleado.marcaciones[fechaKey].tardanza = marcacion.esTardanza;
+            empleado.marcaciones[fechaKey].datosEntrada = marcacion;
+          }
           break;
         case 1:
-          empleado.marcaciones[fechaKey].salida = hora || '';
-          empleado.marcaciones[fechaKey].datosSalida = marcacion;
+          // Si existen varias salidas conservamos la última del jornal.
+          if (!empleado.marcaciones[fechaKey].datosSalida ||
+              new Date(marcacion.fecha).getTime() > new Date(empleado.marcaciones[fechaKey].datosSalida.fecha).getTime()) {
+            empleado.marcaciones[fechaKey].salida = hora || '';
+            empleado.marcaciones[fechaKey].datosSalida = marcacion;
+          }
           break;
         case 2:
           empleado.marcaciones[fechaKey].salidaRefrigerio = hora || '';
@@ -264,9 +313,35 @@ export class ReporteMarcacionComponent {
       }
     });
 
+    this.agregarPersonalConAusenciasSinMarcacion(empleadosMap);
+
     this.datosReporte = Array.from(empleadosMap.values());
     this.agruparDatosPorOrden();
     console.log("✅ Datos procesados para reporte:", this.datosReporte);
+  }
+
+  private agregarPersonalConAusenciasSinMarcacion(empleadosMap: Map<string, EmpleadoReporte>): void {
+    const personalIncluido = new Set(
+      Array.from(empleadosMap.values()).map((empleado) => empleado.personalId)
+    );
+
+    this.vacaciones.forEach((_codigo, clave) => {
+      const personalId = Number(clave.split('|')[0]);
+      if (!Number.isFinite(personalId) || personalIncluido.has(personalId)) {
+        return;
+      }
+
+      const personalDetalle = this.personalPorId.get(personalId);
+      const persona = personalDetalle?.persona;
+      empleadosMap.set(`ausencia-${personalId}`, {
+        orden: this.nombreOrdenAusencias,
+        dni: persona?.documentoIdentidad || 'N/A',
+        personal: this.obtenerNombreCompleto(personalDetalle, persona),
+        personalId,
+        marcaciones: {}
+      });
+      personalIncluido.add(personalId);
+    });
   }
 
   agruparDatosPorOrden() {
@@ -360,10 +435,14 @@ export class ReporteMarcacionComponent {
   }
 
   obtenerOrdenInfo(marcacion: any): string {
+    if (marcacion.ordenTrabajo?.id == null && marcacion.ordenServicio?.id == null) {
+      return 'OFICINA';
+    }
+
     const codigoOrdenServicio = marcacion.ordenServicio?.codigoOrdenInterna || marcacion.ordenServicio?.codigoReferencial;
     const nombreOT = marcacion.ordenTrabajo?.nombre;
     const descripcionOT = marcacion.ordenTrabajo?.descripcion;
-    const nombreOrdenTrabajo = `${nombreOT} - ${descripcionOT}`;
+    const nombreOrdenTrabajo = [nombreOT, descripcionOT].filter(Boolean).join(' - ');
 
     const partes = [];
     if (codigoOrdenServicio) {
@@ -399,6 +478,39 @@ export class ReporteMarcacionComponent {
       case 99: return marcacion.desconocido || '';
       default: return '';
     }
+  }
+
+  esVacacion(empleado: EmpleadoReporte, fecha: string): boolean {
+    return this.vacaciones.has(this.crearClaveVacacion(empleado.personalId, fecha));
+  }
+
+  obtenerCodigoAusencia(empleado: EmpleadoReporte, fecha: string): string {
+    return this.vacaciones.get(this.crearClaveVacacion(empleado.personalId, fecha)) ?? '';
+  }
+
+  tieneMarcacionEnFecha(empleado: EmpleadoReporte, fecha: string): boolean {
+    const marcacion = empleado.marcaciones[fecha];
+    return !!marcacion && Object.keys(marcacion).some((propiedad) =>
+      propiedad.startsWith('datos') && !!(marcacion as any)[propiedad]
+    );
+  }
+
+  obtenerTextoCelda(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): string {
+    const valor = this.obtenerMarcacionPorTipo(empleado, fecha, tipoEvento);
+    if (!valor && this.esVacacion(empleado, fecha) && !this.tieneMarcacionEnFecha(empleado, fecha) &&
+        (tipoEvento === 0 || tipoEvento === 1)) {
+      return this.obtenerCodigoAusencia(empleado, fecha);
+    }
+    return valor;
+  }
+
+  esCruceVacaciones(empleado: EmpleadoReporte, fecha: string): boolean {
+    return this.esVacacion(empleado, fecha) && this.tieneMarcacionEnFecha(empleado, fecha);
+  }
+
+  private crearClaveVacacion(personalId: number, fecha: string): string {
+    const fechaNormalizada = typeof fecha === 'string' ? fecha.slice(0, 10) : '';
+    return personalId && fechaNormalizada ? `${personalId}|${fechaNormalizada}` : '';
   }
 
   tieneMarcacionPorTipo(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): boolean {
@@ -513,6 +625,7 @@ export class ReporteMarcacionComponent {
   }
 
   onCellClick(empleado: EmpleadoReporte, fecha: string, tipoEvento: number) {
+    this.cruceVacacionesSeleccionado = this.esCruceVacaciones(empleado, fecha);
     const tieneMarcacion = this.tieneMarcacionPorTipo(empleado, fecha, tipoEvento);
 
     if (tieneMarcacion) {
@@ -562,6 +675,7 @@ export class ReporteMarcacionComponent {
     this.contextoRegularizacionNueva = null;
     this.editandoMarcacion = false;
     this.detalleMarcacion = null;
+    this.cruceVacacionesSeleccionado = false;
     this.regularizacion = {
       jornal: '',
       evento: 0,
@@ -685,6 +799,7 @@ export class ReporteMarcacionComponent {
     this.detalleMarcacion = null;
     this.editandoMarcacion = false;
     this.rostroUrl = null;
+    this.cruceVacacionesSeleccionado = false;
   }
 
   obtenerTipoEventoTexto(tipoEvento: number): string {
@@ -832,7 +947,12 @@ export class ReporteMarcacionComponent {
 
   /* ================= DESCARGAR REPORTE FORMATO TAREO (ExcelJS con estilos) ================= */
   async descargarReporteTareo() {
-    if (!this.datosReporte || this.datosReporte.length === 0) {
+    const empleadosTareo = (this.datosReporte || []).filter(empleado => {
+      const marcacion = this.obtenerPrimeraMarcacionDatos(empleado);
+      return marcacion?.ordenServicio?.id != null || marcacion?.ordenTrabajo?.id != null;
+    });
+
+    if (empleadosTareo.length === 0) {
       this.showMessage('No hay datos para exportar');
       return;
     }
@@ -872,6 +992,7 @@ export class ReporteMarcacionComponent {
       const fillEncabezadoColumnas: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF70AD47' } };
       const fillFinDeSemana: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
       const fillTotales: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } };
+      const fillMarcacionIncompleta: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
 
       const fontBlanco: Partial<ExcelJS.Font> = { bold: true, color: { argb: 'FFFFFFFF' } };
       const fontTitulo: Partial<ExcelJS.Font> = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
@@ -979,28 +1100,16 @@ export class ReporteMarcacionComponent {
       }
 
       // ── FILAS DE DATOS ──
-      this.datosReporte.forEach((empleado, index) => {
-        // Obtener la primera marcación para extraer datos de OT/OS
-        const primeraMarcacion = this.obtenerPrimeraMarcacionDatos(empleado);
-
-        // Fechas desde ordenTrabajo
-        const fechaInicioOT = primeraMarcacion?.ordenTrabajo?.fechaInicio
-          ? this.datePipe.transform(primeraMarcacion.ordenTrabajo.fechaInicio, 'dd/MM/yyyy') || ''
+      empleadosTareo.forEach((empleado, index) => {
+        // El periodo real se obtiene del primer y último jornal marcado.
+        const periodoMarcaciones = this.obtenerPeriodoMarcaciones(empleado);
+        const fechaInicioMarcaciones = periodoMarcaciones
+          ? this.formatearFechaJornal(periodoMarcaciones.fechaInicio)
           : '';
-        const fechaFinOT = primeraMarcacion?.ordenTrabajo?.fechaFin
-          ? this.datePipe.transform(primeraMarcacion.ordenTrabajo.fechaFin, 'dd/MM/yyyy') || ''
+        const fechaFinMarcaciones = periodoMarcaciones
+          ? this.formatearFechaJornal(periodoMarcaciones.fechaFin)
           : '';
-
-        // Total de días entre fechaInicio y fechaFin de la OT
-        let totalDiasOT: number | string = '';
-        if (primeraMarcacion?.ordenTrabajo?.fechaInicio && primeraMarcacion?.ordenTrabajo?.fechaFin) {
-          const inicio = new Date(primeraMarcacion.ordenTrabajo.fechaInicio);
-          const fin = new Date(primeraMarcacion.ordenTrabajo.fechaFin);
-          totalDiasOT = Math.ceil((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
-        }
-
-        // codigoReferencial de ordenServicio para columna OS
-        const codigoReferencialOS = primeraMarcacion?.ordenServicio?.codigoReferencial || '';
+        const totalDiasMarcaciones = periodoMarcaciones?.totalDias ?? '';
 
         const filaData: any[] = [
           index + 1,
@@ -1011,33 +1120,40 @@ export class ReporteMarcacionComponent {
           '.'  // GUARDIAS
         ];
 
-        let totalHoras = 0;
+        let totalMinutos = 0;
+        const celdasMarcacionIncompleta: number[] = [];
 
-        this.columnasdinamicas.forEach(col => {
+        this.columnasdinamicas.forEach((col, diaIndex) => {
           const marcacion = empleado.marcaciones[col.fecha];
 
-          // L: vacío (empresa no disponible aún)
-          const letra = '';
+          const datosOrden = marcacion
+            ? (marcacion.datosEntrada || marcacion.datosSalida)
+            : null;
+          // L identifica la labor mediante los primeros cinco caracteres de la descripción de la OT.
+          const letra = datosOrden?.ordenTrabajo?.descripcion?.slice(0, 5) || '';
 
-          let horas = 0;
           let horasTexto: string | number = '';
-          if (marcacion?.entrada && marcacion?.salida) {
-            horas = this.calcularHorasNumerico(marcacion.entrada, marcacion.salida);
-            horasTexto = horas > 0 ? horas : '';
-            totalHoras += horas;
+          if (marcacion?.datosEntrada || marcacion?.datosSalida) {
+            const minutosTrabajados = this.calcularMinutosTareo(marcacion);
+            if (minutosTrabajados === null) {
+              horasTexto = -1;
+              celdasMarcacionIncompleta.push(8 + diaIndex * 3);
+            } else {
+              horasTexto = this.minutosAHorasDecimales(minutosTrabajados);
+              totalMinutos += minutosTrabajados;
+            }
           }
 
-          // OS: codigoReferencial de ordenServicio
-          let ordenServicio = '';
-          if (marcacion?.entrada) {
-            ordenServicio = codigoReferencialOS;
-          }
+          // OS corresponde al nombre de la Orden de Trabajo de ese mismo jornal.
+          const ordenServicio = datosOrden?.ordenTrabajo?.nombre || '';
 
           filaData.push(letra, horasTexto, ordenServicio);
         });
 
         // Columnas adicionales
-        const horasExtra = totalHoras - 192;
+        // Se totalizan minutos antes de convertirlos para evitar acumular errores de redondeo diarios.
+        const totalHoras = this.minutosAHorasDecimales(totalMinutos);
+        const horasExtra = Math.round(Math.max(0, totalHoras - 192) * 100) / 100;
         const horasExtraDisplay = horasExtra > 0 ? horasExtra : 0;
         const textoPagar = horasExtra > 0
           ? `PAGAR ${horasExtra} HORAS EXTRA AL 25% DEL MES DE ${mesActual}`
@@ -1048,14 +1164,20 @@ export class ReporteMarcacionComponent {
           horasExtraDisplay,                   // HORAS EXTRA
           textoPagar,                          // PAGAR
           '',                                  // MOTIVO
-          fechaInicioOT,                       // FECHA DE INICIO (de ordenTrabajo)
-          fechaFinOT,                          // FECHA DE FIN (de ordenTrabajo)
-          totalDiasOT,                         // TOTAL DE DÍAS (calculado de OT)
+          fechaInicioMarcaciones,              // FECHA DE INICIO (primera marcación)
+          fechaFinMarcaciones,                 // FECHA DE FIN (última marcación)
+          totalDiasMarcaciones,                // TOTAL DE DÍAS (rango inclusivo)
           'DIAS',                              // MEDIDA
           ''                                   // OBSERVACIONES
         );
 
         const row = ws.addRow(filaData);
+
+        celdasMarcacionIncompleta.forEach(columna => {
+          const cell = row.getCell(columna);
+          cell.fill = fillMarcacionIncompleta;
+          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        });
 
         // ── Estilos fila de datos ──
 
@@ -1076,7 +1198,7 @@ export class ReporteMarcacionComponent {
             const cell = row.getCell(c);
             cell.alignment = alignCenter;
             cell.border = borderThin;
-            if (esFinDeSemana) {
+            if (esFinDeSemana && cell.value !== -1) {
               cell.fill = fillFinDeSemana;
             }
           }
@@ -1156,12 +1278,51 @@ export class ReporteMarcacionComponent {
    */
   obtenerPrimeraMarcacionDatos(empleado: EmpleadoReporte): any | null {
     for (const fecha of Object.keys(empleado.marcaciones)) {
-      const marc = empleado.marcaciones[fecha];
-      const datos = marc.datosEntrada || marc.datosSalida || marc.datosSalidaRefrigerio
-                    || marc.datosEntradaRefrigerio || marc.datosDesconocido;
+      const datos = this.obtenerDatosMarcacion(empleado.marcaciones[fecha]);
       if (datos) return datos;
     }
     return null;
+  }
+
+  obtenerPeriodoMarcaciones(empleado: EmpleadoReporte): {
+    fechaInicio: string;
+    fechaFin: string;
+    totalDias: number;
+  } | null {
+    const fechas = Object.entries(empleado.marcaciones)
+      .filter(([, marcacion]) => this.obtenerDatosMarcacion(marcacion) !== null)
+      .map(([fecha]) => fecha)
+      .sort();
+
+    if (fechas.length === 0) {
+      return null;
+    }
+
+    const fechaInicio = fechas[0];
+    const fechaFin = fechas[fechas.length - 1];
+    const inicioUtc = this.fechaJornalAUtc(fechaInicio);
+    const finUtc = this.fechaJornalAUtc(fechaFin);
+
+    return {
+      fechaInicio,
+      fechaFin,
+      totalDias: Math.floor((finUtc - inicioUtc) / (1000 * 60 * 60 * 24)) + 1
+    };
+  }
+
+  private obtenerDatosMarcacion(marcacion: MarcacionPorDia): any | null {
+    return marcacion.datosEntrada || marcacion.datosSalida || marcacion.datosSalidaRefrigerio
+      || marcacion.datosEntradaRefrigerio || marcacion.datosDesconocido || null;
+  }
+
+  private fechaJornalAUtc(fecha: string): number {
+    const [anio, mes, dia] = fecha.split('-').map(Number);
+    return Date.UTC(anio, mes - 1, dia);
+  }
+
+  private formatearFechaJornal(fecha: string): string {
+    const [anio, mes, dia] = fecha.split('-');
+    return `${dia}/${mes}/${anio}`;
   }
 
   numeroALetraColumna(num: number): string {
@@ -1237,6 +1398,36 @@ export class ReporteMarcacionComponent {
     } catch (error) {
       return 0;
     }
+  }
+
+  /**
+   * Calcula los minutos de HH usando exclusivamente el par entrada/salida del
+   * mismo grupo (personal, fecha jornal, OS y OT). El agrupamiento se realiza
+   * en procesarDatosParaReporte antes de llegar a este método.
+   */
+  calcularMinutosTareo(marcacion: MarcacionPorDia): number | null {
+    const entrada = marcacion.datosEntrada;
+    const salida = marcacion.datosSalida;
+
+    if (!entrada?.fecha || !salida?.fecha) {
+      return null;
+    }
+
+    const fechaEntrada = new Date(entrada.fecha).getTime();
+    const fechaSalida = new Date(salida.fecha).getTime();
+    const minutosDescanso = Number(entrada.minutosDescanso ?? salida.minutosDescanso ?? 0);
+
+    if (!Number.isFinite(fechaEntrada) || !Number.isFinite(fechaSalida) ||
+        !Number.isFinite(minutosDescanso)) {
+      return null;
+    }
+
+    const diferenciaMinutos = (fechaSalida - fechaEntrada) / (1000 * 60) - minutosDescanso;
+    return diferenciaMinutos >= 0 ? diferenciaMinutos : null;
+  }
+
+  private minutosAHorasDecimales(minutos: number): number {
+    return Math.round((minutos / 60) * 100) / 100;
   }
 
   obtenerCodigoOrdenServicio(orden: string): string {
