@@ -1937,6 +1937,12 @@ export class ApiService{
     return this.https.post<any>(url, body, { headers });
   }
 
+  registrarMarcacionEspecifica(body: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/rrhh/RegistroAsistencia/regularizar`;
+    return this.https.post<any>(url, body, { headers });
+  }
+
   //
   //subir foto
 

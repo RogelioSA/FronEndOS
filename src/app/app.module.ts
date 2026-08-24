@@ -67,6 +67,7 @@ import { CuentaCorrienteComponent } from './cuenta-corriente/cuenta-corriente.co
 import { PersonalMarcacionComponent } from './personal-marcacion/personal-marcacion.component';
 import { UsuarioComponent } from './usuario/usuario.component';
 import { MarcacionDatosComponent } from './marcacion-datos/marcacion-datos.component';
+import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionespecifica.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -127,7 +128,8 @@ import { MarcacionDatosComponent } from './marcacion-datos/marcacion-datos.compo
         CuentaCorrienteComponent,
         PersonalMarcacionComponent,
         UsuarioComponent,
-        MarcacionDatosComponent
+        MarcacionDatosComponent,
+        MarcacionespecificaComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,
