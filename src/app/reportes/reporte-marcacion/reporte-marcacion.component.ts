@@ -64,6 +64,7 @@ export class ReporteMarcacionComponent {
   marcaciones: any[] = [];
   vacaciones = new Map<string, string>();
   personalPorId = new Map<number, any>();
+  cargosPorId = new Map<number, string>();
   datosReporte: EmpleadoReporte[] = [];
   datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
   textoBusquedaPersonal: string = '';
@@ -192,7 +193,7 @@ export class ReporteMarcacionComponent {
         throw new Error('Fechas inválidas');
       }
 
-      const [result, horarios, personalDetalle] = await Promise.all([
+      const [result, horarios, personalDetalle, cargos] = await Promise.all([
         firstValueFrom(this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)),
         firstValueFrom(
           this.apiService.obtenerHorariosPorOrdenYRango(
@@ -201,7 +202,8 @@ export class ReporteMarcacionComponent {
             fechaFin.slice(0, 10)
           )
         ),
-        firstValueFrom(this.apiService.getPersonalDetalle())
+        firstValueFrom(this.apiService.getPersonalDetalle()),
+        firstValueFrom(this.apiService.getCargos())
       ]);
 
       this.marcaciones = result.map((marcacion: any) => this.normalizarDescripcionOrdenes(marcacion));
@@ -221,6 +223,12 @@ export class ReporteMarcacionComponent {
             personal
           ])
           .filter(([personalId]: [number, any]) => Number.isFinite(personalId))
+      );
+      const listaCargos = Array.isArray(cargos) ? cargos : cargos?.data ?? [];
+      this.cargosPorId = new Map(
+        listaCargos
+          .map((cargo: any): [number, string] => [Number(cargo.id), String(cargo.nombre ?? '').trim()])
+          .filter(([cargoId, nombre]: [number, string]) => Number.isFinite(cargoId) && !!nombre)
       );
       this.procesarDatosParaReporte();
 
@@ -1110,13 +1118,14 @@ export class ReporteMarcacionComponent {
           ? this.formatearFechaJornal(periodoMarcaciones.fechaFin)
           : '';
         const totalDiasMarcaciones = periodoMarcaciones?.totalDias ?? '';
+        const cargo = this.obtenerCargoEmpleado(empleado);
 
         const filaData: any[] = [
           index + 1,
           empleado.dni,
           this.obtenerApellidos(empleado.personal),
           this.obtenerNombres(empleado.personal),
-          '',  // CARGO
+          cargo,
           '.'  // GUARDIAS
         ];
 
@@ -1282,6 +1291,12 @@ export class ReporteMarcacionComponent {
       if (datos) return datos;
     }
     return null;
+  }
+
+  obtenerCargoEmpleado(empleado: EmpleadoReporte): string {
+    const marcacion = this.obtenerPrimeraMarcacionDatos(empleado);
+    const cargoId = Number(marcacion?.personalCargoExterno?.cargoId);
+    return Number.isFinite(cargoId) ? this.cargosPorId.get(cargoId) ?? '' : '';
   }
 
   obtenerPeriodoMarcaciones(empleado: EmpleadoReporte): {
