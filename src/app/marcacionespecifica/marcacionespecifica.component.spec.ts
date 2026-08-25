@@ -39,16 +39,18 @@ describe('MarcacionespecificaComponent', () => {
     expect(spy.calls.allArgs()).toEqual([[0], [1]]);
   });
 
-  it('should only load active work orders', async () => {
+  it('should only load active work orders with permitted ids', async () => {
     const apiService = TestBed.inject(ApiService) as any;
     spyOn(apiService, 'listarOrdenTrabajoCabeceraSimplificado').and.returnValue(of([
-      { id: 1, nombre: 'OT activa', descripcion: 'Trabajo activo', estado: 1 },
-      { id: 2, nombre: 'OT cerrada', descripcion: 'Trabajo cerrado', estado: 0 }
+      { id: 27, nombre: 'OT permitida', descripcion: 'Trabajo activo', estado: 1 },
+      { id: 33, nombre: 'OT permitida', descripcion: 'Trabajo activo', estado: 1 },
+      { id: 28, nombre: 'OT cerrada', descripcion: 'Trabajo cerrado', estado: 0 },
+      { id: 99, nombre: 'OT no permitida', descripcion: 'Trabajo activo', estado: 1 }
     ]));
 
     await component.cargarOrdenesTrabajo();
 
-    expect(component.ordenesTrabajo.map(orden => orden.id)).toEqual([1]);
+    expect(component.ordenesTrabajo.map(orden => orden.id)).toEqual([27, 33]);
   });
 
   it('should require an observation before marking attendance', async () => {
