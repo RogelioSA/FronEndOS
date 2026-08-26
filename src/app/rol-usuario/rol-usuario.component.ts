@@ -130,6 +130,11 @@ export class RolUsuarioComponent {
       }
 
       const usuariosSeleccionados = (seleccionUsuario as any[]).map((usuarioId: any) => String(usuarioId));
+      console.log('asignarRolUsuario - roleName:', roleName);
+      console.log(
+        'asignarRolUsuario - payload JSON:',
+        JSON.stringify(usuariosSeleccionados, null, 2)
+      );
       const obser = this.apiService.asignarRolUsuario(roleName, usuariosSeleccionados);
       const result = await firstValueFrom(obser);
       await this.traerRolUsuario(roleName);
