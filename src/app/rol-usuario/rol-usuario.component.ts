@@ -121,21 +121,20 @@ export class RolUsuarioComponent {
     }
 
     try{
-      const roleName = (this.roles as any[]).find((rol: any) => rol.nCodigo === seleccionRol[0])?.cNombre;
+      const rolSeleccionado = (this.roles as any[]).find(
+        (rol: any) => String(rol.nCodigo) === String(seleccionRol[0])
+      );
+      const roleId = rolSeleccionado?.nCodigo ? String(rolSeleccionado.nCodigo) : undefined;
+      const roleName = rolSeleccionado?.cNombre;
 
-      if (!roleName) {
+      if (!roleId || !roleName) {
         this.mensajeToast = 'No se pudo identificar el rol seleccionado';
         this.visibleToast = true;
         return;
       }
 
       const usuariosSeleccionados = (seleccionUsuario as any[]).map((usuarioId: any) => String(usuarioId));
-      console.log('asignarRolUsuario - roleName:', roleName);
-      console.log(
-        'asignarRolUsuario - payload JSON:',
-        JSON.stringify(usuariosSeleccionados, null, 2)
-      );
-      const obser = this.apiService.asignarRolUsuario(roleName, usuariosSeleccionados);
+      const obser = this.apiService.asignarRolUsuario(roleId, usuariosSeleccionados);
       const result = await firstValueFrom(obser);
       await this.traerRolUsuario(roleName);
 

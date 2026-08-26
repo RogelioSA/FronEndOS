@@ -83,9 +83,9 @@ export class ApiService{
       });
     }
 
-    asignarRolUsuario(roleName: string, data: string[]): Observable<any> {
+    asignarRolUsuario(roleId: string, data: string[]): Observable<any> {
       return this.https.post(
-        `${this.baseUrl}/security/RolUsuario/${roleName}`,
+        `${this.baseUrl}/security/RolUsuario/${roleId}`,
         data,
         {
           headers: this.getHttpHeaders()
