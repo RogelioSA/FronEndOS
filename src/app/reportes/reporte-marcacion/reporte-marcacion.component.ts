@@ -1017,10 +1017,10 @@ export class ReporteMarcacionComponent {
       const fillTotales: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } };
       const fillMarcacionIncompleta: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
 
-      const fontBlanco: Partial<ExcelJS.Font> = { bold: true, color: { argb: 'FFFFFFFF' } };
-      const fontTitulo: Partial<ExcelJS.Font> = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
-      const fontEncDias: Partial<ExcelJS.Font> = { bold: true, size: 10, color: { argb: 'FF000000' } };
-      const fontEncCols: Partial<ExcelJS.Font> = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+      const fontBlanco: Partial<ExcelJS.Font> = { name: 'Arial Narrow', bold: true, size: 9, color: { argb: 'FFFFFFFF' } };
+      const fontTitulo: Partial<ExcelJS.Font> = { name: 'Arial Narrow', bold: true, size: 9, color: { argb: 'FFFFFFFF' } };
+      const fontEncDias: Partial<ExcelJS.Font> = { name: 'Arial Narrow', bold: true, size: 9, color: { argb: 'FF000000' } };
+      const fontEncCols: Partial<ExcelJS.Font> = { name: 'Arial Narrow', bold: true, size: 9, color: { argb: 'FFFFFFFF' } };
 
       const alignCenter: Partial<ExcelJS.Alignment> = { horizontal: 'center', vertical: 'middle' };
       const alignLeft: Partial<ExcelJS.Alignment> = { horizontal: 'left', vertical: 'middle' };
@@ -1122,17 +1122,25 @@ export class ReporteMarcacionComponent {
         cell.border = borderThin;
       }
 
+      // Todos los encabezados de las filas 3, 4 y 5 usan la tipografía solicitada,
+      // incluidos los espacios que forman parte de encabezados combinados.
+      [row3, row4, row5].forEach(row => {
+        for (let c = 1; c < colInicioAdicionales + 9; c++) {
+          const cell = row.getCell(c);
+          cell.font = { ...cell.font, name: 'Arial Narrow', size: 9 };
+        }
+      });
+
       // ── FILAS DE DATOS ──
       empleadosTareo.forEach((empleado, index) => {
-        // El periodo real se obtiene del primer y último jornal marcado.
-        const periodoMarcaciones = this.obtenerPeriodoMarcaciones(empleado);
-        const fechaInicioMarcaciones = periodoMarcaciones
-          ? this.formatearFechaJornal(periodoMarcaciones.fechaInicio)
+        const periodoVacaciones = this.obtenerPeriodoVacaciones(empleado);
+        const fechaInicioVacaciones = periodoVacaciones
+          ? this.formatearFechaJornal(periodoVacaciones.fechaInicio)
           : '';
-        const fechaFinMarcaciones = periodoMarcaciones
-          ? this.formatearFechaJornal(periodoMarcaciones.fechaFin)
+        const fechaFinVacaciones = periodoVacaciones
+          ? this.formatearFechaJornal(periodoVacaciones.fechaFin)
           : '';
-        const totalDiasMarcaciones = periodoMarcaciones?.totalDias ?? '';
+        const totalDiasVacaciones = periodoVacaciones?.totalDias ?? '';
         const cargo = this.obtenerCargoEmpleado(empleado);
 
         const filaData: any[] = [
@@ -1178,21 +1186,22 @@ export class ReporteMarcacionComponent {
         // Columnas adicionales
         // Se totalizan minutos antes de convertirlos para evitar acumular errores de redondeo diarios.
         const totalHoras = this.minutosAHorasDecimales(totalMinutos);
-        const horasExtra = Math.round(Math.max(0, totalHoras - 192) * 100) / 100;
-        const horasExtraDisplay = horasExtra > 0 ? horasExtra : 0;
-        const textoPagar = horasExtra > 0
-          ? `PAGAR ${horasExtra} HORAS EXTRA AL 25% DEL MES DE ${mesActual}`
-          : `PAGAR 0 HORAS EXTRA AL 25% DEL MES DE ${mesActual}`;
+        const diferencialHoras = Math.round((totalHoras - 192) * 100) / 100;
+        const correspondePagarHorasExtra = diferencialHoras > 0.15;
+        const horasExtraDisplay = correspondePagarHorasExtra ? diferencialHoras : '';
+        const textoPagar = correspondePagarHorasExtra
+          ? `Pagar ${diferencialHoras} HORAS EXTRA AL 25% DEL MES DE ${mesActual}`
+          : '';
 
         filaData.push(
           totalHoras > 0 ? totalHoras : 0,   // TOTAL HORAS
           horasExtraDisplay,                   // HORAS EXTRA
           textoPagar,                          // PAGAR
-          '',                                  // MOTIVO
-          fechaInicioMarcaciones,              // FECHA DE INICIO (primera marcación)
-          fechaFinMarcaciones,                 // FECHA DE FIN (última marcación)
-          totalDiasMarcaciones,                // TOTAL DE DÍAS (rango inclusivo)
-          'DIAS',                              // MEDIDA
+          periodoVacaciones ? 'VAC' : '',       // MOTIVO
+          fechaInicioVacaciones,                // FECHA DE INICIO (primera VAC)
+          fechaFinVacaciones,                   // FECHA DE FIN (última VAC)
+          totalDiasVacaciones,                  // TOTAL DE DÍAS asignados con VAC
+          periodoVacaciones ? 'DIAS' : '',      // MEDIDA
           ''                                   // OBSERVACIONES
         );
 
@@ -1245,6 +1254,12 @@ export class ReporteMarcacionComponent {
           } else {
             cell.alignment = alignCenter;
           }
+        }
+
+        // El contenido completo del reporte se presenta en Arial Narrow 8.
+        for (let c = 1; c < colInicioAdicionales + 9; c++) {
+          const cell = row.getCell(c);
+          cell.font = { ...cell.font, name: 'Arial Narrow', size: 8 };
         }
       });
 
@@ -1338,6 +1353,29 @@ export class ReporteMarcacionComponent {
       fechaInicio,
       fechaFin,
       totalDias: Math.floor((finUtc - inicioUtc) / (1000 * 60 * 60 * 24)) + 1
+    };
+  }
+
+  private obtenerPeriodoVacaciones(empleado: EmpleadoReporte): {
+    fechaInicio: string;
+    fechaFin: string;
+    totalDias: number;
+  } | null {
+    const fechasVacaciones = this.columnasdinamicas
+      .map(columna => String(columna.fecha).slice(0, 10))
+      .filter(fecha =>
+        this.vacaciones.get(this.crearClaveVacacion(empleado.personalId, fecha)) === 'VAC'
+      )
+      .sort();
+
+    if (fechasVacaciones.length === 0) {
+      return null;
+    }
+
+    return {
+      fechaInicio: fechasVacaciones[0],
+      fechaFin: fechasVacaciones[fechasVacaciones.length - 1],
+      totalDias: fechasVacaciones.length
     };
   }
 
