@@ -91,6 +91,7 @@ export class ReporteMarcacionComponent {
     evento: 0,
     ordenTrabajoId: null as number | null,
     hora: '',
+    observacion: '',
   };
 
   // Nueva propiedad para el checkbox
@@ -613,7 +614,8 @@ export class ReporteMarcacionComponent {
       jornal: this.convertirFechaJornalAISO(this.detalleMarcacion.fechaJornal),
       evento: this.detalleMarcacion.tipoEventoCodigo,
       ordenTrabajoId: this.detalleMarcacion.ordenTrabajoId,
-      hora: (this.detalleMarcacion.hora || '').slice(0, 5)
+      hora: (this.detalleMarcacion.hora || '').slice(0, 5),
+      observacion: ''
     };
   }
 
@@ -672,7 +674,8 @@ export class ReporteMarcacionComponent {
       jornal: fecha,
       evento: tipoEvento,
       ordenTrabajoId: null,
-      hora: ''
+      hora: '',
+      observacion: ''
     };
 
     this.mostrarRegularizacionNueva = true;
@@ -688,7 +691,8 @@ export class ReporteMarcacionComponent {
       jornal: '',
       evento: 0,
       ordenTrabajoId: null,
-      hora: ''
+      hora: '',
+      observacion: ''
     };
   }
 
@@ -701,6 +705,11 @@ export class ReporteMarcacionComponent {
 
     if (!this.regularizacion.jornal || !this.regularizacion.hora) {
       this.showMessage('Ingresa la fecha y hora de la regularización');
+      return;
+    }
+
+    if (this.regularizacion.ordenTrabajoId === null) {
+      this.showMessage('Selecciona una orden de trabajo');
       return;
     }
 
@@ -720,13 +729,16 @@ export class ReporteMarcacionComponent {
       latitud: 0,
       longitud: 0,
       adjuntoId: 0,
+      observacion: this.regularizacion.observacion.trim(),
       ordenTrabajoId: this.regularizacion.ordenTrabajoId,
-      tipoEvento: this.regularizacion.evento
+      obseracion: this.regularizacion.observacion.trim(),
+      eventoTipo: this.regularizacion.evento,
+      tipoRegularizacion: 0
     };
 
     try {
       this.blockUI.start('Registrando regularización...');
-      await firstValueFrom(this.apiService.regularizarMarcacion(payload));
+      await firstValueFrom(this.apiService.registrarMarcacionEspecifica(payload));
       this.showMessage('Regularización registrada correctamente');
       if (this.mostrarRegularizacionNueva) {
         this.cerrarRegularizacionNueva();
