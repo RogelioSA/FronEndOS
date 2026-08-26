@@ -25,6 +25,7 @@ interface EmpleadoReporte {
   dni: string;
   personal: string;
   personalId: number;
+  esAsignacionAusencia?: boolean;
   marcaciones: { [fecha: string]: MarcacionPorDia };
 }
 
@@ -59,7 +60,6 @@ export class ReporteMarcacionComponent {
   private readonly ordenTrabajoOficinaId = 0;
   private readonly ordenTrabajoVacacionesId = 37;
   private readonly codigosAusencia = new Set(['VAC', 'LIC', 'DM', 'DP']);
-  private readonly nombreOrdenAusencias = 'VARIOS';
 
   marcaciones: any[] = [];
   vacaciones = new Map<string, string>();
@@ -84,7 +84,6 @@ export class ReporteMarcacionComponent {
   detalleMarcacion: DetalleMarcacion | null = null;
   editandoMarcacion: boolean = false;
   mostrarRegularizacionNueva: boolean = false;
-  cruceVacacionesSeleccionado: boolean = false;
   contextoRegularizacionNueva: { empleado: EmpleadoReporte; fecha: string; tipoEvento: number } | null = null;
   regularizacion = {
     jornal: '',
@@ -322,34 +321,36 @@ export class ReporteMarcacionComponent {
       }
     });
 
-    this.agregarPersonalConAusenciasSinMarcacion(empleadosMap);
+    this.agregarAsignacionesAusencia(empleadosMap);
 
     this.datosReporte = Array.from(empleadosMap.values());
     this.agruparDatosPorOrden();
     console.log("✅ Datos procesados para reporte:", this.datosReporte);
   }
 
-  private agregarPersonalConAusenciasSinMarcacion(empleadosMap: Map<string, EmpleadoReporte>): void {
-    const personalIncluido = new Set(
-      Array.from(empleadosMap.values()).map((empleado) => empleado.personalId)
-    );
+  private agregarAsignacionesAusencia(empleadosMap: Map<string, EmpleadoReporte>): void {
+    const personalConAusencia = new Set<number>();
+    const ordenAusencias = this.ordenesTrabajo.find(
+      (orden) => orden.id === this.ordenTrabajoVacacionesId
+    )?.cOrdenInterna ?? 'VACACIONES';
 
     this.vacaciones.forEach((_codigo, clave) => {
       const personalId = Number(clave.split('|')[0]);
-      if (!Number.isFinite(personalId) || personalIncluido.has(personalId)) {
+      if (!Number.isFinite(personalId) || personalConAusencia.has(personalId)) {
         return;
       }
 
       const personalDetalle = this.personalPorId.get(personalId);
       const persona = personalDetalle?.persona;
       empleadosMap.set(`ausencia-${personalId}`, {
-        orden: this.nombreOrdenAusencias,
+        orden: ordenAusencias,
         dni: persona?.documentoIdentidad || 'N/A',
         personal: this.obtenerNombreCompleto(personalDetalle, persona),
         personalId,
+        esAsignacionAusencia: true,
         marcaciones: {}
       });
-      personalIncluido.add(personalId);
+      personalConAusencia.add(personalId);
     });
   }
 
@@ -364,14 +365,19 @@ export class ReporteMarcacionComponent {
       : this.datosReporte;
 
     empleadosFiltrados.forEach((empleado) => {
-      if (!grupos.has(empleado.orden)) {
-        grupos.set(empleado.orden, []);
+      // Las asignaciones se conservan como un bloque independiente, incluso si
+      // existen marcaciones asociadas a la Orden de Trabajo 37.
+      const claveGrupo = empleado.esAsignacionAusencia
+        ? `asignaciones-ausencia|${empleado.orden}`
+        : `marcaciones|${empleado.orden}`;
+      if (!grupos.has(claveGrupo)) {
+        grupos.set(claveGrupo, []);
       }
-      grupos.get(empleado.orden)!.push(empleado);
+      grupos.get(claveGrupo)!.push(empleado);
     });
 
-    this.datosAgrupados = Array.from(grupos.entries()).map(([orden, empleados]) => ({
-      orden,
+    this.datosAgrupados = Array.from(grupos.values()).map((empleados) => ({
+      orden: empleados[0].orden,
       empleados,
     }));
   }
@@ -490,7 +496,8 @@ export class ReporteMarcacionComponent {
   }
 
   esVacacion(empleado: EmpleadoReporte, fecha: string): boolean {
-    return this.vacaciones.has(this.crearClaveVacacion(empleado.personalId, fecha));
+    return !!empleado.esAsignacionAusencia &&
+      this.vacaciones.has(this.crearClaveVacacion(empleado.personalId, fecha));
   }
 
   obtenerCodigoAusencia(empleado: EmpleadoReporte, fecha: string): string {
@@ -511,10 +518,6 @@ export class ReporteMarcacionComponent {
       return this.obtenerCodigoAusencia(empleado, fecha);
     }
     return valor;
-  }
-
-  esCruceVacaciones(empleado: EmpleadoReporte, fecha: string): boolean {
-    return this.esVacacion(empleado, fecha) && this.tieneMarcacionEnFecha(empleado, fecha);
   }
 
   private crearClaveVacacion(personalId: number, fecha: string): string {
@@ -635,7 +638,6 @@ export class ReporteMarcacionComponent {
   }
 
   onCellClick(empleado: EmpleadoReporte, fecha: string, tipoEvento: number) {
-    this.cruceVacacionesSeleccionado = this.esCruceVacaciones(empleado, fecha);
     const tieneMarcacion = this.tieneMarcacionPorTipo(empleado, fecha, tipoEvento);
 
     if (tieneMarcacion) {
@@ -686,7 +688,6 @@ export class ReporteMarcacionComponent {
     this.contextoRegularizacionNueva = null;
     this.editandoMarcacion = false;
     this.detalleMarcacion = null;
-    this.cruceVacacionesSeleccionado = false;
     this.regularizacion = {
       jornal: '',
       evento: 0,
@@ -819,7 +820,6 @@ export class ReporteMarcacionComponent {
     this.detalleMarcacion = null;
     this.editandoMarcacion = false;
     this.rostroUrl = null;
-    this.cruceVacacionesSeleccionado = false;
   }
 
   obtenerTipoEventoTexto(tipoEvento: number): string {

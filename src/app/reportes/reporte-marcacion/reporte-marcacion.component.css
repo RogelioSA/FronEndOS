@@ -471,27 +471,13 @@
     }
 }
 
-/* Vacaciones: amarillo sin marcaciones y ámbar cuando existe un cruce. */
+/* Asignaciones de ausencia. */
 .celda-clickeable.vacaciones-sin-marcacion {
     background-color: #ffeb3b !important;
     color: #212529;
     font-weight: 700;
 }
 
-.celda-clickeable.vacaciones-con-marcacion {
-    background-color: #ffbf00 !important;
-    color: #212529 !important;
-    font-weight: 700;
-}
-
-.celda-clickeable.vacaciones-sin-marcacion:hover,
-.celda-clickeable.vacaciones-con-marcacion:hover {
+.celda-clickeable.vacaciones-sin-marcacion:hover {
     box-shadow: inset 0 0 0 2px #9a6700;
-}
-
-.cruce-vacaciones-alerta {
-    align-items: center;
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0;
 }

@@ -168,8 +168,7 @@
                                             'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
                                             'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                             'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 0),
-                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha),
-                                            'vacaciones-con-marcacion': esCruceVacaciones(empleado, col.fecha)
+                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
                                         }"
                                         (click)="onCellClick(empleado, col.fecha, 0)"
                                         style="cursor: pointer;">
@@ -178,8 +177,7 @@
                                     <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                                     'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1),
-                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha),
-                                            'vacaciones-con-marcacion': esCruceVacaciones(empleado, col.fecha)}"
+                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)}"
                                         (click)="onCellClick(empleado, col.fecha, 1)"
                                         style="cursor: pointer;">
                                         {{ obtenerTextoCelda(empleado, col.fecha, 1) }}
@@ -196,8 +194,7 @@
                                             'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
                                             'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                             'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 0),
-                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha),
-                                            'vacaciones-con-marcacion': esCruceVacaciones(empleado, col.fecha)
+                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
                                         }"
                                         (click)="onCellClick(empleado, col.fecha, 0)"
                                         style="cursor: pointer;">
@@ -226,8 +223,7 @@
                                     <td class="text-center align-middle celda-clickeable"
                                         [ngClass]="{'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                                     'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1),
-                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha),
-                                            'vacaciones-con-marcacion': esCruceVacaciones(empleado, col.fecha)}"
+                                            'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)}"
                                         (click)="onCellClick(empleado, col.fecha, 1)"
                                         style="cursor: pointer;">
                                         {{ obtenerTextoCelda(empleado, col.fecha, 1) }}
@@ -384,10 +380,6 @@
 
             <ng-template #regularizacionForm>
                 <div class="regularizacion-form">
-                    <div *ngIf="cruceVacacionesSeleccionado" class="alert alert-warning cruce-vacaciones-alerta" role="alert">
-                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-                        <strong>CRUCE DE MARCACION CON VACACIONES</strong>
-                    </div>
                     <div class="info-line stacked">
                         <span class="info-label">Jornal:</span>
                         <input
