@@ -969,7 +969,10 @@ export class ReporteMarcacionComponent {
   async descargarReporteTareo() {
     const empleadosTareo = (this.datosReporte || []).filter(empleado => {
       const marcacion = this.obtenerPrimeraMarcacionDatos(empleado);
-      return marcacion?.ordenServicio?.id != null || marcacion?.ordenTrabajo?.id != null;
+      // OFICINA no tiene OS ni OT vinculada, pero sigue siendo una marcación
+      // válida para el tareo. Las filas de ausencias quedan fuera porque no
+      // contienen datos de marcación.
+      return marcacion != null;
     });
 
     if (empleadosTareo.length === 0) {
@@ -1166,7 +1169,8 @@ export class ReporteMarcacionComponent {
           }
 
           // OS corresponde al nombre de la Orden de Trabajo de ese mismo jornal.
-          const ordenServicio = datosOrden?.ordenTrabajo?.nombre || '';
+          const ordenServicio = datosOrden?.ordenTrabajo?.nombre ||
+            datosOrden?.ordenTrabajo?.descripcion || '';
 
           filaData.push(letra, horasTexto, ordenServicio);
         });
