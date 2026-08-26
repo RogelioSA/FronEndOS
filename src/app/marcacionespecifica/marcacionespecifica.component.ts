@@ -95,14 +95,14 @@ export class MarcacionespecificaComponent implements OnInit, OnDestroy {
   async cargarOrdenesTrabajo(): Promise<void> {
     this.isLoadingOrders = true;
     try {
-      const ordenesPermitidas = new Set([27, 33, 28, 29, 30, 31, 34, 35]);
       const response = await firstValueFrom(
         this.apiService.listarOrdenTrabajoCabeceraSimplificado()
       );
       const ordenes = Array.isArray(response) ? response : (response?.data ?? []);
       this.ordenesTrabajo = ordenes.filter(
         (orden: OrdenTrabajo) =>
-          Number(orden.estado) === 1 && ordenesPermitidas.has(Number(orden.id))
+          Number(orden.estado) === 1 &&
+          (orden.nombre.startsWith('EM') || orden.nombre.startsWith('CAPA'))
       );
     } catch (error) {
       console.error('Error al cargar órdenes de trabajo:', error);
