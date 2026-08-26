@@ -11,6 +11,8 @@ import * as XLSX from 'xlsx';
     standalone: false
 })
 export class PersonalMantenimientoComponent {
+  private readonly rolPersonalMarcacionId = '10';
+
   existeAsignacion: boolean = false;
   personal: any[] = [];
   cargos : any[] = [];
@@ -1359,20 +1361,20 @@ export class PersonalMantenimientoComponent {
     // PASO 4: El rol se asigna únicamente junto con un usuario nuevo.
     if (!resultadoUsuario.existente) {
       console.log('\n🔵 Paso 4 - Asignando rol al usuario...');
-      const roleName = 'MARCACION';
       const usuariosIds = [String(usuarioId)];
 
-      console.log('📤 Asignando rol:', { roleName, usuariosIds });
-
       try {
-        await firstValueFrom(this.apiService.asignarRolUsuario(roleName, usuariosIds));
+        console.log('📤 Asignando rol:', { roleId: this.rolPersonalMarcacionId, usuariosIds });
+        await firstValueFrom(
+          this.apiService.asignarRolUsuario(this.rolPersonalMarcacionId, usuariosIds)
+        );
         console.log('✅ Rol asignado al usuario');
       } catch (error: any) {
         console.error('❌ Error al asignar rol:', error);
         throw new Error(`Error al asignar rol: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
       }
     } else {
-      console.log(`ℹ️ El usuario ${email} ya tiene el rol MARCACION; no se ejecutará POST /security/RolUsuario/MARCACION.`);
+      console.log(`ℹ️ El usuario ${email} ya tiene el rol asignado; no se ejecutará POST /security/RolUsuario/${this.rolPersonalMarcacionId}.`);
     }
 
     // PASO 5: Crear Personal (asignación)
@@ -1500,7 +1502,9 @@ export class PersonalMantenimientoComponent {
     if (!resultadoUsuario.existente) {
       console.log('\n🔵 Asignando rol al usuario...');
       try {
-        await firstValueFrom(this.apiService.asignarRolUsuario('MARCACION', [String(usuarioId)]));
+        await firstValueFrom(
+          this.apiService.asignarRolUsuario(this.rolPersonalMarcacionId, [String(usuarioId)])
+        );
 
         console.log('✅ Rol asignado al usuario');
       } catch (error: any) {
@@ -1508,7 +1512,7 @@ export class PersonalMantenimientoComponent {
         throw new Error(`Error al asignar rol: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
       }
     } else {
-      console.log(`ℹ️ El usuario ${email} ya tiene el rol MARCACION; no se ejecutará POST /security/RolUsuario/MARCACION.`);
+      console.log(`ℹ️ El usuario ${email} ya tiene el rol asignado; no se ejecutará POST /security/RolUsuario/${this.rolPersonalMarcacionId}.`);
     }
 
     return usuarioId; // ✅ Retorna number

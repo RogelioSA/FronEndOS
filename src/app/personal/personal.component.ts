@@ -11,6 +11,8 @@ import * as XLSX from 'xlsx';
     standalone: false
 })
 export class PersonalComponent {
+  private readonly rolPersonalMarcacionId = '10';
+
   existeAsignacion: boolean = false;
   personal: any[] = [];
   cargos : any[] = [];
@@ -1175,13 +1177,12 @@ export class PersonalComponent {
 
     // PASO 4: Asignar rol al usuario
     console.log('\n🔵 Paso 4 - Asignando rol al usuario...');
-    const roleName = 'MARCACION';
+    const roleId = this.rolPersonalMarcacionId;
     const usuariosIds = [String(usuarioId)];
 
-    console.log('📤 Asignando rol:', { roleName, usuariosIds });
-
     try {
-      await firstValueFrom(this.apiService.asignarRolUsuario(roleName, usuariosIds));
+      console.log('📤 Asignando rol:', { roleId, usuariosIds });
+      await firstValueFrom(this.apiService.asignarRolUsuario(roleId, usuariosIds));
       console.log('✅ Rol asignado al usuario');
     } catch (error: any) {
       console.error('❌ Error al asignar rol:', error);
@@ -1270,7 +1271,9 @@ export class PersonalComponent {
     // Asignar rol
     console.log('\n🔵 Asignando rol al usuario...');
     try {
-      await firstValueFrom(this.apiService.asignarRolUsuario('MARCACION', [String(usuarioId)]));
+      await firstValueFrom(
+        this.apiService.asignarRolUsuario(this.rolPersonalMarcacionId, [String(usuarioId)])
+      );
 
       console.log('✅ Rol asignado al usuario');
     } catch (error: any) {
