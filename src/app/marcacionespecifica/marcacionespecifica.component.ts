@@ -144,8 +144,7 @@ export class MarcacionespecificaComponent implements OnInit, OnDestroy {
 
       const claims = this.authService.getClaims();
       const payload = {
-        empresaId: Number(localStorage.getItem('empresa_id')) || 0,
-        personalId: Number(claims?.nCodigo) || 0,
+        empresaId: 1,
         latitud: this.latitude,
         longitud: this.longitude,
         adjuntoId,
