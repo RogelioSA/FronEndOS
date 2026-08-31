@@ -922,12 +922,6 @@ export class PersonalHorarioComponent {
     return;
   }
 
-  if (this.personalDisponibles.length === 0) {
-    this.showMessage('No hay personal disponible cargado para asignar.');
-    event.target.value = null;
-    return;
-  }
-
   this.blockUI.start('Procesando Excel de asignación masiva...');
 
   try {
@@ -1002,7 +996,8 @@ export class PersonalHorarioComponent {
       return;
     }
 
-    // 2) Hacemos match con personalDisponible por documentoIdentidad
+    // 2) Hacemos match por documentoIdentidad tanto con el personal disponible
+    // como con el que ya pertenece a la OT (y puede tener pendiente su horario).
     const mapaDisponiblesPorDni = new Map<string, any>();
     for (const p of this.personalDisponibles) {
       const dni = this.normalizarDni(p.documentoIdentidad);
@@ -1013,41 +1008,58 @@ export class PersonalHorarioComponent {
       }
     }
 
+    const mapaAsignadosPorDni = new Map<string, any>();
+    for (const p of this.personalHorarios) {
+      const dni = this.normalizarDni(p.documentoIdentidad);
+      if (dni && !mapaAsignadosPorDni.has(dni)) {
+        mapaAsignadosPorDni.set(dni, p);
+      }
+    }
+
     const seleccionDesdeExcel: any[] = [];
     const mapPersonaIdToExcelInfo = new Map<number, ExcelRowInfo>();
     const noEncontrados: string[] = [];
 
     for (const [dni, info] of excelInfoPorDni.entries()) {
-      const persona = mapaDisponiblesPorDni.get(dni);
-      if (persona) {
-        seleccionDesdeExcel.push(persona);
-        mapPersonaIdToExcelInfo.set(persona.nEmpleado, info);
-      } else {
-        noEncontrados.push(dni);
+      const personaAsignada = mapaAsignadosPorDni.get(dni);
+      if (personaAsignada) {
+        mapPersonaIdToExcelInfo.set(personaAsignada.nEmpleado, info);
+        continue;
       }
+
+      const personaDisponible = mapaDisponiblesPorDni.get(dni);
+      if (personaDisponible) {
+        seleccionDesdeExcel.push(personaDisponible);
+        mapPersonaIdToExcelInfo.set(personaDisponible.nEmpleado, info);
+        continue;
+      }
+
+      noEncontrados.push(dni);
     }
 
-    if (seleccionDesdeExcel.length === 0) {
-      this.showMessage('Ningún DNI del Excel coincide con el personal disponible.');
+    if (mapPersonaIdToExcelInfo.size === 0) {
+      this.showMessage('Ningún DNI del Excel coincide con el personal disponible ni asignado.');
       console.warn('DNIs no encontrados:', noEncontrados);
       return;
     }
 
     console.log('✅ Personas a asignar desde Excel:', seleccionDesdeExcel);
     if (noEncontrados.length > 0) {
-      console.warn('⚠️ DNIs sin coincidencia en personal disponible:', noEncontrados);
+      console.warn('⚠️ DNIs sin coincidencia en personal disponible ni asignado:', noEncontrados);
     }
 
-    // 3) Cargar en la selección y reutilizar agregarSeleccionados()
-    this.seleccionDisponibles = seleccionDesdeExcel;
-    this.hayDisponiblesSeleccionados = this.seleccionDisponibles.length > 0;
-
-    await this.agregarSeleccionados(); // esto crea OrdenTrabajoPersonal y filas en personalHorarios
+    // 3) Crear asignaciones únicamente para quienes todavía están disponibles.
+    // Si todos ya están asignados, continuamos directamente con sus horarios.
+    if (seleccionDesdeExcel.length > 0) {
+      this.seleccionDisponibles = seleccionDesdeExcel;
+      this.hayDisponiblesSeleccionados = true;
+      await this.agregarSeleccionados();
+    }
 
     // 4) Asignar horarios día a día según TURNO / MOVILIZACION / DESMOVILIZACION
     await this.asignarHorariosDesdeExcel(mapPersonaIdToExcelInfo);
 
-    this.showMessage(`Asignación masiva completada. Personas: ${seleccionDesdeExcel.length}.`);
+    this.showMessage(`Asignación masiva completada. Personas: ${mapPersonaIdToExcelInfo.size}.`);
 
   } catch (err) {
     console.error('❌ Error procesando Excel de asignación masiva:', err);
