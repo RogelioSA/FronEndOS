@@ -33,6 +33,7 @@ export class PersonalMantenimientoComponent {
   estados: any[] = [];
   politicasRegistro: any[] = [];
   usuarios: any[] = [];
+  private usuariosRolPersonalIds = new Set<string>();
 
   // Propiedades para subida masiva
   popupSubidaMasivaVisible = false;
@@ -136,6 +137,7 @@ export class PersonalMantenimientoComponent {
         cCelular: p.persona?.celular,
         lEstado: p.persona?.estado,
         cSexo: p.persona?.sexo?.id ?? p.persona?.sexoId,
+        distritoId: p.persona?.distrito?.id ?? p.persona?.distritoId,
         nLicenciaCategoria: p.persona?.licenciaConducir?.id ?? p.persona?.licenciaConducirId,
         nDocumentoIdentidadTipo: p.persona?.documentoIdentidadTipo?.id ?? p.persona?.documentoIdentidadTipoId,
         nCargoId: p.personalCargoExterno?.cargoId,
@@ -640,12 +642,15 @@ export class PersonalMantenimientoComponent {
     const encabezados = [
       'CODIGO',
       'APELLIDO/NOMBRES',
+      'T.DOC.',
       'NRO DOCUMENTO',
       'SEXO',
-      'MAIL',
+      'EMAIL CORPORATIVO',
+      'EMAIL PERSONAL',
       'TELEFONO',
       'FEC.NACIMIENTO',
-      'CARGO'
+      'CARGO',
+      'COSTO EMPRESA DIA'
     ];
 
     const primerRegistro = this.personal?.[0];
@@ -653,34 +658,43 @@ export class PersonalMantenimientoComponent {
       ? {
           CODIGO: primerRegistro.nCodigo ?? '',
           'APELLIDO/NOMBRES': this.construirApellidoNombres(primerRegistro),
+          'T.DOC.': Number(primerRegistro.nDocumentoIdentidadTipo) === 1 ? 'DNI' : 'OTRO',
           'NRO DOCUMENTO': primerRegistro.cDNI ?? '',
           SEXO: this.obtenerTextoSexo(primerRegistro.cSexo),
-          MAIL: primerRegistro.cCorreo ?? '',
+          'EMAIL CORPORATIVO': primerRegistro.cCorreo ?? '',
+          'EMAIL PERSONAL': '',
           TELEFONO: primerRegistro.cCelular ?? '',
           'FEC.NACIMIENTO': this.formatearFechaExcel(primerRegistro.dFechaNacimiento),
-          CARGO: this.obtenerTextoCargo(primerRegistro.nCargoId)
+          CARGO: this.obtenerTextoCargo(primerRegistro.nCargoId),
+          'COSTO EMPRESA DIA': primerRegistro.costoHombre ?? 0
         }
       : {
           CODIGO: '001',
           'APELLIDO/NOMBRES': 'APELLIDO PATERNO APELLIDO MATERNO, NOMBRES',
+          'T.DOC.': 'DNI',
           'NRO DOCUMENTO': '12345678',
           SEXO: 'M',
-          MAIL: 'nombre.apellido@empresa.com',
+          'EMAIL CORPORATIVO': 'nombre.apellido@empresa.com',
+          'EMAIL PERSONAL': 'nombre.apellido@gmail.com',
           TELEFONO: '999999999',
           'FEC.NACIMIENTO': '01/01/1990',
-          CARGO: 'ASISTENTE DE ALMACEN'
+          CARGO: 'ASISTENTE DE ALMACEN',
+          'COSTO EMPRESA DIA': 0
         };
 
     const worksheet = XLSX.utils.json_to_sheet([filaEjemplo], { header: encabezados });
     worksheet['!cols'] = [
       { wch: 12 },
       { wch: 35 },
+      { wch: 12 },
       { wch: 16 },
       { wch: 10 },
       { wch: 30 },
+      { wch: 30 },
       { wch: 14 },
       { wch: 18 },
-      { wch: 30 }
+      { wch: 30 },
+      { wch: 20 }
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -812,6 +826,8 @@ export class PersonalMantenimientoComponent {
       await this.cargarCargosParaSubidaMasiva();
       // Refrescar usuarios una sola vez antes de validar/crear cuentas.
       await this.traerUsuarios();
+      // Conservar los usuarios que ya tienen el rol PERSONAL al agregar usuarios nuevos.
+      await this.cargarUsuariosRolPersonal();
 
       // 🔹 PASO 5: Procesar registros del Excel
       let actualizados = 0;
@@ -845,17 +861,11 @@ export class PersonalMantenimientoComponent {
 
                actualizados++;
              } else {
-               console.log(`ℹ️ DNI ${dni} ya activo - Actualizando cargo`);
+               console.log(`ℹ️ DNI ${dni} ya activo - Se conservan sus datos actuales`);
              }
 
-             await this.asignarCargoDesdeExcel(
-               Number(registroExistente.nCodigo),
-               fila,
-               i + 1,
-               registroExistente.personalCargoExternoId ?? null,
-               Number(registroExistente.empresaId ?? 1),
-               Number(registroExistente.costoHombre ?? 0)
-             );
+             // Una persona ya registrada solo puede cambiar de estado durante la carga.
+             // Sus demás datos, incluida la asignación de cargo, se conservan sin cambios.
              this.registrosExitosos++;
            } else {
             // ➕ CREAR nuevo
@@ -1365,9 +1375,7 @@ export class PersonalMantenimientoComponent {
 
       try {
         console.log('📤 Asignando rol:', { roleId: this.rolPersonalMarcacionId, usuariosIds });
-        await firstValueFrom(
-          this.apiService.asignarRolUsuario(this.rolPersonalMarcacionId, usuariosIds)
-        );
+        await this.asignarRolPersonalConservandoUsuarios(usuariosIds[0]);
         console.log('✅ Rol asignado al usuario');
       } catch (error: any) {
         console.error('❌ Error al asignar rol:', error);
@@ -1412,6 +1420,25 @@ export class PersonalMantenimientoComponent {
 
   private normalizarEmail(email: any): string {
     return String(email || '').trim().toLowerCase();
+  }
+
+  private async cargarUsuariosRolPersonal(): Promise<void> {
+    const usuariosRol: any[] = await firstValueFrom(this.apiService.getRolUsuarios('PERSONAL'));
+    this.usuariosRolPersonalIds = new Set(
+      (usuariosRol || [])
+        .map((usuario: any) => String(usuario?.id || '').trim())
+        .filter((id: string) => id.length > 0)
+    );
+  }
+
+  private async asignarRolPersonalConservandoUsuarios(usuarioId: string): Promise<void> {
+    this.usuariosRolPersonalIds.add(String(usuarioId));
+    await firstValueFrom(
+      this.apiService.asignarRolUsuario(
+        this.rolPersonalMarcacionId,
+        Array.from(this.usuariosRolPersonalIds)
+      )
+    );
   }
 
   private async obtenerOCrearUsuario(
@@ -1502,9 +1529,7 @@ export class PersonalMantenimientoComponent {
     if (!resultadoUsuario.existente) {
       console.log('\n🔵 Asignando rol al usuario...');
       try {
-        await firstValueFrom(
-          this.apiService.asignarRolUsuario(this.rolPersonalMarcacionId, [String(usuarioId)])
-        );
+        await this.asignarRolPersonalConservandoUsuarios(String(usuarioId));
 
         console.log('✅ Rol asignado al usuario');
       } catch (error: any) {
@@ -1605,19 +1630,12 @@ export class PersonalMantenimientoComponent {
   }
 
   determinarSexoId(sexoTexto: string): number {
-    // Normalizar texto
     const texto = sexoTexto.toUpperCase().trim();
 
-    // Mapeo común
-    if (texto === 'M' || texto === 'MASCULINO' || texto === 'HOMBRE' || texto === 'VARÓN' || texto === 'MASC') {
-      return 1; // Asumiendo que 1 es masculino
-    }
-    if (texto === 'F' || texto === 'FEMENINO' || texto === 'MUJER' || texto === 'FEM') {
-      return 2; // Asumiendo que 2 es femenino
-    }
+    if (texto === 'M') return 1;
+    if (texto === 'F') return 2;
 
-    // Por defecto
-    return 1;
+    throw new Error(`Sexo inválido: "${sexoTexto}". Solo se permiten los valores M y F.`);
   }
 
   generarEmail(nombres: string, apellido: string): string {
