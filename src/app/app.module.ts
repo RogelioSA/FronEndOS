@@ -15,7 +15,7 @@ import { AreaComponent } from './area/area.component';
 import { CondicionContractualComponent } from './condicion-contractual/condicion-contractual.component';
 import { ContratoTipoComponent } from './contrato-tipo/contrato-tipo.component';
 import { CargoComponent } from './cargo/cargo.component';
-import { PersonalComponent } from './personal/personal.component';
+//import { PersonalComponent } from './personal/personal.component';
 import { PersonalMantenimientoComponent } from './personal-mantenimiento/personal-mantenimiento.component';
 import { PersonalSituacionComponent } from './personal-situacion/personal-situacion.component';
 import { DxTreeListModule, DxTreeListTypes } from 'devextreme-angular/ui/tree-list';
@@ -79,7 +79,7 @@ import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionesp
         CondicionContractualComponent,
         ContratoTipoComponent,
         CargoComponent,
-        PersonalComponent,
+        //PersonalComponent,
         PersonalMantenimientoComponent,
         PersonalSituacionComponent,
         InicioComponent,
@@ -150,5 +150,5 @@ import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionesp
         DxTabsModule,
         DxTabPanelModule], providers: [provideHttpClient(withInterceptorsFromDi())] })
 export class AppModule {
-  
+
  }

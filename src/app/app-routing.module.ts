@@ -9,7 +9,7 @@ import { CondicionContractualComponent } from './condicion-contractual/condicion
 import { ContratoTipoComponent } from './contrato-tipo/contrato-tipo.component';
 import { CargoComponent } from './cargo/cargo.component';
 import { PersonalSituacionComponent } from './personal-situacion/personal-situacion.component';
-import { PersonalComponent } from './personal/personal.component';
+//import { PersonalComponent } from './personal/personal.component';
 import { PersonalMantenimientoComponent } from './personal-mantenimiento/personal-mantenimiento.component';
 import { MenuComponent } from './menu/menu.component';
 import { InicioComponent } from './inicio/inicio.component';
@@ -57,12 +57,12 @@ import { PersonalMarcacionComponent } from './personal-marcacion/personal-marcac
 import { UsuarioComponent } from './usuario/usuario.component';
 import { MarcacionDatosComponent } from './marcacion-datos/marcacion-datos.component';
 import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionespecifica.component';
- 
+
 const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   //{ path: 'home/:idVendedor', component: HomeComponent },
-  
-  //{ path: '#', pathMatch: 'full', redirectTo: '#', }, 
+
+  //{ path: '#', pathMatch: 'full', redirectTo: '#', },
   { path: 'login', component: LoginComponent },
   { path: 'inicio', component: InicioComponent, canActivate: [AuthGuard]  },
   { path: '', component: InicioComponent, canActivate: [AuthGuard]  },
@@ -76,7 +76,7 @@ const routes: Routes = [
   { path: 'mantenimiento/contratoTipo', component: ContratoTipoComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/cargo', component: CargoComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/personalEstado', component: PersonalSituacionComponent, canActivate: [AuthGuard]  },
-  { path: 'mantenimiento/personal', component: PersonalComponent, canActivate: [AuthGuard]  },
+ // { path: 'mantenimiento/personal', component: PersonalComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/personalMantenimiento', component: PersonalMantenimientoComponent, canActivate: [AuthGuard]  },
   { path: 'mantenimiento/personal/personalHorario', component: PersonalHorarioComponent, canActivate: [AuthGuard]  },
   { path: 'seguridad/menu', component: MenuComponent, canActivate: [AuthGuard]  },
