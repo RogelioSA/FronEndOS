@@ -1,0 +1,26 @@
+.reporte-admin { color: #25324a; padding-bottom: 2rem; }
+.filtros { border: 0; border-top: 4px solid #315f9e; }
+.eyebrow { color: #61728e; font-size: .72rem; font-weight: 700; letter-spacing: .12em; }
+h2 { font-size: 1.45rem; font-weight: 700; }
+.form-label { color: #46546c; font-size: .78rem; font-weight: 700; margin-bottom: .35rem; }
+.badge-oficina { background: #e9f1fb; border: 1px solid #bfd2ed; border-radius: 999px; color: #315f9e; font-size: .78rem; font-weight: 700; padding: .55rem .8rem; }
+.table-responsive { border: 1px solid #dce3ec; border-radius: .5rem; max-height: 68vh; }
+.table { font-size: .75rem; white-space: nowrap; }
+.table th, .table td { border-color: #dce3ec; padding: .55rem .5rem; }
+.table thead { position: sticky; top: 0; z-index: 5; }
+.encabezado-principal th { background: #263b59; color: white; text-align: center; vertical-align: middle; }
+.subencabezado th { background: #dce8f7; color: #263b59; text-align: center; }
+.fecha span { color: #a9c8ed; font-size: .68rem; }
+.encabezado-principal .fin-semana { background: #655123; }
+.col-fija { position: sticky; z-index: 3; }
+tbody .col-fija { background: #fff; }
+.nro { left: 0; min-width: 52px; }
+.nombres { left: 52px; min-width: 235px; }
+thead .col-fija { z-index: 7; }
+.marca { min-width: 60px; }
+.tardanza { min-width: 55px; }
+.total { color: #315f9e; font-weight: 700; }
+.con-tardanza { background: #fee2e2 !important; color: #b42318; font-weight: 700; }
+.ausencia { background: #fff1b8 !important; color: #684d00; font-weight: 800; }
+.estado-vacio { color: #718096; padding: 2.5rem !important; }
+@media (max-width: 767.98px) { .nombres { min-width: 190px; } h2 { font-size: 1.2rem; } }
