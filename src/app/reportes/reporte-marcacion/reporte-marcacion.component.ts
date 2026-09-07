@@ -1352,21 +1352,38 @@ export class ReporteMarcacionComponent {
       }
 
       Object.entries(empleado.marcaciones).forEach(([fecha, marcacion]) => {
-        if (this.obtenerClavesOrdenTrabajo(marcacion).length > 1) {
+        const marcacionSinOficina = this.descartarOficinaSiExisteOrdenTrabajo(marcacion);
+        if (this.obtenerClavesOrdenTrabajo(marcacionSinOficina).length > 1) {
           unificado!.fechasConCruceOrdenTrabajo.add(fecha);
         }
         const existente = unificado!.marcaciones[fecha];
         if (existente) {
           const ordenes = new Set([
             ...this.obtenerClavesOrdenTrabajo(existente),
-            ...this.obtenerClavesOrdenTrabajo(marcacion)
+            ...this.obtenerClavesOrdenTrabajo(marcacionSinOficina)
           ]);
           if (ordenes.size > 1) {
             unificado!.fechasConCruceOrdenTrabajo.add(fecha);
           }
-          unificado!.marcaciones[fecha] = this.combinarMarcacionesTareo(existente, marcacion);
+
+          const existenteTieneOt = this.obtenerClavesOrdenTrabajo(existente).length > 0;
+          const adicionalTieneOt = this.obtenerClavesOrdenTrabajo(marcacionSinOficina).length > 0;
+          if (!existenteTieneOt && adicionalTieneOt) {
+            // La marcación de OFICINA se descarta completamente: entrada,
+            // salida y diferencial deben proceder de la marcación con OT.
+            unificado!.marcaciones[fecha] = { ...marcacionSinOficina };
+          } else if (existenteTieneOt && !adicionalTieneOt) {
+            // Ya existe una marcación con OT para el jornal; no se mezcla con
+            // horas de una marcación posterior de OFICINA.
+            return;
+          } else {
+            unificado!.marcaciones[fecha] = this.combinarMarcacionesTareo(
+              existente,
+              marcacionSinOficina
+            );
+          }
         } else {
-          unificado!.marcaciones[fecha] = { ...marcacion };
+          unificado!.marcaciones[fecha] = { ...marcacionSinOficina };
         }
       });
     });
@@ -1383,9 +1400,42 @@ export class ReporteMarcacionComponent {
       marcacion.datosDesconocido
     ].filter(Boolean);
 
-    return Array.from(new Set(datos.map(dato =>
-      dato?.ordenTrabajo?.id == null ? 'OFICINA' : String(dato.ordenTrabajo.id)
-    )));
+    return Array.from(new Set(
+      datos
+        .filter(dato => dato?.ordenTrabajo?.id != null)
+        .map(dato => String(dato.ordenTrabajo.id))
+    ));
+  }
+
+  private descartarOficinaSiExisteOrdenTrabajo(marcacion: MarcacionPorDia): MarcacionPorDia {
+    if (this.obtenerClavesOrdenTrabajo(marcacion).length === 0) {
+      return { ...marcacion };
+    }
+
+    const resultado = { ...marcacion };
+    const tipos: Array<{
+      datos: keyof MarcacionPorDia;
+      hora: keyof MarcacionPorDia;
+    }> = [
+      { datos: 'datosEntrada', hora: 'entrada' },
+      { datos: 'datosSalida', hora: 'salida' },
+      { datos: 'datosSalidaRefrigerio', hora: 'salidaRefrigerio' },
+      { datos: 'datosEntradaRefrigerio', hora: 'entradaRefrigerio' },
+      { datos: 'datosDesconocido', hora: 'desconocido' }
+    ];
+
+    tipos.forEach(({ datos, hora }) => {
+      const detalle = marcacion[datos] as any;
+      if (detalle && detalle?.ordenTrabajo?.id == null) {
+        (resultado as any)[datos] = undefined;
+        (resultado as any)[hora] = undefined;
+      }
+    });
+
+    if (!resultado.datosEntrada) {
+      resultado.tardanza = false;
+    }
+    return resultado;
   }
 
   private combinarMarcacionesTareo(
