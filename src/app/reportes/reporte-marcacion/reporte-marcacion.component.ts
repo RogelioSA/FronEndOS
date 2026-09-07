@@ -31,6 +31,7 @@ interface EmpleadoReporte {
 
 interface EmpleadoTareo extends EmpleadoReporte {
   fechasConCruceOrdenTrabajo: Set<string>;
+  minutosConcurrenciaPorFecha: Map<string, number | null>;
 }
 
 interface DetalleMarcacion {
@@ -1179,7 +1180,9 @@ export class ReporteMarcacionComponent {
 
           let horasTexto: string | number = '';
           if (marcacion?.datosEntrada || marcacion?.datosSalida) {
-            const minutosTrabajados = this.calcularMinutosTareo(marcacion);
+            const minutosTrabajados = empleado.minutosConcurrenciaPorFecha.has(col.fecha)
+              ? empleado.minutosConcurrenciaPorFecha.get(col.fecha) ?? null
+              : this.calcularMinutosTareo(marcacion);
             if (minutosTrabajados === null) {
               horasTexto = -1;
               celdasMarcacionIncompleta.push(8 + diaIndex * 3);
@@ -1346,7 +1349,8 @@ export class ReporteMarcacionComponent {
         unificado = {
           ...empleado,
           marcaciones: {},
-          fechasConCruceOrdenTrabajo: new Set<string>()
+          fechasConCruceOrdenTrabajo: new Set<string>(),
+          minutosConcurrenciaPorFecha: new Map<string, number | null>()
         };
         empleadosPorPersonal.set(empleado.personalId, unificado);
       }
@@ -1358,16 +1362,25 @@ export class ReporteMarcacionComponent {
         }
         const existente = unificado!.marcaciones[fecha];
         if (existente) {
+          const ordenesExistentes = this.obtenerClavesOrdenTrabajo(existente);
+          const ordenesAdicionales = this.obtenerClavesOrdenTrabajo(marcacionSinOficina);
           const ordenes = new Set([
-            ...this.obtenerClavesOrdenTrabajo(existente),
-            ...this.obtenerClavesOrdenTrabajo(marcacionSinOficina)
+            ...ordenesExistentes,
+            ...ordenesAdicionales
           ]);
           if (ordenes.size > 1) {
             unificado!.fechasConCruceOrdenTrabajo.add(fecha);
+            this.acumularMinutosConcurrencia(
+              unificado!,
+              fecha,
+              existente,
+              marcacionSinOficina,
+              ordenesAdicionales.some(orden => !ordenesExistentes.includes(orden))
+            );
           }
 
-          const existenteTieneOt = this.obtenerClavesOrdenTrabajo(existente).length > 0;
-          const adicionalTieneOt = this.obtenerClavesOrdenTrabajo(marcacionSinOficina).length > 0;
+          const existenteTieneOt = ordenesExistentes.length > 0;
+          const adicionalTieneOt = ordenesAdicionales.length > 0;
           if (!existenteTieneOt && adicionalTieneOt) {
             // La marcación de OFICINA se descarta completamente: entrada,
             // salida y diferencial deben proceder de la marcación con OT.
@@ -1389,6 +1402,42 @@ export class ReporteMarcacionComponent {
     });
 
     return Array.from(empleadosPorPersonal.values());
+  }
+
+  private acumularMinutosConcurrencia(
+    empleado: EmpleadoTareo,
+    fecha: string,
+    marcacionExistente: MarcacionPorDia,
+    marcacionAdicional: MarcacionPorDia,
+    esNuevaOrden: boolean
+  ): void {
+    const yaInicializado = empleado.minutosConcurrenciaPorFecha.has(fecha);
+    const acumulado = empleado.minutosConcurrenciaPorFecha.get(fecha);
+    let totalMinutos = acumulado ?? 0;
+    let cantidadCompletas = yaInicializado && acumulado !== null ? 1 : 0;
+
+    if (!yaInicializado) {
+      const minutosExistentes = this.calcularMinutosTareo(marcacionExistente);
+      if (minutosExistentes !== null) {
+        totalMinutos += minutosExistentes;
+        cantidadCompletas++;
+      }
+    }
+
+    if (esNuevaOrden) {
+      const minutosAdicionales = this.calcularMinutosTareo(marcacionAdicional);
+      if (minutosAdicionales !== null) {
+        totalMinutos += minutosAdicionales;
+        cantidadCompletas++;
+      }
+    }
+
+    // Una marcación incompleta se descarta de la suma. Si ninguna OT tiene
+    // ingreso y salida se conserva el indicador de marcación incompleta (-1).
+    empleado.minutosConcurrenciaPorFecha.set(
+      fecha,
+      cantidadCompletas > 0 ? totalMinutos : null
+    );
   }
 
   private obtenerClavesOrdenTrabajo(marcacion: MarcacionPorDia): string[] {
