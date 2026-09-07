@@ -68,6 +68,7 @@ import { PersonalMarcacionComponent } from './personal-marcacion/personal-marcac
 import { UsuarioComponent } from './usuario/usuario.component';
 import { MarcacionDatosComponent } from './marcacion-datos/marcacion-datos.component';
 import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionespecifica.component';
+import { RepmarcacionAdminComponent } from './reportes/repmarcacion-admin/repmarcacion-admin.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -129,7 +130,8 @@ import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionesp
         PersonalMarcacionComponent,
         UsuarioComponent,
         MarcacionDatosComponent,
-        MarcacionespecificaComponent
+        MarcacionespecificaComponent,
+        RepmarcacionAdminComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

@@ -1,0 +1,89 @@
+<div class="container-fluid reporte-admin">
+  <section class="filtros card shadow-sm mt-3 mb-4" aria-labelledby="titulo-reporte-admin">
+    <div class="card-body">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <div>
+          <p class="eyebrow mb-1">CONTROL DE ASISTENCIA</p>
+          <h2 id="titulo-reporte-admin" class="mb-0">Reporte administrativo de oficina</h2>
+        </div>
+        <span class="badge-oficina"><i class="fa-solid fa-building"></i> OFICINA</span>
+      </div>
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-3">
+          <label class="form-label" for="fechaInicialAdmin">Fecha Inicial</label>
+          <dx-date-box id="fechaInicialAdmin" type="date" [(ngModel)]="fechaInicial"
+            displayFormat="dd/MM/yyyy" [width]="'100%'" [inputAttr]="{ 'aria-label': 'Fecha Inicial' }">
+          </dx-date-box>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label" for="fechaFinalAdmin">Fecha Final</label>
+          <dx-date-box id="fechaFinalAdmin" type="date" [(ngModel)]="fechaFinal"
+            displayFormat="dd/MM/yyyy" [width]="'100%'" [inputAttr]="{ 'aria-label': 'Fecha Final' }">
+          </dx-date-box>
+        </div>
+        <div class="col-12 col-md-auto">
+          <dx-button text="Buscar" type="default" stylingMode="contained" icon="fa-solid fa-magnifying-glass"
+            [width]="120" (onClick)="buscar()"></dx-button>
+        </div>
+        <div class="col-12 col-md ms-md-auto">
+          <label class="form-label" for="busquedaPersonalAdmin">Buscar personal</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input id="busquedaPersonalAdmin" type="search" class="form-control"
+              placeholder="Buscar por DNI o personal" [(ngModel)]="textoBusquedaPersonal"
+              (ngModelChange)="aplicarFiltroPersonal()">
+          </div>
+        </div>
+      </div>
+      <div *ngIf="mensaje" class="alert alert-warning mt-3 mb-0" role="alert">{{ mensaje }}</div>
+    </div>
+  </section>
+
+  <div class="table-responsive shadow-sm">
+    <table class="table table-bordered table-hover align-middle mb-0">
+      <thead>
+        <tr class="encabezado-principal">
+          <th rowspan="2" class="col-fija nro">Nro</th>
+          <th rowspan="2" class="col-fija nombres">Apellidos y Nombres</th>
+          <th rowspan="2">NroDoc</th>
+          <th rowspan="2">Área</th>
+          <th rowspan="2">Cargo</th>
+          <th rowspan="2">Total Marcas</th>
+          <th rowspan="2">Min. Tardanzas</th>
+          <th *ngFor="let columna of columnasFechas" colspan="3" class="fecha"
+            [class.fin-semana]="columna.diaSemana === 'SÁB' || columna.diaSemana === 'DOM'">
+            <span>{{ columna.diaSemana }}</span> {{ columna.fechaDisplay }}
+          </th>
+        </tr>
+        <tr class="subencabezado">
+          <ng-container *ngFor="let columna of columnasFechas">
+            <th>E</th><th>TARD.</th><th>S</th>
+          </ng-container>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let empleado of empleadosFiltrados; let i = index">
+          <td class="col-fija nro text-center">{{ i + 1 }}</td>
+          <td class="col-fija nombres fw-semibold">{{ empleado.nombreCompleto }}</td>
+          <td>{{ empleado.documentoIdentidad }}</td>
+          <td>{{ empleado.area }}</td>
+          <td>{{ empleado.cargo || '—' }}</td>
+          <td class="text-center total">{{ empleado.totalMarcas }}</td>
+          <td class="text-center" [class.con-tardanza]="empleado.minutosTardanza > 0">{{ empleado.minutosTardanza }}</td>
+          <ng-container *ngFor="let columna of columnasFechas">
+            <ng-container *ngIf="empleado.dias[columna.fecha] as dia">
+              <td class="text-center marca" [class.ausencia]="dia.ausencia">{{ dia.ausencia || dia.entrada }}</td>
+              <td class="text-center tardanza" [class.con-tardanza]="dia.tardanza > 0">{{ dia.tardanza > 0 ? dia.tardanza : '' }}</td>
+              <td class="text-center marca" [class.ausencia]="dia.ausencia">{{ dia.ausencia || dia.salida }}</td>
+            </ng-container>
+          </ng-container>
+        </tr>
+        <tr *ngIf="empleadosFiltrados.length === 0">
+          <td [attr.colspan]="7 + columnasFechas.length * 3" class="estado-vacio text-center">
+            No hay registros de oficina que coincidan con los filtros seleccionados.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
