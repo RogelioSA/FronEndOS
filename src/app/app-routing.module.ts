@@ -123,7 +123,7 @@ const routes: Routes = [
   { path: 'mantenimiento/usuario', component: UsuarioComponent, canActivate: [AuthGuard]},
   { path: 'reporte/marcacion-datos', component: MarcacionDatosComponent, canActivate: [AuthGuard]},
   { path: 'procesos/marcacion-especifica', component: MarcacionespecificaComponent, canActivate: [AuthGuard]},
-  { path: 'repmarcacion-admin', component: RepmarcacionAdminComponent, canActivate: [AuthGuard] },
+  { path: 'reporte/marcacionadministrativos', component: RepmarcacionAdminComponent, canActivate: [AuthGuard] },
 
 ];
 
