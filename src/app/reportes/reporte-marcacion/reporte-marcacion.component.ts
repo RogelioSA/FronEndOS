@@ -29,6 +29,10 @@ interface EmpleadoReporte {
   marcaciones: { [fecha: string]: MarcacionPorDia };
 }
 
+interface EmpleadoTareo extends EmpleadoReporte {
+  fechasConCruceOrdenTrabajo: Set<string>;
+}
+
 interface DetalleMarcacion {
   personal: string;
   dni: string;
@@ -967,7 +971,7 @@ export class ReporteMarcacionComponent {
 
   /* ================= DESCARGAR REPORTE FORMATO TAREO (ExcelJS con estilos) ================= */
   async descargarReporteTareo() {
-    const empleadosTareo = (this.datosReporte || []).filter(empleado => {
+    const empleadosTareo = this.unificarEmpleadosParaTareo(this.datosReporte || []).filter(empleado => {
       const marcacion = this.obtenerPrimeraMarcacionDatos(empleado);
       // OFICINA no tiene OS ni OT vinculada, pero sigue siendo una marcación
       // válida para el tareo. Las filas de ausencias quedan fuera porque no
@@ -1016,6 +1020,7 @@ export class ReporteMarcacionComponent {
       const fillFinDeSemana: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
       const fillTotales: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } };
       const fillMarcacionIncompleta: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
+      const fillCruceOrdenTrabajo: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFC000' } };
 
       const fontBlanco: Partial<ExcelJS.Font> = { name: 'Arial Narrow', bold: true, size: 9, color: { argb: 'FFFFFFFF' } };
       const fontTitulo: Partial<ExcelJS.Font> = { name: 'Arial Narrow', bold: true, size: 9, color: { argb: 'FFFFFFFF' } };
@@ -1154,6 +1159,7 @@ export class ReporteMarcacionComponent {
 
         let totalMinutos = 0;
         const celdasMarcacionIncompleta: number[] = [];
+        const celdasCruceOrdenTrabajo: number[] = [];
 
         this.columnasdinamicas.forEach((col, diaIndex) => {
           const marcacion = empleado.marcaciones[col.fecha];
@@ -1162,7 +1168,14 @@ export class ReporteMarcacionComponent {
             ? (marcacion.datosEntrada || marcacion.datosSalida)
             : null;
           // L identifica la labor mediante los primeros cinco caracteres de la descripción de la OT.
-          const letra = datosOrden?.ordenTrabajo?.descripcion?.slice(0, 5) || '';
+          const existeCruceOrdenTrabajo = empleado.fechasConCruceOrdenTrabajo.has(col.fecha);
+          const letra = existeCruceOrdenTrabajo
+            ? 'OT'
+            : datosOrden?.ordenTrabajo?.descripcion?.slice(0, 5) || '';
+
+          if (existeCruceOrdenTrabajo) {
+            celdasCruceOrdenTrabajo.push(7 + diaIndex * 3);
+          }
 
           let horasTexto: string | number = '';
           if (marcacion?.datosEntrada || marcacion?.datosSalida) {
@@ -1177,8 +1190,9 @@ export class ReporteMarcacionComponent {
           }
 
           // OS corresponde al nombre de la Orden de Trabajo de ese mismo jornal.
-          const ordenServicio = datosOrden?.ordenTrabajo?.nombre ||
-            datosOrden?.ordenTrabajo?.descripcion || '';
+          const ordenServicio = existeCruceOrdenTrabajo
+            ? ''
+            : datosOrden?.ordenTrabajo?.nombre || datosOrden?.ordenTrabajo?.descripcion || '';
 
           filaData.push(letra, horasTexto, ordenServicio);
         });
@@ -1211,6 +1225,12 @@ export class ReporteMarcacionComponent {
           const cell = row.getCell(columna);
           cell.fill = fillMarcacionIncompleta;
           cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        });
+
+        celdasCruceOrdenTrabajo.forEach(columna => {
+          const cell = row.getCell(columna);
+          cell.fill = fillCruceOrdenTrabajo;
+          cell.font = { bold: true, color: { argb: 'FF000000' } };
         });
 
         // ── Estilos fila de datos ──
@@ -1311,6 +1331,98 @@ export class ReporteMarcacionComponent {
   }
 
   /* ================= MÉTODOS AUXILIARES ================= */
+
+  /**
+   * El tareo presenta una sola fila por trabajador. Las marcaciones del reporte
+   * general pueden venir separadas por OS/OT, por lo que aquí se consolidan por
+   * personal y se registran los jornales que contienen más de una OT.
+   */
+  private unificarEmpleadosParaTareo(empleados: EmpleadoReporte[]): EmpleadoTareo[] {
+    const empleadosPorPersonal = new Map<number, EmpleadoTareo>();
+
+    empleados.forEach(empleado => {
+      let unificado = empleadosPorPersonal.get(empleado.personalId);
+      if (!unificado) {
+        unificado = {
+          ...empleado,
+          marcaciones: {},
+          fechasConCruceOrdenTrabajo: new Set<string>()
+        };
+        empleadosPorPersonal.set(empleado.personalId, unificado);
+      }
+
+      Object.entries(empleado.marcaciones).forEach(([fecha, marcacion]) => {
+        if (this.obtenerClavesOrdenTrabajo(marcacion).length > 1) {
+          unificado!.fechasConCruceOrdenTrabajo.add(fecha);
+        }
+        const existente = unificado!.marcaciones[fecha];
+        if (existente) {
+          const ordenes = new Set([
+            ...this.obtenerClavesOrdenTrabajo(existente),
+            ...this.obtenerClavesOrdenTrabajo(marcacion)
+          ]);
+          if (ordenes.size > 1) {
+            unificado!.fechasConCruceOrdenTrabajo.add(fecha);
+          }
+          unificado!.marcaciones[fecha] = this.combinarMarcacionesTareo(existente, marcacion);
+        } else {
+          unificado!.marcaciones[fecha] = { ...marcacion };
+        }
+      });
+    });
+
+    return Array.from(empleadosPorPersonal.values());
+  }
+
+  private obtenerClavesOrdenTrabajo(marcacion: MarcacionPorDia): string[] {
+    const datos = [
+      marcacion.datosEntrada,
+      marcacion.datosSalida,
+      marcacion.datosSalidaRefrigerio,
+      marcacion.datosEntradaRefrigerio,
+      marcacion.datosDesconocido
+    ].filter(Boolean);
+
+    return Array.from(new Set(datos.map(dato =>
+      dato?.ordenTrabajo?.id == null ? 'OFICINA' : String(dato.ordenTrabajo.id)
+    )));
+  }
+
+  private combinarMarcacionesTareo(
+    actual: MarcacionPorDia,
+    adicional: MarcacionPorDia
+  ): MarcacionPorDia {
+    const combinado = { ...actual };
+    const tipos: Array<{
+      datos: keyof MarcacionPorDia;
+      hora: keyof MarcacionPorDia;
+      conservarUltimo: boolean;
+    }> = [
+      { datos: 'datosEntrada', hora: 'entrada', conservarUltimo: false },
+      { datos: 'datosSalida', hora: 'salida', conservarUltimo: true },
+      { datos: 'datosSalidaRefrigerio', hora: 'salidaRefrigerio', conservarUltimo: false },
+      { datos: 'datosEntradaRefrigerio', hora: 'entradaRefrigerio', conservarUltimo: true },
+      { datos: 'datosDesconocido', hora: 'desconocido', conservarUltimo: false }
+    ];
+
+    tipos.forEach(({ datos, hora, conservarUltimo }) => {
+      const datoActual = actual[datos] as any;
+      const datoAdicional = adicional[datos] as any;
+      if (!datoAdicional) return;
+
+      const debeReemplazar = !datoActual || (conservarUltimo
+        ? new Date(datoAdicional.fecha).getTime() > new Date(datoActual.fecha).getTime()
+        : new Date(datoAdicional.fecha).getTime() < new Date(datoActual.fecha).getTime());
+
+      if (debeReemplazar) {
+        (combinado as any)[datos] = datoAdicional;
+        (combinado as any)[hora] = adicional[hora];
+      }
+    });
+
+    combinado.tardanza = combinado.tardanza || adicional.tardanza;
+    return combinado;
+  }
 
   /**
    * Obtiene los datos crudos de la primera marcación disponible del empleado
