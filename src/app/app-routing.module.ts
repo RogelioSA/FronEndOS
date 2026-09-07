@@ -57,6 +57,7 @@ import { PersonalMarcacionComponent } from './personal-marcacion/personal-marcac
 import { UsuarioComponent } from './usuario/usuario.component';
 import { MarcacionDatosComponent } from './marcacion-datos/marcacion-datos.component';
 import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionespecifica.component';
+import { RepmarcacionAdminComponent } from './reportes/repmarcacion-admin/repmarcacion-admin.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -122,6 +123,7 @@ const routes: Routes = [
   { path: 'mantenimiento/usuario', component: UsuarioComponent, canActivate: [AuthGuard]},
   { path: 'reporte/marcacion-datos', component: MarcacionDatosComponent, canActivate: [AuthGuard]},
   { path: 'procesos/marcacion-especifica', component: MarcacionespecificaComponent, canActivate: [AuthGuard]},
+  { path: 'repmarcacion-admin', component: RepmarcacionAdminComponent, canActivate: [AuthGuard] },
 
 ];
 
