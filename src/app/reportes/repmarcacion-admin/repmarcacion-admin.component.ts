@@ -38,12 +38,49 @@ interface EmpleadoMarcacionAdmin {
 export class RepmarcacionAdminComponent {
   private readonly ordenTrabajoAusenciasId = 37;
   private readonly codigosAusencia = new Set(['VAC', 'LIC', 'DM', 'DP']);
-
-  /**
-   * Tabla temporal de áreas por DNI. Se deja centralizada para incorporar la
-   * tabla administrativa indicada por el usuario sin cambiar el reporte.
-   */
-  readonly areaPorDocumento: Record<string, string> = {};
+  private readonly cargosOmitidos = new Set([
+    'MAESTRO',
+    'TECNICO CONDUCTOR',
+    'TECNICO',
+    'AYUDANTE AVANZADO',
+    'TECNICO MECANICO',
+    'AYUDANTE',
+    'SUPERVISOR DE SERVICIOS',
+    'ASISTENTE DE ALMACEN'
+  ]);
+  private readonly areasPorCargo: Record<string, string[]> = {
+    'INGENIERO PLANIFICADOR': ['SERVICIOS'],
+    'MAESTRO': ['SERVICIOS'],
+    'ASISTENTE DE CONTABILIDAD': ['CONTABILIDAD Y FINANZAS'],
+    'SUPERVISOR DE SERVICIOS': ['SERVICIOS'],
+    'TECNICO': ['SERVICIOS'],
+    'TECNICO CONDUCTOR': ['SERVICIOS'],
+    'AYUDANTE AVANZADO': ['SERVICIOS'],
+    'ASISTENTE DE ALMACEN': ['ALMACEN'],
+    'AYUDANTE': ['SERVICIOS'],
+    'GERENTE COMERCIAL Y PROYECTOS': ['CONTABILIDAD Y FINANZAS', 'COMERCIAL'],
+    'JEFE DE QHSE Y SGI': ['SEGURIDAD'],
+    'ENCARGADO DE ALMACEN': ['ALMACEN'],
+    'ENFERMERA OCUPACIONAL': ['SEGURIDAD'],
+    'JEFE DE INGENIERIA Y DESARROLLO': ['INGENIERIA Y DESARROLLO'],
+    'SUPERVISOR DE SEGURIDAD': ['SEGURIDAD'],
+    'MAESTRO MECANICO': ['SERVICIOS'],
+    'COORDINADOR DE SERVICIOS': ['SERVICIOS'],
+    'INGENIERO DE DESARROLLO': ['INGENIERIA Y DESARROLLO'],
+    'JEFE DE SERVICIO': ['SERVICIOS'],
+    'TECNICO MECANICO': ['SERVICIOS'],
+    'ASISTENTE DE PLANEAMIENTO': ['SERVICIOS'],
+    'PERSONAL DE LIMPIEZA': ['RECURSOS HUMANOS'],
+    'PSICOLOGA OCUPACIONAL': ['SEGURIDAD'],
+    'ENCARGADO DE FINANZAS': ['CONTABILIDAD Y FINANZAS'],
+    'ASISTENTE DE LOGISTICA': ['LOGISTICA'],
+    'JEFE COMERCIAL': ['COMERCIAL'],
+    'ENCARGADO DE CONTABILIDAD': ['CONTABILIDAD Y FINANZAS'],
+    'JEFE DE LOGISTICA Y ALMACEN': ['LOGISTICA'],
+    'ASISTENTE DE RECURSOS HUMANOS': ['RECURSOS HUMANOS'],
+    'GERENTE DE QHSE Y SGI': ['SEGURIDAD'],
+    'JEFE DE RECURSOS HUMANOS': ['RECURSOS HUMANOS']
+  };
 
   @BlockUI() blockUI!: NgBlockUI;
 
@@ -136,16 +173,16 @@ export class RepmarcacionAdminComponent {
       const hora = this.datePipe.transform(marcacion.fecha, 'HH:mm') ?? '';
       const dia = empleado.dias[fecha];
       if (evento === 0) {
-        if (!dia.entrada || hora < dia.entrada) dia.entrada = hora;
+        if (!dia.entrada || hora < dia.entrada) {
+          empleado.minutosTardanza -= dia.tardanza;
+          dia.entrada = hora;
+          dia.tardanza = this.obtenerMinutosTardanza(hora);
+          empleado.minutosTardanza += dia.tardanza;
+        }
       } else if (evento === 1) {
         if (!dia.salida || hora > dia.salida) dia.salida = hora;
       }
       if (evento === 0 || evento === 1) empleado.totalMarcas++;
-      const diferencia = Number(marcacion.diferenciaMinutos ?? 0);
-      if (diferencia > 0) {
-        dia.tardanza += diferencia;
-        empleado.minutosTardanza += diferencia;
-      }
     });
 
     horarios.forEach(horario => {
@@ -158,7 +195,9 @@ export class RepmarcacionAdminComponent {
       if (fecha && empleado.dias[fecha]) empleado.dias[fecha].ausencia = codigo;
     });
 
-    this.empleados = Array.from(empleadosPorId.values()).sort((a, b) =>
+    this.empleados = Array.from(empleadosPorId.values())
+      .filter(empleado => !this.cargosOmitidos.has(this.normalizarClave(empleado.cargo)))
+      .sort((a, b) =>
       a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
     );
     this.aplicarFiltroPersonal();
@@ -179,6 +218,9 @@ export class RepmarcacionAdminComponent {
     const cargoId = Number(
       marcacion?.personalCargoExterno?.cargoId ?? detalle?.personalCargoExterno?.cargoId
     );
+    const cargo = Number.isFinite(cargoId)
+      ? cargosPorId.get(cargoId) ?? detalle?.personalCargoExterno?.cargo?.nombre ?? ''
+      : detalle?.personalCargoExterno?.cargo?.nombre ?? '';
     const dias = Object.fromEntries(this.columnasFechas.map(columna => [columna.fecha, {
       entrada: '', salida: '', tardanza: 0, ausencia: ''
     }]));
@@ -186,11 +228,9 @@ export class RepmarcacionAdminComponent {
       personalId,
       nombreCompleto: this.obtenerNombreCompleto(persona),
       documentoIdentidad: documento,
-      area: this.obtenerArea(detalle, persona, documento),
+      area: this.obtenerArea(cargo, detalle, persona),
       // Misma extracción empleada por descargarReporteTareo() del reporte original.
-      cargo: Number.isFinite(cargoId)
-        ? cargosPorId.get(cargoId) ?? detalle?.personalCargoExterno?.cargo?.nombre ?? ''
-        : detalle?.personalCargoExterno?.cargo?.nombre ?? '',
+      cargo,
       totalMarcas: 0,
       minutosTardanza: 0,
       dias
@@ -199,13 +239,16 @@ export class RepmarcacionAdminComponent {
     return empleado;
   }
 
-  private obtenerArea(detalle: any, persona: any, documento: string): string {
-    return this.areaPorDocumento[documento]
-      ?? detalle?.area?.nombre
-      ?? detalle?.areaNombre
-      ?? persona?.area?.nombre
-      ?? persona?.areaNombre
-      ?? 'Por asignar';
+  private obtenerArea(cargo: string, detalle: any, persona: any): string {
+    const areas = this.areasPorCargo[this.normalizarClave(cargo)];
+    if (!areas?.length) return 'Por asignar';
+
+    // El cargo Gerente Comercial y Proyectos aparece en dos áreas de la tabla.
+    // Si el registro ya contiene una de ellas, se conserva para desambiguarlo.
+    const areaActual = detalle?.area?.nombre ?? detalle?.areaNombre
+      ?? persona?.area?.nombre ?? persona?.areaNombre;
+    const areaCoincidente = areas.find(area => this.normalizarClave(area) === this.normalizarClave(areaActual));
+    return areaCoincidente ?? areas[0];
   }
 
   private obtenerNombreCompleto(persona: any): string {
@@ -220,11 +263,13 @@ export class RepmarcacionAdminComponent {
     const fin = new Date(this.fechaFinal.getFullYear(), this.fechaFinal.getMonth(), this.fechaFinal.getDate());
     const dias = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
     while (fecha <= fin) {
-      this.columnasFechas.push({
-        fecha: this.datePipe.transform(fecha, 'yyyy-MM-dd')!,
-        fechaDisplay: this.datePipe.transform(fecha, 'dd/MM/yyyy')!,
-        diaSemana: dias[fecha.getDay()]
-      });
+      if (fecha.getDay() !== 0 && fecha.getDay() !== 6) {
+        this.columnasFechas.push({
+          fecha: this.datePipe.transform(fecha, 'yyyy-MM-dd')!,
+          fechaDisplay: this.datePipe.transform(fecha, 'dd/MM/yyyy')!,
+          diaSemana: dias[fecha.getDay()]
+        });
+      }
       fecha.setDate(fecha.getDate() + 1);
     }
   }
@@ -233,7 +278,20 @@ export class RepmarcacionAdminComponent {
     return Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
   }
 
+  private obtenerMinutosTardanza(horaIngreso: string): number {
+    const [horas, minutos] = horaIngreso.split(':').map(Number);
+    if (!Number.isFinite(horas) || !Number.isFinite(minutos)) return 0;
+    const minutosIngreso = horas * 60 + minutos;
+    const minutosHorarioIngreso = 8 * 60;
+    return Math.max(0, minutosIngreso - minutosHorarioIngreso);
+  }
+
   private normalizar(valor: string): string {
     return (valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
+
+  private normalizarClave(valor: unknown): string {
+    return String(valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ').trim().toUpperCase();
   }
 }
