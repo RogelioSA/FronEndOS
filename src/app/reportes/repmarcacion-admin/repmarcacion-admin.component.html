@@ -73,7 +73,9 @@
           <ng-container *ngFor="let columna of columnasFechas">
             <ng-container *ngIf="empleado.dias[columna.fecha] as dia">
               <td class="text-center marca" [class.ausencia]="dia.ausencia">{{ dia.ausencia || dia.entrada }}</td>
-              <td class="text-center tardanza" [class.con-tardanza]="dia.tardanza > 0">{{ dia.tardanza > 0 ? dia.tardanza : '' }}</td>
+              <td class="text-center tardanza"
+                  [class.con-tardanza]="dia.tardanza > 0"
+                  [class.sin-tardanza]="dia.tardanza <= 0">{{ dia.tardanza > 0 ? dia.tardanza : '' }}</td>
               <td class="text-center marca" [class.ausencia]="dia.ausencia">{{ dia.ausencia || dia.salida }}</td>
             </ng-container>
           </ng-container>
