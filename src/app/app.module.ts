@@ -70,6 +70,7 @@ import { MarcacionDatosComponent } from './marcacion-datos/marcacion-datos.compo
 import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionespecifica.component';
 import { RepmarcacionAdminComponent } from './reportes/repmarcacion-admin/repmarcacion-admin.component';
 import { RepmarcacionServicioComponent } from './reportes/repmarcacion-servicio/repmarcacion-servicio.component';
+import { IndicadoresAsistenciaComponent } from './reportes/indicadoresasistencia/indicadoresasistencia.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -133,7 +134,8 @@ import { RepmarcacionServicioComponent } from './reportes/repmarcacion-servicio/
         MarcacionDatosComponent,
         MarcacionespecificaComponent,
         RepmarcacionAdminComponent,
-        RepmarcacionServicioComponent
+        RepmarcacionServicioComponent,
+        IndicadoresAsistenciaComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

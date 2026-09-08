@@ -1,0 +1,36 @@
+<div class="container-fluid indicadores-asistencia">
+  <section class="filtros card shadow-sm mt-3 mb-4" aria-labelledby="titulo-indicadores">
+    <div class="card-body">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <div><p class="eyebrow mb-1">CONTROL DE ASISTENCIA</p><h2 id="titulo-indicadores" class="mb-0">Indicadores de asistencia</h2></div>
+        <span class="badge-indicador"><i class="fa-solid fa-chart-line"></i> INDICADORES</span>
+      </div>
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-3"><label class="form-label" for="fechaInicialIndicador">Fecha Inicial</label><dx-date-box id="fechaInicialIndicador" type="date" [(ngModel)]="fechaInicial" displayFormat="dd/MM/yyyy" [width]="'100%'" [inputAttr]="{ 'aria-label': 'Fecha Inicial' }"></dx-date-box></div>
+        <div class="col-12 col-md-3"><label class="form-label" for="fechaFinalIndicador">Fecha Final</label><dx-date-box id="fechaFinalIndicador" type="date" [(ngModel)]="fechaFinal" [max]="fechaMaxima" displayFormat="dd/MM/yyyy" [width]="'100%'" [inputAttr]="{ 'aria-label': 'Fecha Final' }"></dx-date-box></div>
+        <div class="col-12 col-md-auto"><dx-button text="Buscar" type="default" stylingMode="contained" icon="fa-solid fa-magnifying-glass" [width]="120" (onClick)="buscar()"></dx-button></div>
+        <div class="col-12 col-md-auto"><dx-button text="Descargar Excel" type="success" stylingMode="contained" icon="fa-solid fa-file-excel" [width]="160" [disabled]="indicadoresFiltrados.length === 0" (onClick)="descargarExcel()"></dx-button></div>
+        <div class="col-12 col-md ms-md-auto"><label class="form-label" for="busquedaArea">Buscar área</label><div class="input-group"><span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span><input id="busquedaArea" type="search" class="form-control" placeholder="Buscar por área" [(ngModel)]="textoBusqueda" (ngModelChange)="aplicarFiltro()"></div></div>
+      </div>
+      <div *ngIf="mensaje" class="alert alert-warning mt-3 mb-0" role="alert">{{ mensaje }}</div>
+    </div>
+  </section>
+
+  <section class="ocupacion-card shadow-sm mb-4" aria-label="Indicador de ocupación">
+    <div class="ocupacion-icon"><i class="fa-solid fa-people-group"></i></div>
+    <div class="flex-grow-1"><span class="ocupacion-label">PORCENTAJE DE OCUPACIÓN</span><strong>{{ porcentajeOcupacion | number:'1.2-2' }}%</strong><div class="progress" role="progressbar" [attr.aria-valuenow]="porcentajeOcupacion" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" [style.width.%]="porcentajeOcupacion"></div></div></div>
+    <div class="ocupacion-detalle"><b>{{ personalSinOcupacion }}</b><span>personas sin asignación, vacaciones ni marcación</span></div>
+  </section>
+
+  <div class="table-responsive shadow-sm">
+    <table class="table table-bordered table-hover align-middle mb-0">
+      <thead><tr><th>Área</th><th>Nro Personal</th><th>Marcaciones<br>Realizadas</th><th>Marcaciones<br>Esperadas</th><th>% Cumplimiento de<br>Marcación de Asistencia</th><th>Nro Personas<br>Puntuales</th><th>% Puntualidad<br>Entrada</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let indicador of indicadoresFiltrados"><td class="area">{{ indicador.area }}</td><td>{{ indicador.numeroPersonal }}</td><td>{{ indicador.marcacionesRealizadas }}</td><td>{{ indicador.marcacionesEsperadas }}</td><td><span class="semaforo" [ngClass]="claseSemaforo(indicador.cumplimiento)"><i></i>{{ indicador.cumplimiento | number:'1.2-2' }}%</span></td><td>{{ indicador.personasPuntuales }}</td><td><span class="semaforo" [ngClass]="claseSemaforo(indicador.puntualidad)"><i></i>{{ indicador.puntualidad | number:'1.2-2' }}%</span></td></tr>
+        <tr *ngIf="indicadoresFiltrados.length === 0"><td colspan="7" class="estado-vacio">No hay indicadores que coincidan con los filtros seleccionados.</td></tr>
+      </tbody>
+      <tfoot><tr><th>TOTALES</th><th>{{ total.numeroPersonal }}</th><th>{{ total.marcacionesRealizadas }}</th><th>{{ total.marcacionesEsperadas }}</th><th><span class="semaforo" [ngClass]="claseSemaforo(total.cumplimiento)"><i></i>{{ total.cumplimiento | number:'1.2-2' }}%</span></th><th>{{ total.personasPuntuales }}</th><th><span class="semaforo" [ngClass]="claseSemaforo(total.puntualidad)"><i></i>{{ total.puntualidad | number:'1.2-2' }}%</span></th></tr></tfoot>
+    </table>
+  </div>
+  <p class="total-activos"><i class="fa-solid fa-circle-check"></i> Total del listado de personal activo: <strong>{{ totalPersonalActivo }}</strong></p>
+</div>
