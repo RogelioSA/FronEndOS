@@ -25,6 +25,10 @@
           <dx-button text="Buscar" type="default" stylingMode="contained" icon="fa-solid fa-magnifying-glass"
             [width]="120" (onClick)="buscar()"></dx-button>
         </div>
+        <div class="col-12 col-md-auto">
+          <dx-button text="Descargar Excel" type="success" stylingMode="contained" icon="fa-solid fa-file-excel"
+            [width]="160" [disabled]="empleadosFiltrados.length === 0" (onClick)="descargarExcel()"></dx-button>
+        </div>
         <div class="col-12 col-md ms-md-auto">
           <label class="form-label" for="busquedaPersonalAdmin">Buscar personal</label>
           <div class="input-group">
@@ -73,7 +77,9 @@
           <ng-container *ngFor="let columna of columnasFechas">
             <ng-container *ngIf="empleado.dias[columna.fecha] as dia">
               <td class="text-center marca" [class.ausencia]="dia.ausencia">{{ dia.ausencia || dia.entrada }}</td>
-              <td class="text-center tardanza" [class.con-tardanza]="dia.tardanza > 0">{{ dia.tardanza > 0 ? dia.tardanza : '' }}</td>
+              <td class="text-center tardanza"
+                  [class.con-tardanza]="dia.tardanza > 0"
+                  [class.sin-tardanza]="dia.tardanza <= 0">{{ dia.tardanza > 0 ? dia.tardanza : '' }}</td>
               <td class="text-center marca" [class.ausencia]="dia.ausencia">{{ dia.ausencia || dia.salida }}</td>
             </ng-container>
           </ng-container>

@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { ApiService } from '../../services/api.service';
+import * as ExcelJS from 'exceljs';
 
 interface FechaReporteAdmin {
   fecha: string;
@@ -38,12 +39,49 @@ interface EmpleadoMarcacionAdmin {
 export class RepmarcacionAdminComponent {
   private readonly ordenTrabajoAusenciasId = 37;
   private readonly codigosAusencia = new Set(['VAC', 'LIC', 'DM', 'DP']);
-
-  /**
-   * Tabla temporal de áreas por DNI. Se deja centralizada para incorporar la
-   * tabla administrativa indicada por el usuario sin cambiar el reporte.
-   */
-  readonly areaPorDocumento: Record<string, string> = {};
+  private readonly cargosOmitidos = new Set([
+    'MAESTRO',
+    'TECNICO CONDUCTOR',
+    'TECNICO',
+    'AYUDANTE AVANZADO',
+    'TECNICO MECANICO',
+    'AYUDANTE',
+    'SUPERVISOR DE SERVICIOS',
+    'ASISTENTE DE ALMACEN'
+  ]);
+  private readonly areasPorCargo: Record<string, string[]> = {
+    'INGENIERO PLANIFICADOR': ['SERVICIOS'],
+    'MAESTRO': ['SERVICIOS'],
+    'ASISTENTE DE CONTABILIDAD': ['CONTABILIDAD Y FINANZAS'],
+    'SUPERVISOR DE SERVICIOS': ['SERVICIOS'],
+    'TECNICO': ['SERVICIOS'],
+    'TECNICO CONDUCTOR': ['SERVICIOS'],
+    'AYUDANTE AVANZADO': ['SERVICIOS'],
+    'ASISTENTE DE ALMACEN': ['ALMACEN'],
+    'AYUDANTE': ['SERVICIOS'],
+    'GERENTE COMERCIAL Y PROYECTOS': ['CONTABILIDAD Y FINANZAS', 'COMERCIAL'],
+    'JEFE DE QHSE Y SGI': ['SEGURIDAD'],
+    'ENCARGADO DE ALMACEN': ['ALMACEN'],
+    'ENFERMERA OCUPACIONAL': ['SEGURIDAD'],
+    'JEFE DE INGENIERIA Y DESARROLLO': ['INGENIERIA Y DESARROLLO'],
+    'SUPERVISOR DE SEGURIDAD': ['SEGURIDAD'],
+    'MAESTRO MECANICO': ['SERVICIOS'],
+    'COORDINADOR DE SERVICIOS': ['SERVICIOS'],
+    'INGENIERO DE DESARROLLO': ['INGENIERIA Y DESARROLLO'],
+    'JEFE DE SERVICIO': ['SERVICIOS'],
+    'TECNICO MECANICO': ['SERVICIOS'],
+    'ASISTENTE DE PLANEAMIENTO': ['SERVICIOS'],
+    'PERSONAL DE LIMPIEZA': ['RECURSOS HUMANOS'],
+    'PSICOLOGA OCUPACIONAL': ['SEGURIDAD'],
+    'ENCARGADO DE FINANZAS': ['CONTABILIDAD Y FINANZAS'],
+    'ASISTENTE DE LOGISTICA': ['LOGISTICA'],
+    'JEFE COMERCIAL': ['COMERCIAL'],
+    'ENCARGADO DE CONTABILIDAD': ['CONTABILIDAD Y FINANZAS'],
+    'JEFE DE LOGISTICA Y ALMACEN': ['LOGISTICA'],
+    'ASISTENTE DE RECURSOS HUMANOS': ['RECURSOS HUMANOS'],
+    'GERENTE DE QHSE Y SGI': ['SEGURIDAD'],
+    'JEFE DE RECURSOS HUMANOS': ['RECURSOS HUMANOS']
+  };
 
   @BlockUI() blockUI!: NgBlockUI;
 
@@ -115,6 +153,120 @@ export class RepmarcacionAdminComponent {
       : [...this.empleados];
   }
 
+  async descargarExcel(): Promise<void> {
+    if (this.empleadosFiltrados.length === 0) {
+      this.mensaje = 'No hay datos para exportar.';
+      return;
+    }
+
+    this.blockUI.start('Generando reporte Excel...');
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const hoja = workbook.addWorksheet('Reporte administrativo', {
+        views: [{ state: 'frozen', xSplit: 2, ySplit: 2 }]
+      });
+      const borde: Partial<ExcelJS.Borders> = {
+        top: { style: 'thin', color: { argb: 'FFDCE3EC' } },
+        bottom: { style: 'thin', color: { argb: 'FFDCE3EC' } },
+        left: { style: 'thin', color: { argb: 'FFDCE3EC' } },
+        right: { style: 'thin', color: { argb: 'FFDCE3EC' } }
+      };
+      const alineacion: Partial<ExcelJS.Alignment> = { horizontal: 'center', vertical: 'middle' };
+      const relleno = (argb: string): ExcelJS.Fill => ({
+        type: 'pattern', pattern: 'solid', fgColor: { argb }
+      });
+      const columnasFijas = ['Nro', 'Apellidos y Nombres', 'NroDoc', 'Área', 'Cargo', 'Total Marcas', 'Min. Tardanzas'];
+      const filaPrincipal = hoja.addRow(columnasFijas);
+      const filaSecundaria = hoja.addRow(columnasFijas.map(() => ''));
+
+      columnasFijas.forEach((_, indice) => hoja.mergeCells(1, indice + 1, 2, indice + 1));
+      this.columnasFechas.forEach((columna, indice) => {
+        const inicio = columnasFijas.length + 1 + indice * 3;
+        hoja.mergeCells(1, inicio, 1, inicio + 2);
+        filaPrincipal.getCell(inicio).value = `${columna.diaSemana} ${columna.fechaDisplay}`;
+        ['E', 'TARD.', 'S'].forEach((titulo, subindice) => {
+          filaSecundaria.getCell(inicio + subindice).value = titulo;
+        });
+      });
+
+      [filaPrincipal, filaSecundaria].forEach((fila, indiceFila) => {
+        for (let columna = 1; columna <= columnasFijas.length + this.columnasFechas.length * 3; columna++) {
+          const celda = fila.getCell(columna);
+          celda.fill = relleno(indiceFila === 0 ? 'FF263B59' : 'FFDCE8F7');
+          celda.font = { bold: true, color: { argb: indiceFila === 0 ? 'FFFFFFFF' : 'FF263B59' } };
+          celda.alignment = alineacion;
+          celda.border = borde;
+        }
+      });
+
+      this.empleadosFiltrados.forEach((empleado, indiceEmpleado) => {
+        const valores: Array<string | number> = [
+          indiceEmpleado + 1,
+          empleado.nombreCompleto,
+          empleado.documentoIdentidad,
+          empleado.area,
+          empleado.cargo || '—',
+          empleado.totalMarcas,
+          empleado.minutosTardanza
+        ];
+        this.columnasFechas.forEach(columna => {
+          const dia = empleado.dias[columna.fecha];
+          valores.push(dia.ausencia || dia.entrada, dia.tardanza > 0 ? dia.tardanza : '', dia.ausencia || dia.salida);
+        });
+        const fila = hoja.addRow(valores);
+        fila.eachCell({ includeEmpty: true }, celda => {
+          celda.border = borde;
+          celda.alignment = alineacion;
+          celda.font = { size: 9 };
+        });
+        fila.getCell(2).alignment = { horizontal: 'left', vertical: 'middle' };
+        fila.getCell(6).font = { bold: true, color: { argb: 'FF315F9E' }, size: 9 };
+        if (empleado.minutosTardanza > 0) {
+          fila.getCell(7).fill = relleno('FFFEE2E2');
+          fila.getCell(7).font = { bold: true, color: { argb: 'FFB42318' }, size: 9 };
+        }
+        this.columnasFechas.forEach((columna, indiceDia) => {
+          const dia = empleado.dias[columna.fecha];
+          const inicio = columnasFijas.length + 1 + indiceDia * 3;
+          if (dia.ausencia) {
+            fila.getCell(inicio).fill = relleno('FFFFF1B8');
+            fila.getCell(inicio + 2).fill = relleno('FFFFF1B8');
+          }
+          const celdaTardanza = fila.getCell(inicio + 1);
+          celdaTardanza.fill = dia.tardanza > 0 ? relleno('FFFEE2E2') : relleno('FFDCFCE7');
+          celdaTardanza.font = {
+            bold: dia.tardanza > 0,
+            color: { argb: dia.tardanza > 0 ? 'FFB42318' : 'FF166534' },
+            size: 9
+          };
+        });
+      });
+
+      [6, 32, 14, 24, 28, 14, 16].forEach((ancho, indice) => hoja.getColumn(indice + 1).width = ancho);
+      this.columnasFechas.forEach((_, indice) => {
+        const inicio = columnasFijas.length + 1 + indice * 3;
+        hoja.getColumn(inicio).width = 9;
+        hoja.getColumn(inicio + 1).width = 9;
+        hoja.getColumn(inicio + 2).width = 9;
+      });
+      hoja.autoFilter = { from: { row: 2, column: 1 }, to: { row: 2, column: columnasFijas.length } };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = `Reporte_administrativo_${this.datePipe.transform(this.fechaInicial, 'yyyyMMdd')}_${this.datePipe.transform(this.fechaFinal, 'yyyyMMdd')}.xlsx`;
+      enlace.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error al generar el reporte administrativo en Excel:', error);
+      this.mensaje = 'No se pudo generar el archivo Excel.';
+    } finally {
+      this.blockUI.stop();
+    }
+  }
+
   private procesarDatos(marcaciones: any[], horarios: any[], personal: any[], cargos: any[]): void {
     const personalPorId = new Map<number, any>();
     personal.forEach(detalle => {
@@ -136,16 +288,16 @@ export class RepmarcacionAdminComponent {
       const hora = this.datePipe.transform(marcacion.fecha, 'HH:mm') ?? '';
       const dia = empleado.dias[fecha];
       if (evento === 0) {
-        if (!dia.entrada || hora < dia.entrada) dia.entrada = hora;
+        if (!dia.entrada || hora < dia.entrada) {
+          empleado.minutosTardanza -= dia.tardanza;
+          dia.entrada = hora;
+          dia.tardanza = this.obtenerMinutosTardanza(hora);
+          empleado.minutosTardanza += dia.tardanza;
+        }
       } else if (evento === 1) {
         if (!dia.salida || hora > dia.salida) dia.salida = hora;
       }
       if (evento === 0 || evento === 1) empleado.totalMarcas++;
-      const diferencia = Number(marcacion.diferenciaMinutos ?? 0);
-      if (diferencia > 0) {
-        dia.tardanza += diferencia;
-        empleado.minutosTardanza += diferencia;
-      }
     });
 
     horarios.forEach(horario => {
@@ -158,7 +310,9 @@ export class RepmarcacionAdminComponent {
       if (fecha && empleado.dias[fecha]) empleado.dias[fecha].ausencia = codigo;
     });
 
-    this.empleados = Array.from(empleadosPorId.values()).sort((a, b) =>
+    this.empleados = Array.from(empleadosPorId.values())
+      .filter(empleado => !this.cargosOmitidos.has(this.normalizarClave(empleado.cargo)))
+      .sort((a, b) =>
       a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
     );
     this.aplicarFiltroPersonal();
@@ -179,6 +333,9 @@ export class RepmarcacionAdminComponent {
     const cargoId = Number(
       marcacion?.personalCargoExterno?.cargoId ?? detalle?.personalCargoExterno?.cargoId
     );
+    const cargo = Number.isFinite(cargoId)
+      ? cargosPorId.get(cargoId) ?? detalle?.personalCargoExterno?.cargo?.nombre ?? ''
+      : detalle?.personalCargoExterno?.cargo?.nombre ?? '';
     const dias = Object.fromEntries(this.columnasFechas.map(columna => [columna.fecha, {
       entrada: '', salida: '', tardanza: 0, ausencia: ''
     }]));
@@ -186,11 +343,9 @@ export class RepmarcacionAdminComponent {
       personalId,
       nombreCompleto: this.obtenerNombreCompleto(persona),
       documentoIdentidad: documento,
-      area: this.obtenerArea(detalle, persona, documento),
+      area: this.obtenerArea(cargo, detalle, persona),
       // Misma extracción empleada por descargarReporteTareo() del reporte original.
-      cargo: Number.isFinite(cargoId)
-        ? cargosPorId.get(cargoId) ?? detalle?.personalCargoExterno?.cargo?.nombre ?? ''
-        : detalle?.personalCargoExterno?.cargo?.nombre ?? '',
+      cargo,
       totalMarcas: 0,
       minutosTardanza: 0,
       dias
@@ -199,13 +354,16 @@ export class RepmarcacionAdminComponent {
     return empleado;
   }
 
-  private obtenerArea(detalle: any, persona: any, documento: string): string {
-    return this.areaPorDocumento[documento]
-      ?? detalle?.area?.nombre
-      ?? detalle?.areaNombre
-      ?? persona?.area?.nombre
-      ?? persona?.areaNombre
-      ?? 'Por asignar';
+  private obtenerArea(cargo: string, detalle: any, persona: any): string {
+    const areas = this.areasPorCargo[this.normalizarClave(cargo)];
+    if (!areas?.length) return 'Por asignar';
+
+    // El cargo Gerente Comercial y Proyectos aparece en dos áreas de la tabla.
+    // Si el registro ya contiene una de ellas, se conserva para desambiguarlo.
+    const areaActual = detalle?.area?.nombre ?? detalle?.areaNombre
+      ?? persona?.area?.nombre ?? persona?.areaNombre;
+    const areaCoincidente = areas.find(area => this.normalizarClave(area) === this.normalizarClave(areaActual));
+    return areaCoincidente ?? areas[0];
   }
 
   private obtenerNombreCompleto(persona: any): string {
@@ -220,11 +378,13 @@ export class RepmarcacionAdminComponent {
     const fin = new Date(this.fechaFinal.getFullYear(), this.fechaFinal.getMonth(), this.fechaFinal.getDate());
     const dias = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
     while (fecha <= fin) {
-      this.columnasFechas.push({
-        fecha: this.datePipe.transform(fecha, 'yyyy-MM-dd')!,
-        fechaDisplay: this.datePipe.transform(fecha, 'dd/MM/yyyy')!,
-        diaSemana: dias[fecha.getDay()]
-      });
+      if (fecha.getDay() !== 0 && fecha.getDay() !== 6) {
+        this.columnasFechas.push({
+          fecha: this.datePipe.transform(fecha, 'yyyy-MM-dd')!,
+          fechaDisplay: this.datePipe.transform(fecha, 'dd/MM/yyyy')!,
+          diaSemana: dias[fecha.getDay()]
+        });
+      }
       fecha.setDate(fecha.getDate() + 1);
     }
   }
@@ -233,7 +393,20 @@ export class RepmarcacionAdminComponent {
     return Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
   }
 
+  private obtenerMinutosTardanza(horaIngreso: string): number {
+    const [horas, minutos] = horaIngreso.split(':').map(Number);
+    if (!Number.isFinite(horas) || !Number.isFinite(minutos)) return 0;
+    const minutosIngreso = horas * 60 + minutos;
+    const minutosHorarioIngreso = 8 * 60;
+    return Math.max(0, minutosIngreso - minutosHorarioIngreso);
+  }
+
   private normalizar(valor: string): string {
     return (valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
+
+  private normalizarClave(valor: unknown): string {
+    return String(valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ').trim().toUpperCase();
   }
 }
