@@ -36,6 +36,7 @@ interface ResumenPersonal {
 })
 export class IndicadoresAsistenciaComponent {
   private readonly ordenAusenciasId = 37;
+  private readonly codigosSinMarcacionEsperada = new Set(['VAC', 'LIC', 'DM', 'DP', 'LP', 'PSG']);
   private readonly cargosServicio = new Set(['MAESTRO', 'TECNICO CONDUCTOR', 'TECNICO', 'AYUDANTE AVANZADO', 'TECNICO MECANICO', 'AYUDANTE', 'SUPERVISOR DE SERVICIOS']);
   private readonly areasPorCargo: Record<string, string[]> = {
     'INGENIERO PLANIFICADOR': ['SERVICIOS'], 'MAESTRO': ['SERVICIOS'], 'ASISTENTE DE CONTABILIDAD': ['CONTABILIDAD Y FINANZAS'],
@@ -119,8 +120,22 @@ export class IndicadoresAsistenciaComponent {
       porId.set(id, { id, area: this.obtenerArea(cargo, p), esOficina: !this.cargosServicio.has(this.clave(cargo)), realizadas: 0,
         esperadas: 0, tardanza: 0, tieneAsignacion: false, tieneVacaciones: false, tieneMarcacion: false });
     });
-    const diasLaborables = this.contarDiasLaborables();
-    porId.forEach(p => { if (p.esOficina) p.esperadas = diasLaborables * 2; });
+    const fechasLaborables = this.obtenerFechasLaborables();
+    const ausenciasPorPersonaFecha = new Set<string>();
+    ausencias.forEach(a => {
+      const personalId = Number(a.personalId);
+      const fecha = this.fechaClave(a.fecha);
+      const codigo = this.clave(a?.horarioCabecera?.nombre);
+      if (porId.has(personalId) && fecha && this.codigosSinMarcacionEsperada.has(codigo)) {
+        ausenciasPorPersonaFecha.add(`${personalId}|${fecha}`);
+      }
+      if (porId.has(personalId) && codigo === 'VAC') porId.get(personalId)!.tieneVacaciones = true;
+    });
+    porId.forEach(p => {
+      if (!p.esOficina) return;
+      p.esperadas = [...fechasLaborables]
+        .filter(fecha => !ausenciasPorPersonaFecha.has(`${p.id}|${fecha}`)).length * 2;
+    });
 
     const clavesAsignacion = new Set<string>();
     asignaciones.forEach(a => {
@@ -129,27 +144,27 @@ export class IndicadoresAsistenciaComponent {
       const clave = `${id}|${fecha}|${a.ordenTrabajoCabeceraId ?? a.ordenTrabajoId ?? a.ordenConsultadaId}`;
       if (clavesAsignacion.has(clave)) return;
       clavesAsignacion.add(clave); resumen.tieneAsignacion = true;
-      if (!resumen.esOficina) resumen.esperadas += 2;
+      if (!resumen.esOficina && !ausenciasPorPersonaFecha.has(`${id}|${fecha}`)) resumen.esperadas += 2;
     });
-    ausencias.forEach(a => { const p = porId.get(Number(a.personalId)); if (p && this.clave(a?.horarioCabecera?.nombre) === 'VAC') p.tieneVacaciones = true; });
 
     const grupos = new Map<string, { entrada: boolean; salida: boolean; primeraEntrada: any }>();
     marcaciones.forEach(m => {
       const id = Number(m.personalId ?? m.personal?.persona?.id ?? m.persona?.id); const fecha = this.fechaClave(m.fechaJornal ?? m.fecha);
       const p = porId.get(id); if (!p || !fecha) return;
       p.tieneMarcacion = true;
+      const evento = Number(m.tipoEvento);
+      if (evento === 0 || evento === 1) p.realizadas++;
       const ot = m?.ordenTrabajo?.id ?? 'OFICINA'; const clave = `${id}|${fecha}|${ot}`;
       const grupo = grupos.get(clave) ?? { entrada: false, salida: false, primeraEntrada: null };
-      if (Number(m.tipoEvento) === 0) {
+      if (evento === 0) {
         grupo.entrada = true;
         if (!grupo.primeraEntrada || new Date(m.fecha).getTime() < new Date(grupo.primeraEntrada).getTime()) grupo.primeraEntrada = m.fecha;
       }
-      if (Number(m.tipoEvento) === 1) grupo.salida = true;
+      if (evento === 1) grupo.salida = true;
       grupos.set(clave, grupo);
     });
     grupos.forEach((g, clave) => {
       const p = porId.get(Number(clave.split('|')[0]))!;
-      if (g.entrada && g.salida) p.realizadas += 2;
       if (clave.endsWith('|OFICINA') && g.primeraEntrada) p.tardanza += this.minutosTardanza(g.primeraEntrada);
     });
 
@@ -186,7 +201,7 @@ export class IndicadoresAsistenciaComponent {
   private calcularPorcentajes(i: IndicadorArea): IndicadorArea { return { ...i, cumplimiento: this.porcentaje(i.marcacionesRealizadas, i.marcacionesEsperadas), puntualidad: this.porcentaje(i.personasPuntuales, i.numeroPersonal) }; }
   private porcentaje(n: number, d: number): number { return d ? Math.round(n / d * 10000) / 100 : 0; }
   private minutosTardanza(fecha: any): number { const d = new Date(fecha); return Number.isNaN(d.getTime()) ? 0 : Math.max(0, d.getHours() * 60 + d.getMinutes() - 480); }
-  private contarDiasLaborables(): number { let n = 0; const d = new Date(this.fechaInicial.getFullYear(), this.fechaInicial.getMonth(), this.fechaInicial.getDate()); const fin = new Date(this.fechaFinal.getFullYear(), this.fechaFinal.getMonth(), this.fechaFinal.getDate()); while (d <= fin) { if (d.getDay() !== 0 && d.getDay() !== 6) n++; d.setDate(d.getDate() + 1); } return n; }
+  private obtenerFechasLaborables(): Set<string> { const fechas = new Set<string>(); const d = new Date(this.fechaInicial.getFullYear(), this.fechaInicial.getMonth(), this.fechaInicial.getDate()); const fin = new Date(this.fechaFinal.getFullYear(), this.fechaFinal.getMonth(), this.fechaFinal.getDate()); while (d <= fin) { if (d.getDay() !== 0 && d.getDay() !== 6) fechas.add(this.fechaClave(d)); d.setDate(d.getDate() + 1); } return fechas; }
   private seCruzaConPeriodo(o: any): boolean { const inicio = o.fechaInicio ? new Date(o.fechaInicio) : null; const fin = o.fechaFin || o.fechaCompromiso ? new Date(o.fechaFin ?? o.fechaCompromiso) : null; return (!inicio || inicio <= this.fechaFinal) && (!fin || fin >= this.fechaInicial); }
   private obtenerArea(cargo: string, detalle: any): string { const areas = this.areasPorCargo[this.clave(cargo)]; if (!areas?.length) return 'Por asignar'; const actual = detalle?.area?.nombre ?? detalle?.areaNombre ?? detalle?.persona?.area?.nombre; return areas.find(a => this.clave(a) === this.clave(actual)) ?? areas[0]; }
   private fechaClave(v: any): string { return this.datePipe.transform(v, 'yyyy-MM-dd') ?? ''; }
