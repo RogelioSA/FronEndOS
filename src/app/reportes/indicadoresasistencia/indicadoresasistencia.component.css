@@ -1,0 +1,24 @@
+.indicadores-asistencia { color: #25324a; padding-bottom: 2rem; }
+.filtros { border: 0; border-top: 4px solid #315f9e; }
+.eyebrow { color: #61728e; font-size: .72rem; font-weight: 700; letter-spacing: .12em; }
+h2 { font-size: 1.45rem; font-weight: 700; }
+.form-label { color: #46546c; font-size: .78rem; font-weight: 700; margin-bottom: .35rem; }
+.badge-indicador { background: #e8f0fb; border: 1px solid #bad0ed; border-radius: 999px; color: #315f9e; font-size: .78rem; font-weight: 700; padding: .55rem .8rem; }
+.ocupacion-card { align-items: center; background: linear-gradient(115deg, #263b59, #315f9e); border-radius: .65rem; color: white; display: flex; gap: 1.2rem; padding: 1.15rem 1.4rem; }
+.ocupacion-icon { align-items: center; background: #ffffff1f; border-radius: 50%; display: flex; font-size: 1.35rem; height: 48px; justify-content: center; min-width: 48px; }
+.ocupacion-label { display: block; font-size: .7rem; font-weight: 700; letter-spacing: .1em; opacity: .75; }
+.ocupacion-card strong { display: block; font-size: 1.7rem; line-height: 1.15; }
+.progress { background: #ffffff29; height: 5px; margin-top: .5rem; }
+.progress-bar { background: #6ee7a0; }
+.ocupacion-detalle { border-left: 1px solid #ffffff40; display: flex; flex-direction: column; max-width: 250px; padding-left: 1.2rem; }
+.ocupacion-detalle b { font-size: 1.4rem; }.ocupacion-detalle span { font-size: .75rem; opacity: .82; }
+.table-responsive { border: 1px solid #dce3ec; border-radius: .5rem; }
+.table { font-size: .8rem; text-align: center; }
+.table th, .table td { border-color: #dce3ec; padding: .75rem .6rem; }
+.table thead th { background: #263b59; color: white; vertical-align: middle; }
+.table .area { font-weight: 600; text-align: left; }.table tfoot th { background: #e8f0fb; color: #263b59; vertical-align: middle; }
+.semaforo { align-items: center; border-radius: 999px; display: inline-flex; font-weight: 700; gap: .4rem; min-width: 86px; padding: .28rem .55rem; }
+.semaforo i { border-radius: 50%; height: 8px; width: 8px; }.semaforo-rojo { background: #fee2e2; color: #b42318; }.semaforo-rojo i { background: #dc2626; }
+.semaforo-ambar { background: #fef3c7; color: #92400e; }.semaforo-ambar i { background: #f59e0b; }.semaforo-verde { background: #dcfce7; color: #166534; }.semaforo-verde i { background: #22c55e; }
+.estado-vacio { color: #718096; padding: 2.5rem !important; }.total-activos { color: #61728e; font-size: .78rem; margin: .7rem .25rem 0; text-align: right; }.total-activos i { color: #22a35a; }
+@media (max-width: 767.98px) { h2 { font-size: 1.2rem; }.ocupacion-card { align-items: flex-start; flex-wrap: wrap; }.ocupacion-detalle { border-left: 0; padding-left: 0; } }
