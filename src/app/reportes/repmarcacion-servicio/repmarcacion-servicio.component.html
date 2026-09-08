@@ -1,0 +1,30 @@
+<div class="container-fluid reporte-servicio">
+  <section class="filtros card shadow-sm mt-3 mb-4" aria-labelledby="titulo-reporte-servicio">
+    <div class="card-body">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <div><p class="eyebrow mb-1">CONTROL DE ASISTENCIA</p><h2 id="titulo-reporte-servicio" class="mb-0">Reporte de marcaciones en servicios</h2></div>
+        <span class="badge-servicio"><i class="fa-solid fa-screwdriver-wrench"></i> SERVICIOS</span>
+      </div>
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-3"><label class="form-label" for="fechaInicialServicio">Fecha Inicial</label><dx-date-box id="fechaInicialServicio" type="date" [(ngModel)]="fechaInicial" displayFormat="dd/MM/yyyy" [width]="'100%'" [inputAttr]="{ 'aria-label': 'Fecha Inicial' }"></dx-date-box></div>
+        <div class="col-12 col-md-3"><label class="form-label" for="fechaFinalServicio">Fecha Final</label><dx-date-box id="fechaFinalServicio" type="date" [(ngModel)]="fechaFinal" displayFormat="dd/MM/yyyy" [width]="'100%'" [inputAttr]="{ 'aria-label': 'Fecha Final' }"></dx-date-box></div>
+        <div class="col-12 col-md-auto"><dx-button text="Buscar" type="default" stylingMode="contained" icon="fa-solid fa-magnifying-glass" [width]="120" (onClick)="buscar()"></dx-button></div>
+        <div class="col-12 col-md-auto"><dx-button text="Descargar Excel" type="success" stylingMode="contained" icon="fa-solid fa-file-excel" [width]="160" [disabled]="empleadosFiltrados.length === 0" (onClick)="descargarExcel()"></dx-button></div>
+        <div class="col-12 col-md ms-md-auto"><label class="form-label" for="busquedaPersonalServicio">Buscar personal</label><div class="input-group"><span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span><input id="busquedaPersonalServicio" type="search" class="form-control" placeholder="Buscar por DNI o personal" [(ngModel)]="textoBusquedaPersonal" (ngModelChange)="aplicarFiltroPersonal()"></div></div>
+      </div>
+      <div *ngIf="mensaje" class="alert alert-warning mt-3 mb-0" role="alert">{{ mensaje }}</div>
+    </div>
+  </section>
+  <div class="table-responsive shadow-sm">
+    <table class="table table-bordered table-hover align-middle mb-0">
+      <thead><tr class="encabezado-principal"><th rowspan="2" class="col-fija nro">Nro</th><th rowspan="2" class="col-fija nombres">Apellidos y Nombres</th><th rowspan="2">NroDoc</th><th rowspan="2">Área</th><th rowspan="2">Cargo</th><th rowspan="2">Total HH</th><th *ngFor="let columna of columnasFechas" colspan="4" class="fecha"><span>{{ columna.diaSemana }}</span> {{ columna.fechaDisplay }}</th></tr>
+      <tr class="subencabezado"><ng-container *ngFor="let columna of columnasFechas"><th>OS</th><th>E</th><th>S</th><th>HH</th></ng-container></tr></thead>
+      <tbody>
+        <tr *ngFor="let empleado of empleadosFiltrados; let i = index"><td class="col-fija nro text-center">{{ i + 1 }}</td><td class="col-fija nombres fw-semibold">{{ empleado.nombreCompleto }}</td><td>{{ empleado.documentoIdentidad }}</td><td>{{ empleado.area }}</td><td>{{ empleado.cargo || '—' }}</td><td class="text-center total">{{ empleado.totalHoras }}</td>
+          <ng-container *ngFor="let columna of columnasFechas"><ng-container *ngIf="empleado.dias[columna.fecha] as dia"><td class="detalle os">{{ valoresDetalle(dia, 'ordenServicio') }}</td><td class="detalle text-center">{{ valoresDetalle(dia, 'entrada') }}</td><td class="detalle text-center">{{ valoresDetalle(dia, 'salida') }}</td><td class="detalle text-center hh" [class.incompleta]="horasDetalle(dia).includes('-1')">{{ horasDetalle(dia) }}</td></ng-container></ng-container>
+        </tr>
+        <tr *ngIf="empleadosFiltrados.length === 0"><td [attr.colspan]="6 + columnasFechas.length * 4" class="estado-vacio text-center">No hay marcaciones con orden de trabajo que coincidan con los filtros seleccionados.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
