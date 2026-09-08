@@ -59,6 +59,7 @@ import { MarcacionDatosComponent } from './marcacion-datos/marcacion-datos.compo
 import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionespecifica.component';
 import { RepmarcacionAdminComponent } from './reportes/repmarcacion-admin/repmarcacion-admin.component';
 import { RepmarcacionServicioComponent } from './reportes/repmarcacion-servicio/repmarcacion-servicio.component';
+import { IndicadoresAsistenciaComponent } from './reportes/indicadoresasistencia/indicadoresasistencia.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -126,6 +127,7 @@ const routes: Routes = [
   { path: 'procesos/marcacion-especifica', component: MarcacionespecificaComponent, canActivate: [AuthGuard]},
   { path: 'reporte/marcacionadministrativos', component: RepmarcacionAdminComponent, canActivate: [AuthGuard] },
   { path: 'reporte/marcacionservicios', component: RepmarcacionServicioComponent, canActivate: [AuthGuard] },
+  { path: 'reporte/indicadoresasistencia', component: IndicadoresAsistenciaComponent, canActivate: [AuthGuard] },
 
 ];
 
