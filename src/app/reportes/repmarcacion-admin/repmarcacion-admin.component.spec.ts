@@ -83,26 +83,58 @@ describe('RepmarcacionAdminComponent', () => {
     expect(component.empleados[0].area).toBe('COMERCIAL');
   });
 
-  it('no considera diferencias negativas como tardanza', () => {
+  it('calcula tardanza solo con el evento de ingreso y diferencias positivas', () => {
     component.fechaInicial = new Date(2026, 8, 7);
     component.fechaFinal = new Date(2026, 8, 7);
     (component as any).generarColumnasFechas();
     const persona = { id: 1, nombres: 'Ana' };
     const personal = [{ persona, personalCargoExterno: { cargoId: 20 } }];
-    const marcaciones = [{
-      personalId: persona.id,
-      persona,
-      personalCargoExterno: { cargoId: 20 },
-      ordenTrabajo: { id: null },
-      fechaJornal: '2026-09-07',
-      fecha: '2026-09-07T07:55:00',
-      tipoEvento: 0,
-      diferenciaMinutos: -5
-    }];
+    const marcaciones = [
+      {
+        personalId: persona.id,
+        persona,
+        personalCargoExterno: { cargoId: 20 },
+        ordenTrabajo: { id: null },
+        fechaJornal: '2026-09-07',
+        fecha: '2026-09-07T07:55:00',
+        tipoEvento: 0,
+        diferenciaMinutos: -10
+      },
+      {
+        personalId: persona.id,
+        persona,
+        personalCargoExterno: { cargoId: 20 },
+        ordenTrabajo: { id: null },
+        fechaJornal: '2026-09-07',
+        fecha: '2026-09-07T18:12:00',
+        tipoEvento: 1,
+        diferenciaMinutos: 13
+      }
+    ];
 
     (component as any).procesarDatos(marcaciones, [], personal, [{ id: 20, nombre: 'JEFE COMERCIAL' }]);
 
     expect(component.empleados[0].dias['2026-09-07'].tardanza).toBe(0);
     expect(component.empleados[0].minutosTardanza).toBe(0);
+  });
+
+  it('muestra en verde la celda TARD. cuando no existe tardanza', () => {
+    component.columnasFechas = [{ fecha: '2026-09-07', fechaDisplay: '07/09/2026', diaSemana: 'LUN' }];
+    component.empleadosFiltrados = [{
+      personalId: 1,
+      nombreCompleto: 'Ana',
+      documentoIdentidad: '12345678',
+      area: 'COMERCIAL',
+      cargo: 'JEFE COMERCIAL',
+      totalMarcas: 2,
+      minutosTardanza: 0,
+      dias: { '2026-09-07': { entrada: '07:55', salida: '18:12', tardanza: 0, ausencia: '' } }
+    }];
+
+    fixture.detectChanges();
+
+    const celdaTardanza = fixture.nativeElement.querySelector('td.tardanza');
+    expect(celdaTardanza.classList).toContain('sin-tardanza');
+    expect(celdaTardanza.textContent.trim()).toBe('');
   });
 });

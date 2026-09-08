@@ -178,7 +178,9 @@ export class RepmarcacionAdminComponent {
         if (!dia.salida || hora > dia.salida) dia.salida = hora;
       }
       if (evento === 0 || evento === 1) empleado.totalMarcas++;
-      const minutosTardanza = this.obtenerMinutosTardanza(marcacion.diferenciaMinutos);
+      const minutosTardanza = evento === 0
+        ? this.obtenerMinutosTardanza(marcacion.diferenciaMinutos)
+        : null;
       if (minutosTardanza !== null) {
         dia.tardanza += minutosTardanza;
         empleado.minutosTardanza += minutosTardanza;

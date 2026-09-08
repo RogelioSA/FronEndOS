@@ -21,6 +21,7 @@ thead .col-fija { z-index: 7; }
 .tardanza { min-width: 55px; }
 .total { color: #315f9e; font-weight: 700; }
 .con-tardanza { background: #fee2e2 !important; color: #b42318; font-weight: 700; }
+.sin-tardanza { background: #dcfce7 !important; color: #166534; }
 .ausencia { background: #fff1b8 !important; color: #684d00; font-weight: 800; }
 .estado-vacio { color: #718096; padding: 2.5rem !important; }
 @media (max-width: 767.98px) { .nombres { min-width: 190px; } h2 { font-size: 1.2rem; } }
