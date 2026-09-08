@@ -36,6 +36,12 @@ describe('RepmarcacionAdminComponent', () => {
     expect(component.mensaje).toContain('fecha inicial');
   });
 
+  it('no intenta descargar Excel cuando no hay datos', async () => {
+    await component.descargarExcel();
+
+    expect(component.mensaje).toBe('No hay datos para exportar.');
+  });
+
   it('genera columnas únicamente para días laborables', () => {
     component.fechaInicial = new Date(2026, 8, 4);
     component.fechaFinal = new Date(2026, 8, 7);

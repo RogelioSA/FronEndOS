@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { ApiService } from '../../services/api.service';
+import * as ExcelJS from 'exceljs';
 
 interface FechaReporteAdmin {
   fecha: string;
@@ -150,6 +151,120 @@ export class RepmarcacionAdminComponent {
           this.normalizar(empleado.documentoIdentidad).includes(termino) ||
           this.normalizar(empleado.nombreCompleto).includes(termino))
       : [...this.empleados];
+  }
+
+  async descargarExcel(): Promise<void> {
+    if (this.empleadosFiltrados.length === 0) {
+      this.mensaje = 'No hay datos para exportar.';
+      return;
+    }
+
+    this.blockUI.start('Generando reporte Excel...');
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const hoja = workbook.addWorksheet('Reporte administrativo', {
+        views: [{ state: 'frozen', xSplit: 2, ySplit: 2 }]
+      });
+      const borde: Partial<ExcelJS.Borders> = {
+        top: { style: 'thin', color: { argb: 'FFDCE3EC' } },
+        bottom: { style: 'thin', color: { argb: 'FFDCE3EC' } },
+        left: { style: 'thin', color: { argb: 'FFDCE3EC' } },
+        right: { style: 'thin', color: { argb: 'FFDCE3EC' } }
+      };
+      const alineacion: Partial<ExcelJS.Alignment> = { horizontal: 'center', vertical: 'middle' };
+      const relleno = (argb: string): ExcelJS.Fill => ({
+        type: 'pattern', pattern: 'solid', fgColor: { argb }
+      });
+      const columnasFijas = ['Nro', 'Apellidos y Nombres', 'NroDoc', 'Área', 'Cargo', 'Total Marcas', 'Min. Tardanzas'];
+      const filaPrincipal = hoja.addRow(columnasFijas);
+      const filaSecundaria = hoja.addRow(columnasFijas.map(() => ''));
+
+      columnasFijas.forEach((_, indice) => hoja.mergeCells(1, indice + 1, 2, indice + 1));
+      this.columnasFechas.forEach((columna, indice) => {
+        const inicio = columnasFijas.length + 1 + indice * 3;
+        hoja.mergeCells(1, inicio, 1, inicio + 2);
+        filaPrincipal.getCell(inicio).value = `${columna.diaSemana} ${columna.fechaDisplay}`;
+        ['E', 'TARD.', 'S'].forEach((titulo, subindice) => {
+          filaSecundaria.getCell(inicio + subindice).value = titulo;
+        });
+      });
+
+      [filaPrincipal, filaSecundaria].forEach((fila, indiceFila) => {
+        for (let columna = 1; columna <= columnasFijas.length + this.columnasFechas.length * 3; columna++) {
+          const celda = fila.getCell(columna);
+          celda.fill = relleno(indiceFila === 0 ? 'FF263B59' : 'FFDCE8F7');
+          celda.font = { bold: true, color: { argb: indiceFila === 0 ? 'FFFFFFFF' : 'FF263B59' } };
+          celda.alignment = alineacion;
+          celda.border = borde;
+        }
+      });
+
+      this.empleadosFiltrados.forEach((empleado, indiceEmpleado) => {
+        const valores: Array<string | number> = [
+          indiceEmpleado + 1,
+          empleado.nombreCompleto,
+          empleado.documentoIdentidad,
+          empleado.area,
+          empleado.cargo || '—',
+          empleado.totalMarcas,
+          empleado.minutosTardanza
+        ];
+        this.columnasFechas.forEach(columna => {
+          const dia = empleado.dias[columna.fecha];
+          valores.push(dia.ausencia || dia.entrada, dia.tardanza > 0 ? dia.tardanza : '', dia.ausencia || dia.salida);
+        });
+        const fila = hoja.addRow(valores);
+        fila.eachCell({ includeEmpty: true }, celda => {
+          celda.border = borde;
+          celda.alignment = alineacion;
+          celda.font = { size: 9 };
+        });
+        fila.getCell(2).alignment = { horizontal: 'left', vertical: 'middle' };
+        fila.getCell(6).font = { bold: true, color: { argb: 'FF315F9E' }, size: 9 };
+        if (empleado.minutosTardanza > 0) {
+          fila.getCell(7).fill = relleno('FFFEE2E2');
+          fila.getCell(7).font = { bold: true, color: { argb: 'FFB42318' }, size: 9 };
+        }
+        this.columnasFechas.forEach((columna, indiceDia) => {
+          const dia = empleado.dias[columna.fecha];
+          const inicio = columnasFijas.length + 1 + indiceDia * 3;
+          if (dia.ausencia) {
+            fila.getCell(inicio).fill = relleno('FFFFF1B8');
+            fila.getCell(inicio + 2).fill = relleno('FFFFF1B8');
+          }
+          const celdaTardanza = fila.getCell(inicio + 1);
+          celdaTardanza.fill = dia.tardanza > 0 ? relleno('FFFEE2E2') : relleno('FFDCFCE7');
+          celdaTardanza.font = {
+            bold: dia.tardanza > 0,
+            color: { argb: dia.tardanza > 0 ? 'FFB42318' : 'FF166534' },
+            size: 9
+          };
+        });
+      });
+
+      [6, 32, 14, 24, 28, 14, 16].forEach((ancho, indice) => hoja.getColumn(indice + 1).width = ancho);
+      this.columnasFechas.forEach((_, indice) => {
+        const inicio = columnasFijas.length + 1 + indice * 3;
+        hoja.getColumn(inicio).width = 9;
+        hoja.getColumn(inicio + 1).width = 9;
+        hoja.getColumn(inicio + 2).width = 9;
+      });
+      hoja.autoFilter = { from: { row: 2, column: 1 }, to: { row: 2, column: columnasFijas.length } };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = `Reporte_administrativo_${this.datePipe.transform(this.fechaInicial, 'yyyyMMdd')}_${this.datePipe.transform(this.fechaFinal, 'yyyyMMdd')}.xlsx`;
+      enlace.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error al generar el reporte administrativo en Excel:', error);
+      this.mensaje = 'No se pudo generar el archivo Excel.';
+    } finally {
+      this.blockUI.stop();
+    }
   }
 
   private procesarDatos(marcaciones: any[], horarios: any[], personal: any[], cargos: any[]): void {

@@ -25,6 +25,10 @@
           <dx-button text="Buscar" type="default" stylingMode="contained" icon="fa-solid fa-magnifying-glass"
             [width]="120" (onClick)="buscar()"></dx-button>
         </div>
+        <div class="col-12 col-md-auto">
+          <dx-button text="Descargar Excel" type="success" stylingMode="contained" icon="fa-solid fa-file-excel"
+            [width]="160" [disabled]="empleadosFiltrados.length === 0" (onClick)="descargarExcel()"></dx-button>
+        </div>
         <div class="col-12 col-md ms-md-auto">
           <label class="form-label" for="busquedaPersonalAdmin">Buscar personal</label>
           <div class="input-group">
