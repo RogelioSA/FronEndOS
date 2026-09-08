@@ -9,4 +9,10 @@ describe('IndicadoresAsistenciaComponent', () => {
     expect(componente.claseSemaforo(95)).toBe('semaforo-ambar');
     expect(componente.claseSemaforo(95.01)).toBe('semaforo-verde');
   });
+
+  it('inicializa la fecha final con la fecha actual como límite máximo', () => {
+    const componente = new IndicadoresAsistenciaComponent({} as any, new DatePipe('es-PE'));
+    expect(componente.fechaFinal.getTime()).toBe(componente.fechaMaxima.getTime());
+    expect(componente.fechaMaxima.getHours()).toBe(0);
+  });
 });

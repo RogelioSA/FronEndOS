@@ -52,6 +52,7 @@ export class IndicadoresAsistenciaComponent {
   };
 
   @BlockUI() blockUI!: NgBlockUI;
+  readonly fechaMaxima: Date;
   fechaInicial: Date;
   fechaFinal: Date;
   textoBusqueda = '';
@@ -65,8 +66,9 @@ export class IndicadoresAsistenciaComponent {
 
   constructor(private apiService: ApiService, private datePipe: DatePipe) {
     const hoy = new Date();
+    this.fechaMaxima = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
     this.fechaInicial = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-    this.fechaFinal = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+    this.fechaFinal = new Date(this.fechaMaxima);
   }
 
   ngOnInit(): void { void this.buscar(); }
@@ -75,12 +77,14 @@ export class IndicadoresAsistenciaComponent {
     this.mensaje = '';
     if (!this.fechaInicial || !this.fechaFinal) { this.mensaje = 'Selecciona ambas fechas.'; return; }
     if (this.fechaInicial > this.fechaFinal) { this.mensaje = 'La fecha inicial no puede ser mayor que la fecha final.'; return; }
+    if (this.fechaFinal > this.fechaMaxima) { this.mensaje = 'La fecha final no puede ser posterior a la fecha actual.'; return; }
     const inicio = this.datePipe.transform(this.fechaInicial, 'yyyy-MM-dd');
     const fin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd');
     if (!inicio || !fin) return;
     this.blockUI.start('Calculando indicadores de asistencia...');
     try {
       const [marcacionesR, personalR, cargosR, ordenesR, ausenciasR] = await Promise.all([
+        // El API requiere el cierre del día para incluir todas las marcaciones de la fecha final.
         firstValueFrom(this.apiService.getRegistroAsistencia(inicio, `${fin}T23:59:59`)),
         firstValueFrom(this.apiService.getPersonalDetalle()), firstValueFrom(this.apiService.getCargos()),
         firstValueFrom(this.apiService.listarOrdenTrabajoCabeceraSimplificado()),
