@@ -45,7 +45,8 @@ export class RepmarcacionAdminComponent {
     'AYUDANTE AVANZADO',
     'TECNICO MECANICO',
     'AYUDANTE',
-    'SUPERVISOR DE SERVICIOS'
+    'SUPERVISOR DE SERVICIOS',
+    'ASISTENTE DE ALMACEN'
   ]);
   private readonly areasPorCargo: Record<string, string[]> = {
     'INGENIERO PLANIFICADOR': ['SERVICIOS'],
@@ -177,10 +178,10 @@ export class RepmarcacionAdminComponent {
         if (!dia.salida || hora > dia.salida) dia.salida = hora;
       }
       if (evento === 0 || evento === 1) empleado.totalMarcas++;
-      const diferencia = Number(marcacion.diferenciaMinutos ?? 0);
-      if (diferencia > 0) {
-        dia.tardanza += diferencia;
-        empleado.minutosTardanza += diferencia;
+      const minutosTardanza = this.obtenerMinutosTardanza(marcacion.diferenciaMinutos);
+      if (minutosTardanza !== null) {
+        dia.tardanza += minutosTardanza;
+        empleado.minutosTardanza += minutosTardanza;
       }
     });
 
@@ -275,6 +276,11 @@ export class RepmarcacionAdminComponent {
 
   private obtenerLista(respuesta: any): any[] {
     return Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
+  }
+
+  private obtenerMinutosTardanza(diferenciaMinutos: unknown): number | null {
+    const diferencia = Number(diferenciaMinutos);
+    return Number.isFinite(diferencia) && diferencia > 0 ? diferencia : null;
   }
 
   private normalizar(valor: string): string {

@@ -58,11 +58,13 @@ describe('RepmarcacionAdminComponent', () => {
     (component as any).generarColumnasFechas();
     const personal = [
       { persona: { id: 1, nombres: 'Ana' }, personalCargoExterno: { cargoId: 10 } },
-      { persona: { id: 2, nombres: 'Luis' }, personalCargoExterno: { cargoId: 20 } }
+      { persona: { id: 2, nombres: 'Luis' }, personalCargoExterno: { cargoId: 20 } },
+      { persona: { id: 3, nombres: 'Marta' }, personalCargoExterno: { cargoId: 30 } }
     ];
     const cargos = [
       { id: 10, nombre: 'TÉCNICO' },
-      { id: 20, nombre: 'JEFE COMERCIAL' }
+      { id: 20, nombre: 'JEFE COMERCIAL' },
+      { id: 30, nombre: 'ASISTENTE DE ALMACEN' }
     ];
     const marcaciones = personal.map(detalle => ({
       personalId: detalle.persona.id,
@@ -79,5 +81,28 @@ describe('RepmarcacionAdminComponent', () => {
     expect(component.empleados.length).toBe(1);
     expect(component.empleados[0].cargo).toBe('JEFE COMERCIAL');
     expect(component.empleados[0].area).toBe('COMERCIAL');
+  });
+
+  it('no considera diferencias negativas como tardanza', () => {
+    component.fechaInicial = new Date(2026, 8, 7);
+    component.fechaFinal = new Date(2026, 8, 7);
+    (component as any).generarColumnasFechas();
+    const persona = { id: 1, nombres: 'Ana' };
+    const personal = [{ persona, personalCargoExterno: { cargoId: 20 } }];
+    const marcaciones = [{
+      personalId: persona.id,
+      persona,
+      personalCargoExterno: { cargoId: 20 },
+      ordenTrabajo: { id: null },
+      fechaJornal: '2026-09-07',
+      fecha: '2026-09-07T07:55:00',
+      tipoEvento: 0,
+      diferenciaMinutos: -5
+    }];
+
+    (component as any).procesarDatos(marcaciones, [], personal, [{ id: 20, nombre: 'JEFE COMERCIAL' }]);
+
+    expect(component.empleados[0].dias['2026-09-07'].tardanza).toBe(0);
+    expect(component.empleados[0].minutosTardanza).toBe(0);
   });
 });
