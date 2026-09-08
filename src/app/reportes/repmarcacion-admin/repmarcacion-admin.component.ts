@@ -173,18 +173,16 @@ export class RepmarcacionAdminComponent {
       const hora = this.datePipe.transform(marcacion.fecha, 'HH:mm') ?? '';
       const dia = empleado.dias[fecha];
       if (evento === 0) {
-        if (!dia.entrada || hora < dia.entrada) dia.entrada = hora;
+        if (!dia.entrada || hora < dia.entrada) {
+          empleado.minutosTardanza -= dia.tardanza;
+          dia.entrada = hora;
+          dia.tardanza = this.obtenerMinutosTardanza(hora);
+          empleado.minutosTardanza += dia.tardanza;
+        }
       } else if (evento === 1) {
         if (!dia.salida || hora > dia.salida) dia.salida = hora;
       }
       if (evento === 0 || evento === 1) empleado.totalMarcas++;
-      const minutosTardanza = evento === 0
-        ? this.obtenerMinutosTardanza(marcacion.diferenciaMinutos)
-        : null;
-      if (minutosTardanza !== null) {
-        dia.tardanza += minutosTardanza;
-        empleado.minutosTardanza += minutosTardanza;
-      }
     });
 
     horarios.forEach(horario => {
@@ -280,9 +278,12 @@ export class RepmarcacionAdminComponent {
     return Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
   }
 
-  private obtenerMinutosTardanza(diferenciaMinutos: unknown): number | null {
-    const diferencia = Number(diferenciaMinutos);
-    return Number.isFinite(diferencia) && diferencia > 0 ? diferencia : null;
+  private obtenerMinutosTardanza(horaIngreso: string): number {
+    const [horas, minutos] = horaIngreso.split(':').map(Number);
+    if (!Number.isFinite(horas) || !Number.isFinite(minutos)) return 0;
+    const minutosIngreso = horas * 60 + minutos;
+    const minutosHorarioIngreso = 8 * 60;
+    return Math.max(0, minutosIngreso - minutosHorarioIngreso);
   }
 
   private normalizar(valor: string): string {

@@ -83,7 +83,7 @@ describe('RepmarcacionAdminComponent', () => {
     expect(component.empleados[0].area).toBe('COMERCIAL');
   });
 
-  it('calcula tardanza solo con el evento de ingreso y diferencias positivas', () => {
+  it('calcula tardanza contra las 08:00 y no usa diferenciaMinutos', () => {
     component.fechaInicial = new Date(2026, 8, 7);
     component.fechaFinal = new Date(2026, 8, 7);
     (component as any).generarColumnasFechas();
@@ -96,9 +96,9 @@ describe('RepmarcacionAdminComponent', () => {
         personalCargoExterno: { cargoId: 20 },
         ordenTrabajo: { id: null },
         fechaJornal: '2026-09-07',
-        fecha: '2026-09-07T07:55:00',
+        fecha: '2026-09-07T07:49:39',
         tipoEvento: 0,
-        diferenciaMinutos: -10
+        diferenciaMinutos: 25
       },
       {
         personalId: persona.id,
@@ -116,6 +116,35 @@ describe('RepmarcacionAdminComponent', () => {
 
     expect(component.empleados[0].dias['2026-09-07'].tardanza).toBe(0);
     expect(component.empleados[0].minutosTardanza).toBe(0);
+  });
+
+  it('registra los minutos posteriores a las 08:00 usando el primer ingreso', () => {
+    component.fechaInicial = new Date(2026, 8, 7);
+    component.fechaFinal = new Date(2026, 8, 7);
+    (component as any).generarColumnasFechas();
+    const persona = { id: 1, nombres: 'Ana' };
+    const personal = [{ persona, personalCargoExterno: { cargoId: 20 } }];
+    const crearIngreso = (hora: string, diferenciaMinutos: number) => ({
+      personalId: persona.id,
+      persona,
+      personalCargoExterno: { cargoId: 20 },
+      ordenTrabajo: { id: null },
+      fechaJornal: '2026-09-07',
+      fecha: `2026-09-07T${hora}:00`,
+      tipoEvento: 0,
+      diferenciaMinutos
+    });
+
+    (component as any).procesarDatos(
+      [crearIngreso('08:13', -10), crearIngreso('08:05', 100)],
+      [],
+      personal,
+      [{ id: 20, nombre: 'JEFE COMERCIAL' }]
+    );
+
+    expect(component.empleados[0].dias['2026-09-07'].entrada).toBe('08:05');
+    expect(component.empleados[0].dias['2026-09-07'].tardanza).toBe(5);
+    expect(component.empleados[0].minutosTardanza).toBe(5);
   });
 
   it('muestra en verde la celda TARD. cuando no existe tardanza', () => {
