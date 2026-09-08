@@ -87,7 +87,7 @@ export class RepmarcacionServicioComponent {
     const inicio = this.datePipe.transform(this.fechaInicial, 'yyyy-MM-dd');
     const fin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd');
     if (!inicio || !fin) return;
-    this.blockUI.start('Cargando reporte de servicios...');
+    this.blockUI.start('Consultanto información...');
     try {
       const [marcaciones, personal, cargos] = await Promise.all([
         firstValueFrom(this.apiService.getRegistroAsistencia(inicio, `${fin}T23:59:59`)),
