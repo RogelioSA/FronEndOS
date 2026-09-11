@@ -58,19 +58,27 @@ describe('RepmarcacionAdminComponent', () => {
       .toBe('RECURSOS HUMANOS');
   });
 
-  it('omite del reporte los cargos operativos indicados', () => {
+  it('incluye asistente de almacén y omite supervisor de seguridad', () => {
+    const cargosOmitidos = (component as any).cargosOmitidos as Set<string>;
+    expect(cargosOmitidos.has('ASISTENTE DE ALMACEN')).toBeFalse();
+    expect(cargosOmitidos.has('INGENIERO DE DESARROLLO')).toBeFalse();
+    expect(cargosOmitidos.has('GERENTE DE QHSE Y SGI')).toBeFalse();
+    expect(cargosOmitidos.has('SUPERVISOR DE SEGURIDAD')).toBeTrue();
+
     component.fechaInicial = new Date(2026, 8, 7);
     component.fechaFinal = new Date(2026, 8, 7);
     (component as any).generarColumnasFechas();
     const personal = [
       { persona: { id: 1, nombres: 'Ana' }, personalCargoExterno: { cargoId: 10 } },
       { persona: { id: 2, nombres: 'Luis' }, personalCargoExterno: { cargoId: 20 } },
-      { persona: { id: 3, nombres: 'Marta' }, personalCargoExterno: { cargoId: 30 } }
+      { persona: { id: 3, nombres: 'Marta' }, personalCargoExterno: { cargoId: 30 } },
+      { persona: { id: 4, nombres: 'José' }, personalCargoExterno: { cargoId: 40 } }
     ];
     const cargos = [
       { id: 10, nombre: 'TÉCNICO' },
       { id: 20, nombre: 'JEFE COMERCIAL' },
-      { id: 30, nombre: 'ASISTENTE DE ALMACEN' }
+      { id: 30, nombre: 'ASISTENTE DE ALMACEN' },
+      { id: 40, nombre: 'SUPERVISOR DE SEGURIDAD' }
     ];
     const marcaciones = personal.map(detalle => ({
       personalId: detalle.persona.id,
@@ -84,9 +92,8 @@ describe('RepmarcacionAdminComponent', () => {
 
     (component as any).procesarDatos(marcaciones, [], personal, cargos);
 
-    expect(component.empleados.length).toBe(1);
-    expect(component.empleados[0].cargo).toBe('JEFE COMERCIAL');
-    expect(component.empleados[0].area).toBe('COMERCIAL');
+    expect(component.empleados.map(empleado => empleado.cargo)).toEqual(['JEFE COMERCIAL', 'ASISTENTE DE ALMACEN']);
+    expect(component.empleados.find(empleado => empleado.cargo === 'ASISTENTE DE ALMACEN')?.area).toBe('ALMACEN');
   });
 
   it('calcula tardanza contra las 08:00 y no usa diferenciaMinutos', () => {
@@ -163,7 +170,8 @@ describe('RepmarcacionAdminComponent', () => {
       cargo: 'JEFE COMERCIAL',
       totalMarcas: 2,
       minutosTardanza: 0,
-      dias: { '2026-09-07': { entrada: '07:55', salida: '18:12', tardanza: 0, ausencia: '' } }
+      totalHorasTrabajadas: 10.28,
+      dias: { '2026-09-07': { entrada: '07:55', salida: '18:12', tardanza: 0, ausencia: '', horasTrabajadas: 10.28 } }
     }];
 
     fixture.detectChanges();
@@ -171,5 +179,36 @@ describe('RepmarcacionAdminComponent', () => {
     const celdaTardanza = fixture.nativeElement.querySelector('td.tardanza');
     expect(celdaTardanza.classList).toContain('sin-tardanza');
     expect(celdaTardanza.textContent.trim()).toBe('');
+  });
+
+  it('calcula las HH diarias y el Total HH solo con entrada y salida completas', () => {
+    component.fechaInicial = new Date(2026, 8, 7);
+    component.fechaFinal = new Date(2026, 8, 9);
+    (component as any).generarColumnasFechas();
+    const persona = { id: 1, nombres: 'Ana' };
+    const personal = [{ persona, personalCargoExterno: { cargoId: 20 } }];
+    const marca = (fecha: string, hora: string, tipoEvento: number) => ({
+      personalId: persona.id,
+      persona,
+      personalCargoExterno: { cargoId: 20 },
+      ordenTrabajo: { id: null },
+      fechaJornal: fecha,
+      fecha: `${fecha}T${hora}:00`,
+      tipoEvento
+    });
+
+    (component as any).procesarDatos([
+      marca('2026-09-07', '08:00', 0),
+      marca('2026-09-07', '16:30', 1),
+      marca('2026-09-08', '08:15', 0),
+      marca('2026-09-08', '17:00', 1),
+      marca('2026-09-09', '08:00', 0)
+    ], [], personal, [{ id: 20, nombre: 'JEFE COMERCIAL' }]);
+
+    const empleado = component.empleados[0];
+    expect(empleado.dias['2026-09-07'].horasTrabajadas).toBe(8.5);
+    expect(empleado.dias['2026-09-08'].horasTrabajadas).toBe(8.75);
+    expect(empleado.dias['2026-09-09'].horasTrabajadas).toBe(0);
+    expect(empleado.totalHorasTrabajadas).toBe(17.25);
   });
 });
