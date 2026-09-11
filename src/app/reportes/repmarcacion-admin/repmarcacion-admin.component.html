@@ -55,14 +55,15 @@
           <th rowspan="2">Cargo</th>
           <th rowspan="2">Total Marcas</th>
           <th rowspan="2">Min. Tardanzas</th>
-          <th *ngFor="let columna of columnasFechas" colspan="3" class="fecha"
+          <th rowspan="2">Total HH</th>
+          <th *ngFor="let columna of columnasFechas" colspan="4" class="fecha"
             [class.fin-semana]="columna.diaSemana === 'SÁB' || columna.diaSemana === 'DOM'">
             <span>{{ columna.diaSemana }}</span> {{ columna.fechaDisplay }}
           </th>
         </tr>
         <tr class="subencabezado">
           <ng-container *ngFor="let columna of columnasFechas">
-            <th>E</th><th>TARD.</th><th>S</th>
+            <th>E</th><th>TARD.</th><th>S</th><th>HH</th>
           </ng-container>
         </tr>
       </thead>
@@ -75,6 +76,7 @@
           <td>{{ empleado.cargo || '—' }}</td>
           <td class="text-center total">{{ empleado.totalMarcas }}</td>
           <td class="text-center" [class.con-tardanza]="empleado.minutosTardanza > 0">{{ empleado.minutosTardanza }}</td>
+          <td class="text-center total-hh">{{ empleado.totalHorasTrabajadas }}</td>
           <ng-container *ngFor="let columna of columnasFechas">
             <ng-container *ngIf="empleado.dias[columna.fecha] as dia">
               <td class="text-center marca" [class.ausencia]="dia.ausencia">{{ dia.ausencia || dia.entrada }}</td>
@@ -82,11 +84,12 @@
                   [class.con-tardanza]="dia.tardanza > 0"
                   [class.sin-tardanza]="dia.tardanza <= 0">{{ dia.tardanza > 0 ? dia.tardanza : '' }}</td>
               <td class="text-center marca" [class.ausencia]="dia.ausencia">{{ dia.ausencia || dia.salida }}</td>
+              <td class="text-center horas-dia">{{ dia.horasTrabajadas }}</td>
             </ng-container>
           </ng-container>
         </tr>
         <tr *ngIf="empleadosFiltrados.length === 0">
-          <td [attr.colspan]="7 + columnasFechas.length * 3" class="estado-vacio text-center">
+          <td [attr.colspan]="8 + columnasFechas.length * 4" class="estado-vacio text-center">
             No hay registros de oficina que coincidan con los filtros seleccionados.
           </td>
         </tr>
