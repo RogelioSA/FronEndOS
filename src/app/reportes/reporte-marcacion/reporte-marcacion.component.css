@@ -199,7 +199,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.4);
+    background: rgba(15, 23, 42, 0.62);
+    backdrop-filter: blur(3px);
     z-index: 1040;
     animation: fadeIn 0.2s ease;
 }
@@ -219,9 +220,10 @@
 
 .modal-content-detalle {
     background: white;
-    border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-    max-width: 700px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 18px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+    max-width: 900px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
@@ -229,9 +231,9 @@
 }
 
 .modal-header-detalle {
-    padding: 16px 20px;
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #0f3d68 0%, #176b87 100%);
+    border-bottom: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -240,14 +242,19 @@
 .modal-header-detalle .modal-title {
     margin: 0;
     font-size: 1.1rem;
-    font-weight: 500;
-    color: #212529;
+    font-weight: 700;
+    color: #fff;
 }
+
+.modal-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.modal-heading-icon { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px; border-radius: 12px; color: #fff; background: rgba(255,255,255,.16); font-size: 1.2rem; }
+.modal-eyebrow { display: block; color: #bae6fd; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.evento-badge { padding: 6px 11px; border-radius: 999px; color: #164e63; background: #cffafe; font-size: .76rem; font-weight: 800; white-space: nowrap; }
 
 .btn-close-detalle {
     background: transparent;
     border: none;
-    color: #6c757d;
+    color: #fff;
     font-size: 1.5rem;
     cursor: pointer;
     padding: 0;
@@ -261,26 +268,28 @@
 }
 
 .btn-close-detalle:hover {
-    background-color: #e9ecef;
-    color: #212529;
+    background-color: rgba(255,255,255,.18);
+    color: #fff;
 }
 
 .modal-body-detalle {
-    padding: 20px;
+    padding: 24px;
+    background: #f8fafc;
 }
 
 .detalle-layout {
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 16px;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, .9fr);
+    gap: 20px;
     align-items: start;
 }
 
 .detalle-col {
     background-color: #fff;
-    border: 1px solid #e9ecef;
-    border-radius: 6px;
-    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, .05);
 }
 
 .detalle-info {
@@ -347,6 +356,9 @@
     font-weight: 600;
     font-size: 0.95rem;
     color: #343a40;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .imagen-placeholder {
@@ -391,7 +403,7 @@
     height: 300px;
     margin-top: 12px;
     border: 1px solid #dee2e6;
-    border-radius: 4px;
+    border-radius: 10px;
     overflow: hidden;
 }
 
@@ -407,18 +419,28 @@
     margin-top: 4px;
     font-weight: 700;
     letter-spacing: 0.5px;
+    border: 0;
+    border-radius: 9px;
+    padding: 10px 14px;
+    color: #78350f;
+    background: #fbbf24;
 }
 
 .regularizacion-form {
     margin-top: 8px;
     border: 1px solid #e9ecef;
-    border-radius: 6px;
-    padding: 10px 12px;
-    background-color: #fffaf2;
+    border-radius: 12px;
+    padding: 16px;
+    background: #fffbeb;
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
+
+.regularizacion-heading { display: flex; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #fde68a; }
+.regularizacion-heading h6 { margin: 0 0 2px; color: #78350f; font-weight: 800; }
+.regularizacion-heading p { margin: 0; color: #92400e; font-size: .78rem; line-height: 1.35; }
+.regularizacion-icon { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 9px; color: #92400e; background: #fde68a; }
 
 .regularizacion-actions {
     display: flex;
