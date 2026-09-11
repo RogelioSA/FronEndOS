@@ -82,7 +82,7 @@ export class IndicadoresAsistenciaComponent {
     const inicio = this.datePipe.transform(this.fechaInicial, 'yyyy-MM-dd');
     const fin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd');
     if (!inicio || !fin) return;
-    this.blockUI.start('Consultanto información...');
+    this.blockUI.start('Consultando información...');
     try {
       const [marcacionesR, personalR, cargosR, ordenesR, ausenciasR] = await Promise.all([
         // El API requiere el cierre del día para incluir todas las marcaciones de la fecha final.
