@@ -129,7 +129,14 @@
                                         'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
                                     }"
                                     (click)="onCellClick(empleado, col.fecha, 0)" style="cursor: pointer;">
-                                    {{ obtenerTextoCelda(empleado, col.fecha, 0) }}
+                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 0)"
+                                        type="button" class="hora-marcacion"
+                                        (click)="$event.stopPropagation(); abrirDetalleDatosMarcacion(empleado, marcacion)">
+                                        {{ obtenerHoraMarcacion(marcacion) }}
+                                    </button>
+                                    <span *ngIf="obtenerMarcacionesPorTipo(empleado, col.fecha, 0).length === 0">
+                                        {{ obtenerTextoCelda(empleado, col.fecha, 0) }}
+                                    </span>
                                 </td>
                                 <td class="text-center align-middle celda-clickeable"
                                     [ngClass]="{
@@ -138,7 +145,14 @@
                                         'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
                                     }"
                                     (click)="onCellClick(empleado, col.fecha, 1)" style="cursor: pointer;">
-                                    {{ obtenerTextoCelda(empleado, col.fecha, 1) }}
+                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 1)"
+                                        type="button" class="hora-marcacion"
+                                        (click)="$event.stopPropagation(); abrirDetalleDatosMarcacion(empleado, marcacion)">
+                                        {{ obtenerHoraMarcacion(marcacion) }}
+                                    </button>
+                                    <span *ngIf="obtenerMarcacionesPorTipo(empleado, col.fecha, 1).length === 0">
+                                        {{ obtenerTextoCelda(empleado, col.fecha, 1) }}
+                                    </span>
                                 </td>
                                 <td class="text-center align-middle celda-clickeable"
                                     [ngClass]="{
@@ -147,7 +161,11 @@
                                         'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 99)
                                     }"
                                     (click)="onCellClick(empleado, col.fecha, 99)" style="cursor: pointer;">
-                                    {{ obtenerMarcacionPorTipo(empleado, col.fecha, 99) }}
+                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 99)"
+                                        type="button" class="hora-marcacion"
+                                        (click)="$event.stopPropagation(); abrirDetalleDatosMarcacion(empleado, marcacion)">
+                                        {{ obtenerHoraMarcacion(marcacion) }}
+                                    </button>
                                 </td>
                             </ng-container>
                         </tr>

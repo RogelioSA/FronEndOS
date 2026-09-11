@@ -7,6 +7,7 @@ import * as ExcelJS from 'exceljs';
 import * as XLSX from 'xlsx';
 
 interface MarcacionPorDia {
+  eventosPorTipo?: { [tipoEvento: number]: any[] };
   entrada?: string;
   salida?: string;
   salidaRefrigerio?: string;
@@ -286,11 +287,17 @@ export class ReporteMarcacionComponent {
       }
 
       if (!empleado.marcaciones[fechaKey]) {
-        empleado.marcaciones[fechaKey] = {};
+        empleado.marcaciones[fechaKey] = { eventosPorTipo: {} };
       }
 
       const hora = this.datePipe.transform(marcacion.fecha, 'HH:mm');
       const tipoEvento = marcacion.tipoEvento ?? 99;
+      const eventosDelTipo = empleado.marcaciones[fechaKey].eventosPorTipo![tipoEvento] ?? [];
+      eventosDelTipo.push(marcacion);
+      eventosDelTipo.sort(
+        (primera, segunda) => new Date(primera.fecha).getTime() - new Date(segunda.fecha).getTime()
+      );
+      empleado.marcaciones[fechaKey].eventosPorTipo![tipoEvento] = eventosDelTipo;
 
       switch(tipoEvento) {
         case 0:
@@ -491,6 +498,20 @@ export class ReporteMarcacionComponent {
     }
   }
 
+  obtenerMarcacionesPorTipo(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): any[] {
+    return empleado.marcaciones[fecha]?.eventosPorTipo?.[tipoEvento] ?? [];
+  }
+
+  obtenerHoraMarcacion(marcacion: any): string {
+    return this.datePipe.transform(marcacion?.fecha, 'HH:mm') || '';
+  }
+
+  obtenerHorasMarcaciones(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): string {
+    return this.obtenerMarcacionesPorTipo(empleado, fecha, tipoEvento)
+      .map((marcacion) => this.obtenerHoraMarcacion(marcacion))
+      .join(', ');
+  }
+
   esVacacion(empleado: EmpleadoReporte, fecha: string): boolean {
     return !!empleado.esAsignacionAusencia &&
       this.vacaciones.has(this.crearClaveVacacion(empleado.personalId, fecha));
@@ -561,6 +582,10 @@ export class ReporteMarcacionComponent {
     }
 
     if (!datos) return;
+    this.abrirDetalleDatosMarcacion(empleado, datos);
+  }
+
+  abrirDetalleDatosMarcacion(empleado: EmpleadoReporte, datos: any) {
 
     const tipoEventoTexto = this.obtenerTipoEventoTexto(datos.tipoEvento ?? 99);
     const tipoEventoCodigo = datos.tipoEvento ?? 99;
@@ -879,9 +904,9 @@ export class ReporteMarcacionComponent {
 
         this.columnasdinamicas.forEach(col => {
           fila.push(
-            this.obtenerMarcacionPorTipo(empleado, col.fecha, 0) || '',
-            this.obtenerMarcacionPorTipo(empleado, col.fecha, 1) || '',
-            this.obtenerMarcacionPorTipo(empleado, col.fecha, 99) || ''
+            this.obtenerHorasMarcaciones(empleado, col.fecha, 0),
+            this.obtenerHorasMarcaciones(empleado, col.fecha, 1),
+            this.obtenerHorasMarcaciones(empleado, col.fecha, 99)
           );
         });
 
