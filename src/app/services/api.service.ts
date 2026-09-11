@@ -1943,6 +1943,12 @@ export class ApiService{
     return this.https.post<any>(url, body, { headers });
   }
 
+  actualizarRegistroAsistencia(id: number, body: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/rrhh/RegistroAsistencia/${id}`;
+    return this.https.put<any>(url, body, { headers });
+  }
+
   //
   //subir foto
 
