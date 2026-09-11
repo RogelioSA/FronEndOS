@@ -98,9 +98,6 @@ export class ReporteMarcacionComponent {
     observacion: '',
   };
 
-  // Nueva propiedad para el checkbox
-  verTodo: boolean = false;
-
   rostroUrl: string | null = null;
 
   @BlockUI() blockUI!: NgBlockUI;
@@ -249,6 +246,7 @@ export class ReporteMarcacionComponent {
     const fechaIni = new Date(this.fechaInicial);
     const fechaFin = new Date(this.fechaFinal);
 
+    const tiposEventoVisibles = new Set([0, 1, 99]);
     const marcacionesFiltradas = this.marcaciones.filter(m => {
       const fechaJornal = new Date(m.fecha);
       const cumpleFecha = fechaJornal >= fechaIni && fechaJornal <= fechaFin;
@@ -256,7 +254,8 @@ export class ReporteMarcacionComponent {
         (this.ordenTrabajoSeleccionada === this.ordenTrabajoOficinaId
           ? m.ordenTrabajo?.id == null
           : m.ordenTrabajo?.id === this.ordenTrabajoSeleccionada);
-      return cumpleFecha && cumpleOrdenTrabajo;
+      const tipoEvento = m.tipoEvento ?? 99;
+      return cumpleFecha && cumpleOrdenTrabajo && tiposEventoVisibles.has(tipoEvento);
     });
 
     this.generarColumnasFechas();
@@ -311,15 +310,7 @@ export class ReporteMarcacionComponent {
             empleado.marcaciones[fechaKey].datosSalida = marcacion;
           }
           break;
-        case 2:
-          empleado.marcaciones[fechaKey].salidaRefrigerio = hora || '';
-          empleado.marcaciones[fechaKey].datosSalidaRefrigerio = marcacion;
-          break;
-        case 3:
-          empleado.marcaciones[fechaKey].entradaRefrigerio = hora || '';
-          empleado.marcaciones[fechaKey].datosEntradaRefrigerio = marcacion;
-          break;
-        default:
+        case 99:
           empleado.marcaciones[fechaKey].desconocido = hora || '';
           empleado.marcaciones[fechaKey].datosDesconocido = marcacion;
           break;
@@ -852,13 +843,9 @@ export class ReporteMarcacionComponent {
     await this.traerMarcaciones();
   }
 
-  onVerTodoChanged() {
-    console.log('👁️ Ver todo:', this.verTodo);
-  }
-
   calcularColspan(): number {
     const baseColumns = 2;
-    const eventColumns = this.verTodo ? 5 : 2;
+    const eventColumns = 3;
     return baseColumns + (this.columnasdinamicas.length * eventColumns);
   }
 
@@ -877,21 +864,13 @@ export class ReporteMarcacionComponent {
       const encabezadoFechas = ['ORDEN', 'DNI', 'PERSONAL'];
       this.columnasdinamicas.forEach(col => {
         encabezadoFechas.push(`${col.diaSemana} ${col.fechaDisplay}`);
-        if (this.verTodo) {
-          encabezadoFechas.push('', '', '', '');
-        } else {
-          encabezadoFechas.push('');
-        }
+        encabezadoFechas.push('', '');
       });
       datosExcel.push(encabezadoFechas);
 
       const subencabezado = ['', '', ''];
       this.columnasdinamicas.forEach(() => {
-        if (this.verTodo) {
-          subencabezado.push('E', 'SR', 'ER', 'S', 'D');
-        } else {
-          subencabezado.push('E', 'S');
-        }
+        subencabezado.push('E', 'S', 'D');
       });
       datosExcel.push(subencabezado);
 
@@ -899,20 +878,11 @@ export class ReporteMarcacionComponent {
         const fila: any[] = [empleado.orden, empleado.dni, empleado.personal];
 
         this.columnasdinamicas.forEach(col => {
-          if (this.verTodo) {
-            fila.push(
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 0) || '',
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 2) || '',
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 3) || '',
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 1) || '',
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 99) || ''
-            );
-          } else {
-            fila.push(
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 0) || '',
-              this.obtenerMarcacionPorTipo(empleado, col.fecha, 1) || ''
-            );
-          }
+          fila.push(
+            this.obtenerMarcacionPorTipo(empleado, col.fecha, 0) || '',
+            this.obtenerMarcacionPorTipo(empleado, col.fecha, 1) || '',
+            this.obtenerMarcacionPorTipo(empleado, col.fecha, 99) || ''
+          );
         });
 
         datosExcel.push(fila);
@@ -927,11 +897,7 @@ export class ReporteMarcacionComponent {
       ];
 
       this.columnasdinamicas.forEach(() => {
-        if (this.verTodo) {
-          colWidths.push({ wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 6 });
-        } else {
-          colWidths.push({ wch: 8 }, { wch: 8 });
-        }
+        colWidths.push({ wch: 8 }, { wch: 8 }, { wch: 8 });
       });
 
       ws['!cols'] = colWidths;
@@ -940,13 +906,8 @@ export class ReporteMarcacionComponent {
       let colIndex = 3;
 
       this.columnasdinamicas.forEach(() => {
-        if (this.verTodo) {
-          merges.push({ s: { r: 0, c: colIndex }, e: { r: 0, c: colIndex + 4 } });
-          colIndex += 5;
-        } else {
-          merges.push({ s: { r: 0, c: colIndex }, e: { r: 0, c: colIndex + 1 } });
-          colIndex += 2;
-        }
+        merges.push({ s: { r: 0, c: colIndex }, e: { r: 0, c: colIndex + 2 } });
+        colIndex += 3;
       });
 
       ws['!merges'] = merges;
@@ -955,8 +916,7 @@ export class ReporteMarcacionComponent {
       XLSX.utils.book_append_sheet(wb, ws, 'Reporte Marcaciones');
 
       const fechaActual = this.datePipe.transform(new Date(), 'dd-MM-yyyy');
-      const modoVista = this.verTodo ? 'Completo' : 'Resumido';
-      const nombreArchivo = `Reporte_Marcaciones_${modoVista}_${fechaActual}.xlsx`;
+      const nombreArchivo = `Detalle_Marcaciones_${fechaActual}.xlsx`;
 
       XLSX.writeFile(wb, nombreArchivo);
 
