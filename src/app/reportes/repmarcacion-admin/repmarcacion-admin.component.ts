@@ -16,6 +16,7 @@ interface DiaMarcacionAdmin {
   salida: string;
   tardanza: number;
   ausencia: string;
+  horasTrabajadas: number;
 }
 
 interface EmpleadoMarcacionAdmin {
@@ -26,6 +27,7 @@ interface EmpleadoMarcacionAdmin {
   cargo: string;
   totalMarcas: number;
   minutosTardanza: number;
+  totalHorasTrabajadas: number;
   dias: Record<string, DiaMarcacionAdmin>;
 }
 
@@ -47,7 +49,7 @@ export class RepmarcacionAdminComponent {
     'TECNICO MECANICO',
     'AYUDANTE',
     'SUPERVISOR DE SERVICIOS',
-    'ASISTENTE DE ALMACEN'
+    'SUPERVISOR DE SEGURIDAD'
   ]);
   private readonly areasPorCargo: Record<string, string[]> = {
     'INGENIERO PLANIFICADOR': ['SERVICIOS'],
@@ -175,22 +177,22 @@ export class RepmarcacionAdminComponent {
       const relleno = (argb: string): ExcelJS.Fill => ({
         type: 'pattern', pattern: 'solid', fgColor: { argb }
       });
-      const columnasFijas = ['Nro', 'Apellidos y Nombres', 'NroDoc', 'Área', 'Cargo', 'Total Marcas', 'Min. Tardanzas'];
+      const columnasFijas = ['Nro', 'Apellidos y Nombres', 'NroDoc', 'Área', 'Cargo', 'Total Marcas', 'Min. Tardanzas', 'Total HH'];
       const filaPrincipal = hoja.addRow(columnasFijas);
       const filaSecundaria = hoja.addRow(columnasFijas.map(() => ''));
 
       columnasFijas.forEach((_, indice) => hoja.mergeCells(1, indice + 1, 2, indice + 1));
       this.columnasFechas.forEach((columna, indice) => {
-        const inicio = columnasFijas.length + 1 + indice * 3;
-        hoja.mergeCells(1, inicio, 1, inicio + 2);
+        const inicio = columnasFijas.length + 1 + indice * 4;
+        hoja.mergeCells(1, inicio, 1, inicio + 3);
         filaPrincipal.getCell(inicio).value = `${columna.diaSemana} ${columna.fechaDisplay}`;
-        ['E', 'TARD.', 'S'].forEach((titulo, subindice) => {
+        ['E', 'TARD.', 'S', 'HH'].forEach((titulo, subindice) => {
           filaSecundaria.getCell(inicio + subindice).value = titulo;
         });
       });
 
       [filaPrincipal, filaSecundaria].forEach((fila, indiceFila) => {
-        for (let columna = 1; columna <= columnasFijas.length + this.columnasFechas.length * 3; columna++) {
+        for (let columna = 1; columna <= columnasFijas.length + this.columnasFechas.length * 4; columna++) {
           const celda = fila.getCell(columna);
           celda.fill = relleno(indiceFila === 0 ? 'FF263B59' : 'FFDCE8F7');
           celda.font = { bold: true, color: { argb: indiceFila === 0 ? 'FFFFFFFF' : 'FF263B59' } };
@@ -207,11 +209,17 @@ export class RepmarcacionAdminComponent {
           empleado.area,
           empleado.cargo || '—',
           empleado.totalMarcas,
-          empleado.minutosTardanza
+          empleado.minutosTardanza,
+          empleado.totalHorasTrabajadas
         ];
         this.columnasFechas.forEach(columna => {
           const dia = empleado.dias[columna.fecha];
-          valores.push(dia.ausencia || dia.entrada, dia.tardanza > 0 ? dia.tardanza : '', dia.ausencia || dia.salida);
+          valores.push(
+            dia.ausencia || dia.entrada,
+            dia.tardanza > 0 ? dia.tardanza : '',
+            dia.ausencia || dia.salida,
+            dia.horasTrabajadas
+          );
         });
         const fila = hoja.addRow(valores);
         fila.eachCell({ includeEmpty: true }, celda => {
@@ -227,7 +235,7 @@ export class RepmarcacionAdminComponent {
         }
         this.columnasFechas.forEach((columna, indiceDia) => {
           const dia = empleado.dias[columna.fecha];
-          const inicio = columnasFijas.length + 1 + indiceDia * 3;
+          const inicio = columnasFijas.length + 1 + indiceDia * 4;
           if (dia.ausencia) {
             fila.getCell(inicio).fill = relleno('FFFFF1B8');
             fila.getCell(inicio + 2).fill = relleno('FFFFF1B8');
@@ -242,12 +250,13 @@ export class RepmarcacionAdminComponent {
         });
       });
 
-      [6, 32, 14, 24, 28, 14, 16].forEach((ancho, indice) => hoja.getColumn(indice + 1).width = ancho);
+      [6, 32, 14, 24, 28, 14, 16, 12].forEach((ancho, indice) => hoja.getColumn(indice + 1).width = ancho);
       this.columnasFechas.forEach((_, indice) => {
-        const inicio = columnasFijas.length + 1 + indice * 3;
+        const inicio = columnasFijas.length + 1 + indice * 4;
         hoja.getColumn(inicio).width = 9;
         hoja.getColumn(inicio + 1).width = 9;
         hoja.getColumn(inicio + 2).width = 9;
+        hoja.getColumn(inicio + 3).width = 9;
       });
       hoja.autoFilter = { from: { row: 2, column: 1 }, to: { row: 2, column: columnasFijas.length } };
 
@@ -310,6 +319,15 @@ export class RepmarcacionAdminComponent {
       if (fecha && empleado.dias[fecha]) empleado.dias[fecha].ausencia = codigo;
     });
 
+    empleadosPorId.forEach(empleado => {
+      empleado.totalHorasTrabajadas = 0;
+      Object.values(empleado.dias).forEach(dia => {
+        dia.horasTrabajadas = this.obtenerHorasTrabajadas(dia.entrada, dia.salida);
+        empleado.totalHorasTrabajadas += dia.horasTrabajadas;
+      });
+      empleado.totalHorasTrabajadas = this.redondearHoras(empleado.totalHorasTrabajadas);
+    });
+
     this.empleados = Array.from(empleadosPorId.values())
       .filter(empleado => !this.cargosOmitidos.has(this.normalizarClave(empleado.cargo)))
       .sort((a, b) =>
@@ -337,7 +355,7 @@ export class RepmarcacionAdminComponent {
       ? cargosPorId.get(cargoId) ?? detalle?.personalCargoExterno?.cargo?.nombre ?? ''
       : detalle?.personalCargoExterno?.cargo?.nombre ?? '';
     const dias = Object.fromEntries(this.columnasFechas.map(columna => [columna.fecha, {
-      entrada: '', salida: '', tardanza: 0, ausencia: ''
+      entrada: '', salida: '', tardanza: 0, ausencia: '', horasTrabajadas: 0
     }]));
     const empleado: EmpleadoMarcacionAdmin = {
       personalId,
@@ -348,6 +366,7 @@ export class RepmarcacionAdminComponent {
       cargo,
       totalMarcas: 0,
       minutosTardanza: 0,
+      totalHorasTrabajadas: 0,
       dias
     };
     empleados.set(personalId, empleado);
@@ -399,6 +418,26 @@ export class RepmarcacionAdminComponent {
     const minutosIngreso = horas * 60 + minutos;
     const minutosHorarioIngreso = 8 * 60;
     return Math.max(0, minutosIngreso - minutosHorarioIngreso);
+  }
+
+  private obtenerHorasTrabajadas(horaEntrada: string, horaSalida: string): number {
+    if (!horaEntrada || !horaSalida) return 0;
+    const entrada = this.obtenerMinutos(horaEntrada);
+    const salida = this.obtenerMinutos(horaSalida);
+    if (entrada === null || salida === null || salida < entrada) return 0;
+    return this.redondearHoras((salida - entrada) / 60);
+  }
+
+  private obtenerMinutos(hora: string): number | null {
+    const [horas, minutos] = hora.split(':').map(Number);
+    if (!Number.isInteger(horas) || !Number.isInteger(minutos) || horas < 0 || horas > 23 || minutos < 0 || minutos > 59) {
+      return null;
+    }
+    return horas * 60 + minutos;
+  }
+
+  private redondearHoras(horas: number): number {
+    return Math.round(horas * 100) / 100;
   }
 
   private normalizar(valor: string): string {
