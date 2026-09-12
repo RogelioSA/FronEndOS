@@ -11,14 +11,22 @@ describe('ReporteMarcacionComponent', () => {
     apiService = jasmine.createSpyObj('ApiService', [
       'actualizarRegistroAsistencia',
       'registrarMarcacionEspecifica',
-      'obtenerAdjuntoImagen'
+      'obtenerAdjuntoImagen',
+      'listarOrdenTrabajoCabeceraSimplificado'
     ]);
     apiService.actualizarRegistroAsistencia.and.returnValue(of({}));
     apiService.obtenerAdjuntoImagen.and.returnValue(of('foto.jpg'));
+    apiService.listarOrdenTrabajoCabeceraSimplificado.and.returnValue(of([]));
 
     component = new ReporteMarcacionComponent(apiService, new DatePipe('es-PE'));
     component.blockUI = jasmine.createSpyObj('BlockUI', ['start', 'stop']);
     spyOn(component, 'traerMarcaciones').and.resolveTo();
+  });
+
+  it('no consulta marcaciones automáticamente al iniciar', async () => {
+    await component.ngOnInit();
+
+    expect(component.traerMarcaciones).not.toHaveBeenCalled();
   });
 
   it('actualiza la marcación por id y conserva los campos no editables', async () => {
@@ -35,8 +43,6 @@ describe('ReporteMarcacionComponent', () => {
         diferenciaMinutos: 12,
         latitud: -12.04,
         longitud: -77.03,
-        horarioDetalleEventoId: 30,
-        registroAsistenciaPoliticaId: 40,
         adjuntoId: 8
       }
     );
@@ -46,19 +52,18 @@ describe('ReporteMarcacionComponent', () => {
 
     await component.regularizarMarcacion();
 
-    expect(apiService.actualizarRegistroAsistencia).toHaveBeenCalledWith(199, jasmine.objectContaining({
+    expect(apiService.actualizarRegistroAsistencia).toHaveBeenCalledWith(199, {
       id: 199,
       empresaId: 2,
       personalId: 15,
+      fecha: '2026-09-11T08:15:30.000Z',
       fechaJornal: '2026-09-11',
       tipoEvento: 0,
       esTardanza: true,
       diferenciaMinutos: 12,
       latitud: -12.04,
-      longitud: -77.03,
-      horarioDetalleEventoId: 30,
-      registroAsistenciaPoliticaId: 40
-    }));
+      longitud: -77.03
+    });
     expect(apiService.registrarMarcacionEspecifica).not.toHaveBeenCalled();
   });
 });

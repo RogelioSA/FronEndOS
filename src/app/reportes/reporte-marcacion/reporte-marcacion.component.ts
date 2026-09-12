@@ -54,8 +54,7 @@ interface DetalleMarcacion {
   linkGoogleMaps: string;
   personalId: number;
   empresaId: number;
-  horarioDetalleEventoId: number;
-  registroAsistenciaPoliticaId: number;
+  regularizado: boolean;
 }
 
 @Component({
@@ -133,7 +132,6 @@ export class ReporteMarcacionComponent {
 
   async ngOnInit(): Promise<void> {
     await this.cargarOrdenesTrabajo();
-    await this.buscar();
   }
 
   async cargarOrdenesTrabajo() {
@@ -623,8 +621,7 @@ export class ReporteMarcacionComponent {
       linkGoogleMaps: linkGoogleMaps,
       personalId: Number(datos.personalId ?? empleado.personalId),
       empresaId: Number(datos.empresaId ?? datos.empresa?.id ?? 0),
-      horarioDetalleEventoId: Number(datos.horarioDetalleEventoId ?? datos.horarioDetalleEvento?.id ?? 0),
-      registroAsistenciaPoliticaId: Number(datos.registroAsistenciaPoliticaId ?? datos.registroAsistenciaPolitica?.id ?? 0)
+      regularizado: !this.tieneCoordenadas(datos.latitud, datos.longitud)
     };
 
     this.marcacionOriginal = datos;
@@ -705,8 +702,7 @@ export class ReporteMarcacionComponent {
       linkGoogleMaps: '',
       personalId: empleado.personalId,
       empresaId: Number(localStorage.getItem('empresa_id')) || 0,
-      horarioDetalleEventoId: 0,
-      registroAsistenciaPoliticaId: 0
+      regularizado: true
     };
 
     this.regularizacion = {
@@ -788,15 +784,15 @@ export class ReporteMarcacionComponent {
           id: this.detalleMarcacion.id,
           empresaId: this.detalleMarcacion.empresaId,
           personalId: this.detalleMarcacion.personalId,
-          fecha: new Date(fechaLocal).toISOString(),
+          // El backend espera la hora de pared seleccionada en Lima, sin convertirla
+          // nuevamente a UTC (11:59:59 debe enviarse como 11:59:59.000Z).
+          fecha: `${fechaLocal}.000Z`,
           fechaJornal: this.regularizacion.jornal,
           tipoEvento: Number(this.regularizacion.evento),
           esTardanza: Boolean(this.marcacionOriginal?.esTardanza),
           diferenciaMinutos: Number(this.marcacionOriginal?.diferenciaMinutos ?? 0),
           latitud: Number(this.marcacionOriginal?.latitud ?? 0),
-          longitud: Number(this.marcacionOriginal?.longitud ?? 0),
-          horarioDetalleEventoId: this.detalleMarcacion.horarioDetalleEventoId,
-          registroAsistenciaPoliticaId: this.detalleMarcacion.registroAsistenciaPoliticaId
+          longitud: Number(this.marcacionOriginal?.longitud ?? 0)
         };
 
         console.log(
@@ -901,6 +897,30 @@ export class ReporteMarcacionComponent {
       case 99: return "Desconocido";
       default: return `Tipo ${tipoEvento}`;
     }
+  }
+
+  private tieneCoordenadas(latitud: unknown, longitud: unknown): boolean {
+    const latitudNumerica = Number(latitud);
+    const longitudNumerica = Number(longitud);
+    return Number.isFinite(latitudNumerica) && Number.isFinite(longitudNumerica) &&
+      latitudNumerica !== 0 && longitudNumerica !== 0;
+  }
+
+  trackByFecha(_index: number, columna: any): string {
+    return columna.fecha;
+  }
+
+  trackByGrupo(_index: number, grupo: { orden: string; empleados: EmpleadoReporte[] }): string {
+    const primerEmpleado = grupo.empleados[0];
+    return `${grupo.orden}-${primerEmpleado?.esAsignacionAusencia ? 'ausencia' : 'marcacion'}`;
+  }
+
+  trackByEmpleado(_index: number, empleado: EmpleadoReporte): string {
+    return `${empleado.personalId}-${empleado.orden}`;
+  }
+
+  trackByMarcacion(_index: number, marcacion: any): number | string {
+    return marcacion.id ?? marcacion.fecha;
   }
 
   async buscar() {
