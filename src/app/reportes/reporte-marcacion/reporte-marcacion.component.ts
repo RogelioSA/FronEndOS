@@ -36,6 +36,7 @@ interface EmpleadoTareo extends EmpleadoReporte {
 }
 
 interface DetalleMarcacion {
+  id: number;
   personal: string;
   dni: string;
   fecha: string;
@@ -52,6 +53,8 @@ interface DetalleMarcacion {
   ordenTrabajoId: number | null;
   linkGoogleMaps: string;
   personalId: number;
+  empresaId: number;
+  regularizado: boolean;
 }
 
 @Component({
@@ -89,6 +92,8 @@ export class ReporteMarcacionComponent {
   mostrarModal: boolean = false;
   detalleMarcacion: DetalleMarcacion | null = null;
   editandoMarcacion: boolean = false;
+  guardandoMarcacion: boolean = false;
+  marcacionOriginal: any | null = null;
   mostrarRegularizacionNueva: boolean = false;
   contextoRegularizacionNueva: { empleado: EmpleadoReporte; fecha: string; tipoEvento: number } | null = null;
   regularizacion = {
@@ -127,7 +132,6 @@ export class ReporteMarcacionComponent {
 
   async ngOnInit(): Promise<void> {
     await this.cargarOrdenesTrabajo();
-    await this.buscar();
   }
 
   async cargarOrdenesTrabajo() {
@@ -599,6 +603,7 @@ export class ReporteMarcacionComponent {
     }
 
     this.detalleMarcacion = {
+      id: Number(datos.id),
       personal: empleado.personal,
       dni: empleado.dni,
       fecha: fechaCompleta,
@@ -614,8 +619,12 @@ export class ReporteMarcacionComponent {
       horaProgramada: datos.horarioDetalleEvento?.hora || 'N/A',
       ordenTrabajoId: datos.ordenTrabajo?.id ?? null,
       linkGoogleMaps: linkGoogleMaps,
-      personalId: empleado.personalId
+      personalId: Number(datos.personalId ?? empleado.personalId),
+      empresaId: Number(datos.empresaId ?? datos.empresa?.id ?? 0),
+      regularizado: !this.tieneCoordenadas(datos.latitud, datos.longitud)
     };
+
+    this.marcacionOriginal = datos;
 
     this.cargarImagenRostro(datos.adjuntoId);
     this.editandoMarcacion = false;
@@ -638,7 +647,7 @@ export class ReporteMarcacionComponent {
       jornal: this.convertirFechaJornalAISO(this.detalleMarcacion.fechaJornal),
       evento: this.detalleMarcacion.tipoEventoCodigo,
       ordenTrabajoId: this.detalleMarcacion.ordenTrabajoId,
-      hora: (this.detalleMarcacion.hora || '').slice(0, 5),
+      hora: this.detalleMarcacion.hora || '',
       observacion: ''
     };
   }
@@ -675,6 +684,7 @@ export class ReporteMarcacionComponent {
     const fechaDisplay = this.datePipe.transform(new Date(fecha), 'dd/MM/yyyy') || '';
 
     this.detalleMarcacion = {
+      id: 0,
       personal: empleado.personal,
       dni: empleado.dni,
       fecha: fechaDisplay,
@@ -690,7 +700,9 @@ export class ReporteMarcacionComponent {
       horaProgramada: '',
       ordenTrabajoId: null,
       linkGoogleMaps: '',
-      personalId: empleado.personalId
+      personalId: empleado.personalId,
+      empresaId: Number(localStorage.getItem('empresa_id')) || 0,
+      regularizado: true
     };
 
     this.regularizacion = {
@@ -730,7 +742,7 @@ export class ReporteMarcacionComponent {
       return;
     }
 
-    if (this.regularizacion.ordenTrabajoId === null) {
+    if (!this.editandoMarcacion && this.regularizacion.ordenTrabajoId === null) {
       this.showMessage('Selecciona una orden de trabajo');
       return;
     }
@@ -759,9 +771,40 @@ export class ReporteMarcacionComponent {
     };
 
     try {
-      this.blockUI.start('Registrando regularización...');
-      await firstValueFrom(this.apiService.registrarMarcacionEspecifica(payload));
-      this.showMessage('Regularización registrada correctamente');
+      this.guardandoMarcacion = true;
+      this.blockUI.start(this.editandoMarcacion ? 'Actualizando marcación...' : 'Registrando regularización...');
+
+      if (this.editandoMarcacion && this.detalleMarcacion) {
+        if (!Number.isFinite(this.detalleMarcacion.id) || this.detalleMarcacion.id <= 0) {
+          this.showMessage('No se pudo identificar la marcación a actualizar');
+          return;
+        }
+
+        const bodyActualizacion = {
+          id: this.detalleMarcacion.id,
+          empresaId: this.detalleMarcacion.empresaId,
+          personalId: this.detalleMarcacion.personalId,
+          // El backend espera la hora de pared seleccionada en Lima, sin convertirla
+          // nuevamente a UTC (11:59:59 debe enviarse como 11:59:59.000Z).
+          fecha: `${fechaLocal}.000Z`,
+          fechaJornal: this.regularizacion.jornal,
+          tipoEvento: Number(this.regularizacion.evento),
+          esTardanza: Boolean(this.marcacionOriginal?.esTardanza),
+          diferenciaMinutos: Number(this.marcacionOriginal?.diferenciaMinutos ?? 0),
+          latitud: Number(this.marcacionOriginal?.latitud ?? 0),
+          longitud: Number(this.marcacionOriginal?.longitud ?? 0)
+        };
+
+        console.log(
+          `📤 PUT /rrhh/RegistroAsistencia/${this.detalleMarcacion.id} - body:`,
+          JSON.stringify(bodyActualizacion, null, 2)
+        );
+        await firstValueFrom(this.apiService.actualizarRegistroAsistencia(this.detalleMarcacion.id, bodyActualizacion));
+        this.showMessage('Marcación actualizada correctamente');
+      } else {
+        await firstValueFrom(this.apiService.registrarMarcacionEspecifica(payload));
+        this.showMessage('Regularización registrada correctamente');
+      }
       if (this.mostrarRegularizacionNueva) {
         this.cerrarRegularizacionNueva();
       } else {
@@ -774,6 +817,7 @@ export class ReporteMarcacionComponent {
       console.error('❌ Error al regularizar la marcación:', error);
       this.showMessage('Error al regularizar la marcación');
     } finally {
+      this.guardandoMarcacion = false;
       this.blockUI.stop();
     }
   }
@@ -841,6 +885,7 @@ export class ReporteMarcacionComponent {
     this.detalleMarcacion = null;
     this.editandoMarcacion = false;
     this.rostroUrl = null;
+    this.marcacionOriginal = null;
   }
 
   obtenerTipoEventoTexto(tipoEvento: number): string {
@@ -852,6 +897,30 @@ export class ReporteMarcacionComponent {
       case 99: return "Desconocido";
       default: return `Tipo ${tipoEvento}`;
     }
+  }
+
+  private tieneCoordenadas(latitud: unknown, longitud: unknown): boolean {
+    const latitudNumerica = Number(latitud);
+    const longitudNumerica = Number(longitud);
+    return Number.isFinite(latitudNumerica) && Number.isFinite(longitudNumerica) &&
+      latitudNumerica !== 0 && longitudNumerica !== 0;
+  }
+
+  trackByFecha(_index: number, columna: any): string {
+    return columna.fecha;
+  }
+
+  trackByGrupo(_index: number, grupo: { orden: string; empleados: EmpleadoReporte[] }): string {
+    const primerEmpleado = grupo.empleados[0];
+    return `${grupo.orden}-${primerEmpleado?.esAsignacionAusencia ? 'ausencia' : 'marcacion'}`;
+  }
+
+  trackByEmpleado(_index: number, empleado: EmpleadoReporte): string {
+    return `${empleado.personalId}-${empleado.orden}`;
+  }
+
+  trackByMarcacion(_index: number, marcacion: any): number | string {
+    return marcacion.id ?? marcacion.fecha;
   }
 
   async buscar() {
@@ -1727,7 +1796,8 @@ export class ReporteMarcacionComponent {
     const day = String(fecha.getDate()).padStart(2, '0');
     const hours = String(fecha.getHours()).padStart(2, '0');
     const minutes = String(fecha.getMinutes()).padStart(2, '0');
+    const seconds = String(fecha.getSeconds()).padStart(2, '0');
 
-    return `${year}-${month}-${day}T${hours}:${minutes}:00`;
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
   }
 }

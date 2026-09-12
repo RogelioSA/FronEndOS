@@ -1,7 +1,4 @@
 <div class="container-fluid">
-    <!-- Leaflet CSS y JS desde CDN -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
     <div class="row g-1 mt-2 justify-content-md-center mb-4 align-items-end">
         <div class="col-6">
             <div class="dx-field-label">Orden de Trabajo:</div>
@@ -91,13 +88,13 @@
                         <tr>
                             <th rowspan="2" class="align-middle text-center" style="min-width: 100px; position: sticky; left: 0; background-color: #212529; z-index: 11;">DNI</th>
                             <th rowspan="2" class="align-middle text-center" style="min-width: 250px; position: sticky; left: 100px; background-color: #212529; z-index: 11;">PERSONAL</th>
-                            <th *ngFor="let col of columnasdinamicas" colspan="3" class="text-center"
+                            <th *ngFor="let col of columnasdinamicas; trackBy: trackByFecha" colspan="3" class="text-center"
                                 [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">
                                 <div><strong>{{ col.diaSemana }}</strong> {{ col.fechaDisplay }}</div>
                             </th>
                         </tr>
                         <tr>
-                            <ng-container *ngFor="let col of columnasdinamicas">
+                            <ng-container *ngFor="let col of columnasdinamicas; trackBy: trackByFecha">
                                 <th class="text-center" style="min-width: 60px;"
                                     [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}" title="Entrada">E</th>
                                 <th class="text-center" style="min-width: 60px;"
@@ -108,11 +105,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <ng-container *ngFor="let grupo of datosAgrupados">
+                        <ng-container *ngFor="let grupo of datosAgrupados; trackBy: trackByGrupo">
                             <tr class="orden-row">
                                 <td [attr.colspan]="calcularColspan()" class="fw-semibold">{{ grupo.orden }}</td>
                             </tr>
-                            <tr *ngFor="let empleado of grupo.empleados">
+                            <tr *ngFor="let empleado of grupo.empleados; trackBy: trackByEmpleado">
                                 <td class="text-center align-middle" style="position: sticky; left: 0; background-color: white; font-weight: 500;">
                                     {{ empleado.dni }}
                                 </td>
@@ -120,7 +117,7 @@
                                     {{ empleado.personal }}
                                 </td>
 
-                            <ng-container *ngFor="let col of columnasdinamicas">
+                            <ng-container *ngFor="let col of columnasdinamicas; trackBy: trackByFecha">
                                 <td class="text-center align-middle celda-clickeable"
                                     [ngClass]="{
                                         'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
@@ -129,7 +126,7 @@
                                         'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
                                     }"
                                     (click)="onCellClick(empleado, col.fecha, 0)" style="cursor: pointer;">
-                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 0)"
+                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 0); trackBy: trackByMarcacion"
                                         type="button" class="hora-marcacion"
                                         (click)="$event.stopPropagation(); abrirDetalleDatosMarcacion(empleado, marcacion)">
                                         {{ obtenerHoraMarcacion(marcacion) }}
@@ -145,7 +142,7 @@
                                         'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
                                     }"
                                     (click)="onCellClick(empleado, col.fecha, 1)" style="cursor: pointer;">
-                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 1)"
+                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 1); trackBy: trackByMarcacion"
                                         type="button" class="hora-marcacion"
                                         (click)="$event.stopPropagation(); abrirDetalleDatosMarcacion(empleado, marcacion)">
                                         {{ obtenerHoraMarcacion(marcacion) }}
@@ -161,7 +158,7 @@
                                         'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 99)
                                     }"
                                     (click)="onCellClick(empleado, col.fecha, 99)" style="cursor: pointer;">
-                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 99)"
+                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 99); trackBy: trackByMarcacion"
                                         type="button" class="hora-marcacion"
                                         (click)="$event.stopPropagation(); abrirDetalleDatosMarcacion(empleado, marcacion)">
                                         {{ obtenerHoraMarcacion(marcacion) }}
@@ -193,8 +190,18 @@
             <div class="modal-detalle" *ngIf="mostrarModal && detalleMarcacion">
                 <div class="modal-content-detalle" (click)="$event.stopPropagation()">
                     <div class="modal-header-detalle">
-                        <h5 class="modal-title">Marcacion: {{ detalleMarcacion.fechaJornal }}   Evento: {{ detalleMarcacion.tipoEvento }}</h5>
-                        <button type="button" class="btn-close-detalle" (click)="cerrarModal()">
+                        <div class="modal-heading">
+                            <span class="modal-heading-icon"><i class="fa-solid fa-fingerprint"></i></span>
+                            <div>
+                                <span class="modal-eyebrow">Detalle de asistencia</span>
+                                <h5 class="modal-title">Marcación: {{ detalleMarcacion.fechaJornal }}</h5>
+                            </div>
+                            <span class="evento-badge">{{ detalleMarcacion.tipoEvento }}</span>
+                            <span class="regularizado-badge" [class.regularizado-si]="detalleMarcacion.regularizado">
+                                Regularizado: {{ detalleMarcacion.regularizado ? 'SÍ' : 'NO' }}
+                            </span>
+                        </div>
+                        <button type="button" class="btn-close-detalle" (click)="cerrarModal()" aria-label="Cerrar">
                             <i class="fa-solid fa-times"></i>
                         </button>
                     </div>
@@ -202,32 +209,24 @@
                     <div class="modal-body-detalle">
                         <div class="detalle-layout">
                             <div class="detalle-col detalle-info">
-                                <div class="info-line stacked">
-                                    <span class="info-label">Fecha marcación:</span>
-                                    <span class="info-value">{{ detalleMarcacion.fecha }}</span>
-                                </div>
-                                <div class="info-line stacked">
-                                    <span class="info-label">Jornal:</span>
-                                    <span class="info-value">{{ detalleMarcacion.fechaJornal }}</span>
-                                </div>
-                                <div class="info-line stacked">
-                                    <span class="info-label">Regularizado?:</span>
-                                    <span class="info-value">NO</span>
-                                </div>
-                                <div class="info-line stacked">
-                                    <span class="info-label">Usuario:</span>
-                                    <span class="info-value">{{ detalleMarcacion.personal }}</span>
-                                </div>
-                                <div class="info-line stacked">
-                                    <span class="info-label">Aplicación:</span>
-                                    <span class="info-value">Web / Mobile</span>
-                                </div>
-                                <div class="info-line stacked">
-                                    <span class="info-label">Tardanza:</span>
-                                    <span class="info-value" [ngClass]="{'text-danger fw-bold': detalleMarcacion.esTardanza}">
-                                        {{ detalleMarcacion.esTardanza ? 'SÍ' : 'NO' }}
-                                        <span *ngIf="detalleMarcacion.esTardanza"> ({{ detalleMarcacion.diferenciaMinutos }} min)</span>
-                                    </span>
+                                <div class="section-title"><i class="fa-regular fa-address-card"></i> Información de la marcación</div>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <span class="info-label">Fecha marcación</span>
+                                        <span class="info-value">{{ detalleMarcacion.fecha }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Jornal</span>
+                                        <span class="info-value">{{ detalleMarcacion.fechaJornal }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Personal</span>
+                                        <span class="info-value">{{ detalleMarcacion.personal }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">DNI</span>
+                                        <span class="info-value">{{ detalleMarcacion.dni }}</span>
+                                    </div>
                                 </div>
 
                                 <div class="d-grid">
@@ -237,7 +236,7 @@
                                         (click)="iniciarRegularizacion()"
                                         *ngIf="!editandoMarcacion"
                                     >
-                                        REGULARIZAR
+                                        <i class="fa-solid fa-pen-to-square"></i> REGULARIZAR
                                     </button>
                                 </div>
 
@@ -246,7 +245,7 @@
 
                             <div class="detalle-col detalle-extra">
                                 <div class="imagen-section">
-                                    <div class="section-title">Rostro</div>
+                                    <div class="section-title"><i class="fa-regular fa-image"></i> Evidencia fotográfica</div>
                                     <img *ngIf="rostroUrl" [src]="rostroUrl" alt="Rostro de marcación" class="rostro-imagen">
                                     <div class="imagen-placeholder" *ngIf="!rostroUrl">
                                         Imagen no disponible
@@ -254,8 +253,8 @@
                                 </div>
 
                                 <div class="ubicacion-section">
+                                    <div class="section-title"><i class="fa-solid fa-location-dot"></i> Ubicación del personal</div>
                                     <div class="info-line">
-                                        <span class="info-label">Ubicación:</span>
                                         <ng-container *ngIf="detalleMarcacion.latitud && detalleMarcacion.longitud; else sinCoordenadas">
                                             <a [href]="detalleMarcacion.linkGoogleMaps" target="_blank" class="link-ubicacion">
                                                 <i class="fa-solid fa-map-marker-alt"></i>
@@ -308,6 +307,13 @@
 
             <ng-template #regularizacionForm>
                 <div class="regularizacion-form">
+                    <div class="regularizacion-heading" *ngIf="editandoMarcacion">
+                        <span class="regularizacion-icon"><i class="fa-solid fa-pen"></i></span>
+                        <div>
+                            <h6>Editar marcación</h6>
+                            <p>Corrige la fecha, hora o tipo de evento. Los demás datos se conservarán.</p>
+                        </div>
+                    </div>
                     <div class="info-line stacked">
                         <span class="info-label">Jornal:</span>
                         <input
@@ -326,7 +332,7 @@
                         </select>
                     </div>
 
-                    <div class="info-line stacked">
+                    <div class="info-line stacked" *ngIf="!editandoMarcacion">
                         <span class="info-label">Orden de Trabajo:</span>
                         <dx-select-box
                             [dataSource]="ordenesTrabajo"
@@ -342,13 +348,14 @@
                         <span class="info-label">Hora:</span>
                         <input
                             type="time"
+                            step="1"
                             class="form-control"
                             [(ngModel)]="regularizacion.hora"
                             placeholder="00:00"
                         />
                     </div>
 
-                    <div class="info-line stacked">
+                    <div class="info-line stacked" *ngIf="!editandoMarcacion">
                         <label class="info-label" for="observacion-regularizacion">Observación:</label>
                         <textarea
                             id="observacion-regularizacion"
@@ -360,8 +367,9 @@
                     </div>
 
                     <div class="regularizacion-actions">
-                        <button type="button" class="btn btn-primary" (click)="regularizarMarcacion()">
-                            Guardar
+                        <button type="button" class="btn btn-primary" (click)="regularizarMarcacion()" [disabled]="guardandoMarcacion">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            {{ guardandoMarcacion ? 'Guardando...' : (editandoMarcacion ? 'Guardar cambios' : 'Guardar') }}
                         </button>
                         <button type="button" class="btn btn-secondary" (click)="cancelarRegularizacion()">
                             Cancelar
