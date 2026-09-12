@@ -799,6 +799,10 @@ export class ReporteMarcacionComponent {
           registroAsistenciaPoliticaId: this.detalleMarcacion.registroAsistenciaPoliticaId
         };
 
+        console.log(
+          `📤 PUT /rrhh/RegistroAsistencia/${this.detalleMarcacion.id} - body:`,
+          JSON.stringify(bodyActualizacion, null, 2)
+        );
         await firstValueFrom(this.apiService.actualizarRegistroAsistencia(this.detalleMarcacion.id, bodyActualizacion));
         this.showMessage('Marcación actualizada correctamente');
       } else {
