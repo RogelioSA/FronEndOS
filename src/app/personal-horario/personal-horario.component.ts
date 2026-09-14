@@ -871,15 +871,37 @@ export class PersonalHorarioComponent {
     personalId: number,
     asignacionFechas: { id: number; fecha: string; horarioCabeceraId: number }[]
   ): Promise<any> {
+    const fechaVigenciaInicial = Date.now();
     const payload = {
       empresaId: this.empresaId,
       ordenTrabajoCabeceraId: this.ordenCombo,
       personalId,
-      asignacionFechas
+      asignacionFechas: asignacionFechas.map((asignacion, indice) => ({
+        ...asignacion,
+        fechaVigencia: this.formatearFechaVigenciaLima(new Date(fechaVigenciaInicial + indice))
+      }))
     };
 
     console.log('📤 Payload masivo por persona:', JSON.stringify(payload, null, 2));
     return firstValueFrom(this.apiService.guardarOrdenTrabajoHorarioRango(payload));
+  }
+
+  private formatearFechaVigenciaLima(fecha: Date): string {
+    const partes = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3,
+      hourCycle: 'h23'
+    }).formatToParts(fecha);
+    const valor = (tipo: Intl.DateTimeFormatPartTypes) =>
+      partes.find(parte => parte.type === tipo)?.value ?? '';
+
+    return `${valor('year')}-${valor('month')}-${valor('day')}T${valor('hour')}:${valor('minute')}:${valor('second')}.${valor('fractionalSecond')}-05:00`;
   }
 
   enviarPersonalHorario() {
