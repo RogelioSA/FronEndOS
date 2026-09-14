@@ -1219,14 +1219,17 @@ export class ReporteMarcacionComponent {
         this.columnasdinamicas.forEach((col, diaIndex) => {
           const marcacion = empleado.marcaciones[col.fecha];
 
-          const datosOrden = marcacion
-            ? (marcacion.datosEntrada || marcacion.datosSalida)
-            : null;
-          // L identifica la labor mediante los primeros cinco caracteres de la descripción de la OT.
+          const codigoAusencia = this.vacaciones.get(
+            this.crearClaveVacacion(empleado.personalId, col.fecha)
+          );
+          const ordenesDelDia = marcacion ? this.obtenerOrdenesTareo(marcacion) : [];
+          // L identifica la labor. En jornadas con varias OT se muestran todos
+          // los valores, y una asignación de ausencia tiene prioridad ese día.
           const existeCruceOrdenTrabajo = empleado.fechasConCruceOrdenTrabajo.has(col.fecha);
-          const letra = existeCruceOrdenTrabajo
-            ? 'OT'
-            : datosOrden?.ordenTrabajo?.descripcion?.slice(0, 5) || '';
+          const letra = codigoAusencia || ordenesDelDia
+            .map(orden => orden.descripcion.slice(0, 5))
+            .filter(Boolean)
+            .join(' / ');
 
           if (existeCruceOrdenTrabajo) {
             celdasCruceOrdenTrabajo.push(7 + diaIndex * 3);
@@ -1247,9 +1250,10 @@ export class ReporteMarcacionComponent {
           }
 
           // OS corresponde al nombre de la Orden de Trabajo de ese mismo jornal.
-          const ordenServicio = existeCruceOrdenTrabajo
-            ? ''
-            : datosOrden?.ordenTrabajo?.nombre || datosOrden?.ordenTrabajo?.descripcion || '';
+          const ordenServicio = ordenesDelDia
+            .map(orden => orden.nombre || orden.descripcion)
+            .filter(Boolean)
+            .join(' / ');
 
           filaData.push(letra, horasTexto, ordenServicio);
         });
@@ -1515,7 +1519,15 @@ export class ReporteMarcacionComponent {
       return { ...marcacion };
     }
 
-    const resultado = { ...marcacion };
+    const resultado = {
+      ...marcacion,
+      eventosPorTipo: Object.fromEntries(
+        Object.entries(marcacion.eventosPorTipo ?? {}).map(([tipo, eventos]) => [
+          tipo,
+          eventos.filter(evento => evento?.ordenTrabajo?.id != null)
+        ])
+      )
+    };
     const tipos: Array<{
       datos: keyof MarcacionPorDia;
       hora: keyof MarcacionPorDia;
@@ -1573,8 +1585,36 @@ export class ReporteMarcacionComponent {
       }
     });
 
+    const tiposEventos = new Set([
+      ...Object.keys(actual.eventosPorTipo ?? {}),
+      ...Object.keys(adicional.eventosPorTipo ?? {})
+    ]);
+    combinado.eventosPorTipo = {};
+    tiposEventos.forEach(tipo => {
+      combinado.eventosPorTipo![Number(tipo)] = [
+        ...(actual.eventosPorTipo?.[Number(tipo)] ?? []),
+        ...(adicional.eventosPorTipo?.[Number(tipo)] ?? [])
+      ].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+    });
+
     combinado.tardanza = combinado.tardanza || adicional.tardanza;
     return combinado;
+  }
+
+  private obtenerOrdenesTareo(marcacion: MarcacionPorDia): Array<{ descripcion: string; nombre: string }> {
+    const eventos = Object.values(marcacion.eventosPorTipo ?? {}).flat();
+    const datos = eventos.length > 0 ? eventos : [this.obtenerDatosMarcacion(marcacion)].filter(Boolean);
+    const ordenes = new Map<string, { descripcion: string; nombre: string }>();
+
+    datos.forEach((dato: any) => {
+      const orden = dato?.ordenTrabajo;
+      if (!orden || orden.id == null) return;
+      const descripcion = String(orden.descripcion ?? orden.Descripcion ?? '').trim();
+      const nombre = String(orden.nombre ?? '').trim();
+      ordenes.set(String(orden.id), { descripcion, nombre });
+    });
+
+    return Array.from(ordenes.values());
   }
 
   /**
@@ -1740,6 +1780,23 @@ export class ReporteMarcacionComponent {
    * en procesarDatosParaReporte antes de llegar a este método.
    */
   calcularMinutosTareo(marcacion: MarcacionPorDia): number | null {
+    const entradas = marcacion.eventosPorTipo?.[0] ?? [];
+    const salidas = marcacion.eventosPorTipo?.[1] ?? [];
+
+    if (entradas.length > 0 || salidas.length > 0) {
+      if (entradas.length !== salidas.length || entradas.length === 0) {
+        return null;
+      }
+
+      let totalMinutos = 0;
+      for (let indice = 0; indice < entradas.length; indice++) {
+        const minutosTurno = this.calcularMinutosEntreMarcaciones(entradas[indice], salidas[indice]);
+        if (minutosTurno === null) return null;
+        totalMinutos += minutosTurno;
+      }
+      return totalMinutos;
+    }
+
     const entrada = marcacion.datosEntrada;
     const salida = marcacion.datosSalida;
 
@@ -1747,6 +1804,10 @@ export class ReporteMarcacionComponent {
       return null;
     }
 
+    return this.calcularMinutosEntreMarcaciones(entrada, salida);
+  }
+
+  private calcularMinutosEntreMarcaciones(entrada: any, salida: any): number | null {
     const fechaEntrada = new Date(entrada.fecha).getTime();
     const fechaSalida = new Date(salida.fecha).getTime();
     const minutosDescanso = Number(entrada.minutosDescanso ?? salida.minutosDescanso ?? 0);
