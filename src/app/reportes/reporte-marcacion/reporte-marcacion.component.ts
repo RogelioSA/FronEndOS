@@ -5,6 +5,13 @@ import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { DatePipe } from '@angular/common';
 import * as ExcelJS from 'exceljs';
 import * as XLSX from 'xlsx';
+import { jwtDecode } from 'jwt-decode';
+
+interface UsuarioToken {
+  cUsuario?: string;
+  unique_name?: string;
+  name?: string;
+}
 
 interface MarcacionPorDia {
   eventosPorTipo?: { [tipoEvento: number]: any[] };
@@ -140,17 +147,20 @@ export class ReporteMarcacionComponent {
         this.apiService.listarOrdenTrabajoCabeceraSimplificado()
       );
 
+      const ordenes = Array.isArray(response) ? response : response?.data ?? [];
       this.ordenesTrabajo = [
         {
           id: this.ordenTrabajoOficinaId,
           cOrdenInterna: 'OFICINA'
         },
-        ...response.map((ot: any) => ({
-          id: ot.id,
-          cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`,
-          adjuntoId: ot.adjuntoId
-        }))
-      ];
+        ...ordenes
+          .filter((ot: any) => Number(ot.estado) === 1)
+          .map((ot: any) => ({
+            id: ot.id,
+            cOrdenInterna: `${ot.nombre} - ${ot.descripcion}`,
+            adjuntoId: ot.adjuntoId
+          }))
+      ].sort((a, b) => a.cOrdenInterna.localeCompare(b.cOrdenInterna, 'es', { sensitivity: 'base' }));
     } catch (error) {
       console.error('❌ Error al cargar órdenes de trabajo:', error);
       this.showMessage('Error al cargar las órdenes de trabajo');
@@ -742,7 +752,7 @@ export class ReporteMarcacionComponent {
       return;
     }
 
-    if (!this.editandoMarcacion && this.regularizacion.ordenTrabajoId === null) {
+    if (this.regularizacion.ordenTrabajoId === null) {
       this.showMessage('Selecciona una orden de trabajo');
       return;
     }
@@ -781,25 +791,21 @@ export class ReporteMarcacionComponent {
         }
 
         const bodyActualizacion = {
-          id: this.detalleMarcacion.id,
-          empresaId: this.detalleMarcacion.empresaId,
-          personalId: this.detalleMarcacion.personalId,
+          registroAsistenciaId: this.detalleMarcacion.id,
+          observacion: `actualizado ${this.obtenerNombreUsuarioToken()}`.trim(),
+          ordenTrabajoId: this.regularizacion.ordenTrabajoId,
           // El backend espera la hora de pared seleccionada en Lima, sin convertirla
           // nuevamente a UTC (11:59:59 debe enviarse como 11:59:59.000Z).
           fecha: `${fechaLocal}.000Z`,
           fechaJornal: this.regularizacion.jornal,
-          tipoEvento: Number(this.regularizacion.evento),
-          esTardanza: Boolean(this.marcacionOriginal?.esTardanza),
-          diferenciaMinutos: Number(this.marcacionOriginal?.diferenciaMinutos ?? 0),
-          latitud: Number(this.marcacionOriginal?.latitud ?? 0),
-          longitud: Number(this.marcacionOriginal?.longitud ?? 0)
+          eventoTipo: Number(this.regularizacion.evento)
         };
 
         console.log(
-          `📤 PUT /rrhh/RegistroAsistencia/${this.detalleMarcacion.id} - body:`,
+          '📤 PUT /rrhh/RegistroAsistencia/regularizar - body:',
           JSON.stringify(bodyActualizacion, null, 2)
         );
-        await firstValueFrom(this.apiService.actualizarRegistroAsistencia(this.detalleMarcacion.id, bodyActualizacion));
+        await firstValueFrom(this.apiService.regularizarRegistroAsistencia(bodyActualizacion));
         this.showMessage('Marcación actualizada correctamente');
       } else {
         await firstValueFrom(this.apiService.registrarMarcacionEspecifica(payload));
@@ -820,6 +826,16 @@ export class ReporteMarcacionComponent {
       this.guardandoMarcacion = false;
       this.blockUI.stop();
     }
+  }
+
+  private obtenerNombreUsuarioToken(): string {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      return '';
+    }
+
+    const claims = jwtDecode<UsuarioToken>(token);
+    return String(claims.cUsuario ?? claims.unique_name ?? claims.name ?? '').trim();
   }
 
   async cargarImagenRostro(adjuntoId: number) {
