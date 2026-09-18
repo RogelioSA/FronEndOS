@@ -30,6 +30,7 @@ import { DescansoComponent } from './descanso/descanso.component';
 import { HorarioComponent } from './horario/horario.component';
 import { PersonalHorarioComponent } from './personal-horario/personal-horario.component';
 import { ReporteMarcacionComponent } from './reportes/reporte-marcacion/reporte-marcacion.component';
+import { ReporteAsistenciaComponent } from './reportes/reporte-asistencia/reporte-asistencia.component';
 import { MarcacionComponent } from './marcacion/marcacion.component';
 import { AnalogClockComponent } from './analog-clock/analog-clock.component';
 import { ClienteComponent } from './cliente/cliente.component';
@@ -95,6 +96,7 @@ import { IndicadoresAsistenciaComponent } from './reportes/indicadoresasistencia
         HorarioComponent,
         PersonalHorarioComponent,
         ReporteMarcacionComponent,
+        ReporteAsistenciaComponent,
         MarcacionComponent,
         AnalogClockComponent,
         ClienteComponent,

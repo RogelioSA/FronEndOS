@@ -22,6 +22,7 @@ import { DescansoComponent } from './descanso/descanso.component';
 import { HorarioComponent } from './horario/horario.component';
 import { PersonalHorarioComponent } from './personal-horario/personal-horario.component';
 import { ReporteMarcacionComponent } from './reportes/reporte-marcacion/reporte-marcacion.component';
+import { ReporteAsistenciaComponent } from './reportes/reporte-asistencia/reporte-asistencia.component';
 import { MarcacionComponent } from './marcacion/marcacion.component';
 import { TipoActivoServicioComponent } from './tipo-activo-servicio/tipo-activo-servicio.component';
 import { ActivoServicioComponent } from './activo-servicio/activo-servicio.component';
@@ -94,6 +95,7 @@ const routes: Routes = [
   { path: 'mantenimiento/grupoHorario/horario', component: HorarioComponent, canActivate: [AuthGuard]  },
   { path: 'procesos/marcacion', component: MarcacionComponent, canActivate: [AuthGuard]  },
   { path: 'reporte/marcacion', component: ReporteMarcacionComponent, canActivate: [AuthGuard]  },
+  { path: 'reporte/pmarcaciones', component: ReporteAsistenciaComponent, canActivate: [AuthGuard]  },
   { path: 'procesos/Servicio', component: OrdenesServicioComponent, canActivate: [AuthGuard]},
   { path: 'patrimonial/UbicacionTecnica', component: UbicacionTecnicaComponent, canActivate: [AuthGuard]},
   { path: 'mantenimiento/labor', component: LaborComponent, canActivate: [AuthGuard]},

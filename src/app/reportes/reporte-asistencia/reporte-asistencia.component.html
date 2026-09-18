@@ -1,0 +1,259 @@
+<div class="container-fluid">
+    <div class="row g-1 mt-2 justify-content-md-center mb-4 align-items-end">
+        <div class="col-6">
+            <div class="dx-field-label">Orden de Trabajo:</div>
+            <div class="dx-field-value">
+                <dx-select-box
+                    [dataSource]="ordenesTrabajo"
+                    displayExpr="cOrdenInterna"
+                    valueExpr="id"
+                    [(value)]="ordenTrabajoSeleccionada"
+                    placeholder="Seleccione una orden de trabajo"
+                    [width]="'100%'"
+                ></dx-select-box>
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="dx-field-label">Fecha Inicial</div>
+            <div class="dx-field-value">
+                <dx-date-box type="date" [value]="now" [(ngModel)]="fechaInicial" name="fechaInicial"
+                    [displayFormat]="'dd/MM/yyyy'" [inputAttr]="{ 'aria-label': 'Date' }">
+                </dx-date-box>
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="dx-field-label">Fecha Final</div>
+            <div class="dx-field-value">
+                <dx-date-box type="date" [value]="now" [(ngModel)]="fechaFinal" name="fechaFinal"
+                    [displayFormat]="'dd/MM/yyyy'" [inputAttr]="{ 'aria-label': 'Date' }">
+                </dx-date-box>
+            </div>
+        </div>
+        <div class="col-auto text-end pb-2 pb-md-0">
+            <dx-button text="Buscar" stylingMode="contained" type="default" [width]="120"
+                icon="fa-solid fa-magnifying-glass" (onClick)="buscar()">
+            </dx-button>
+        </div>
+    </div>
+
+    <div class="row g-1 mt-2 justify-content-md-center mb-4">
+        <div class="col-12">
+            <div class="encabezado-reporte d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="mb-1">Detalle Marcaciones</h3>
+                    <div class="leyenda-marcaciones" aria-label="Leyenda de tipos de marcación">
+                        <span><strong>E:</strong> Entrada</span>
+                        <span><strong>S:</strong> Salida</span>
+                        <span><strong>D:</strong> Desconocido (marcación automática fuera de rango horario establecido)</span>
+                    </div>
+                </div>
+                <div class="acciones-reporte d-flex gap-2">
+                    <div class="buscador-personal input-group" role="search">
+                        <span class="input-group-text" aria-hidden="true">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input
+                            type="search"
+                            class="form-control"
+                            placeholder="Buscar por DNI o personal"
+                            aria-label="Buscar personal por DNI o nombre"
+                            [(ngModel)]="textoBusquedaPersonal"
+                            (ngModelChange)="aplicarFiltroPersonal()">
+                    </div>
+                    <dx-button
+                        text="Descargar Excel"
+                        stylingMode="contained"
+                        type="success"
+                        [width]="150"
+                        icon="fa-solid fa-file-excel"
+                        (onClick)="descargarExcel()"
+                        [disabled]="datosReporte.length === 0"
+                    ></dx-button>
+                </div>
+            </div>
+
+            <div class="table-responsive" style="overflow-x: auto; max-height: 600px;">
+                <table class="table table-bordered table-hover" style="font-size: 12px;">
+                    <thead class="table-dark" style="position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th rowspan="2" class="align-middle text-center" style="min-width: 100px; position: sticky; left: 0; background-color: #212529; z-index: 11;">DNI</th>
+                            <th rowspan="2" class="align-middle text-center" style="min-width: 250px; position: sticky; left: 100px; background-color: #212529; z-index: 11;">PERSONAL</th>
+                            <th *ngFor="let col of columnasdinamicas; trackBy: trackByFecha" colspan="3" class="text-center"
+                                [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}">
+                                <div><strong>{{ col.diaSemana }}</strong> {{ col.fechaDisplay }}</div>
+                            </th>
+                        </tr>
+                        <tr>
+                            <ng-container *ngFor="let col of columnasdinamicas; trackBy: trackByFecha">
+                                <th class="text-center" style="min-width: 60px;"
+                                    [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}" title="Entrada">E</th>
+                                <th class="text-center" style="min-width: 60px;"
+                                    [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}" title="Salida">S</th>
+                                <th class="text-center" style="min-width: 60px;"
+                                    [ngClass]="{'table-info': col.diaSemana === 'SÁB', 'table-warning': col.diaSemana === 'DOM'}" title="Desconocido">D</th>
+                            </ng-container>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <ng-container *ngFor="let grupo of datosAgrupados; trackBy: trackByGrupo">
+                            <tr class="orden-row">
+                                <td [attr.colspan]="calcularColspan()" class="fw-semibold">{{ grupo.orden }}</td>
+                            </tr>
+                            <tr *ngFor="let empleado of grupo.empleados; trackBy: trackByEmpleado">
+                                <td class="text-center align-middle" style="position: sticky; left: 0; background-color: white; font-weight: 500;">
+                                    {{ empleado.dni }}
+                                </td>
+                                <td class="align-middle" style="position: sticky; left: 100px; background-color: white; font-weight: 500;">
+                                    {{ empleado.personal }}
+                                </td>
+
+                            <ng-container *ngFor="let col of columnasdinamicas; trackBy: trackByFecha">
+                                <td class="text-center align-middle"
+                                    [ngClass]="{
+                                        'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
+                                        'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                        'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 0),
+                                        'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
+                                    }">
+                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 0); trackBy: trackByMarcacion"
+                                        type="button" class="hora-marcacion"
+                                        (click)="$event.stopPropagation(); abrirDetalleDatosMarcacion(empleado, marcacion)">
+                                        {{ obtenerHoraMarcacion(marcacion) }}
+                                    </button>
+                                    <span *ngIf="obtenerMarcacionesPorTipo(empleado, col.fecha, 0).length === 0">
+                                        {{ obtenerTextoCelda(empleado, col.fecha, 0) }}
+                                    </span>
+                                </td>
+                                <td class="text-center align-middle"
+                                    [ngClass]="{
+                                        'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                        'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1),
+                                        'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
+                                    }">
+                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 1); trackBy: trackByMarcacion"
+                                        type="button" class="hora-marcacion"
+                                        (click)="$event.stopPropagation(); abrirDetalleDatosMarcacion(empleado, marcacion)">
+                                        {{ obtenerHoraMarcacion(marcacion) }}
+                                    </button>
+                                    <span *ngIf="obtenerMarcacionesPorTipo(empleado, col.fecha, 1).length === 0">
+                                        {{ obtenerTextoCelda(empleado, col.fecha, 1) }}
+                                    </span>
+                                </td>
+                                <td class="text-center align-middle"
+                                    [ngClass]="{
+                                        'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
+                                        'bg-warning': obtenerMarcacionPorTipo(empleado, col.fecha, 99),
+                                        'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 99)
+                                    }">
+                                    <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 99); trackBy: trackByMarcacion"
+                                        type="button" class="hora-marcacion"
+                                        (click)="$event.stopPropagation(); abrirDetalleDatosMarcacion(empleado, marcacion)">
+                                        {{ obtenerHoraMarcacion(marcacion) }}
+                                    </button>
+                                </td>
+                            </ng-container>
+                        </tr>
+                        </ng-container>
+                        <tr *ngIf="datosReporte.length === 0">
+                            <td [attr.colspan]="calcularColspan()" class="text-center text-muted">
+                                No hay datos para mostrar en el rango de fechas seleccionado
+                            </td>
+                        </tr>
+                        <tr *ngIf="datosReporte.length > 0 && datosAgrupados.length === 0">
+                            <td [attr.colspan]="calcularColspan()" class="text-center text-muted">
+                                No se encontró personal que coincida con la búsqueda
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="messageBox"
+                style="display: none; background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;">
+            </div>
+
+            <!-- Modal de detalle de marcación -->
+            <div class="modal-backdrop" *ngIf="mostrarModal" (click)="cerrarModal()"></div>
+            <div class="modal-detalle" *ngIf="mostrarModal && detalleMarcacion">
+                <div class="modal-content-detalle" (click)="$event.stopPropagation()">
+                    <div class="modal-header-detalle">
+                        <div class="modal-heading">
+                            <span class="modal-heading-icon"><i class="fa-solid fa-fingerprint"></i></span>
+                            <div>
+                                <span class="modal-eyebrow">Detalle de asistencia</span>
+                                <h5 class="modal-title">Marcación: {{ detalleMarcacion.fechaJornal }}</h5>
+                            </div>
+                            <span class="evento-badge">{{ detalleMarcacion.tipoEvento }}</span>
+                        </div>
+                        <button type="button" class="btn-close-detalle" (click)="cerrarModal()" aria-label="Cerrar">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="modal-body-detalle">
+                        <div class="detalle-layout">
+                            <div class="detalle-col detalle-info">
+                                <div class="section-title"><i class="fa-regular fa-address-card"></i> Información de la marcación</div>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <span class="info-label">Fecha marcación</span>
+                                        <span class="info-value">{{ detalleMarcacion.fecha }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Jornal</span>
+                                        <span class="info-value">{{ detalleMarcacion.fechaJornal }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Personal</span>
+                                        <span class="info-value">{{ detalleMarcacion.personal }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">DNI</span>
+                                        <span class="info-value">{{ detalleMarcacion.dni }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detalle-col detalle-extra">
+                                <div class="imagen-section">
+                                    <div class="section-title"><i class="fa-regular fa-image"></i> Evidencia fotográfica</div>
+                                    <img *ngIf="rostroUrl" [src]="rostroUrl" alt="Rostro de marcación" class="rostro-imagen">
+                                    <div class="imagen-placeholder" *ngIf="!rostroUrl">
+                                        Imagen no disponible
+                                    </div>
+                                </div>
+
+                                <div class="ubicacion-section">
+                                    <div class="section-title"><i class="fa-solid fa-location-dot"></i> Ubicación del personal</div>
+                                    <div class="info-line">
+                                        <ng-container *ngIf="detalleMarcacion.latitud && detalleMarcacion.longitud; else sinCoordenadas">
+                                            <a [href]="detalleMarcacion.linkGoogleMaps" target="_blank" class="link-ubicacion">
+                                                <i class="fa-solid fa-map-marker-alt"></i>
+                                                {{ detalleMarcacion.latitud }}, {{ detalleMarcacion.longitud }}
+                                            </a>
+                                        </ng-container>
+                                        <ng-template #sinCoordenadas>
+                                            <span class="info-value text-muted">Sin coordenadas disponibles</span>
+                                        </ng-template>
+                                    </div>
+
+                                    <div class="mapa-wrapper" *ngIf="detalleMarcacion.latitud && detalleMarcacion.longitud">
+                                        <div id="mapaMarcacion" class="mapa-container"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer-detalle">
+                        <button type="button" class="btn btn-light btn-cerrar" (click)="cerrarModal()">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <block-ui></block-ui>
+        </div>
+    </div>
+</div>
