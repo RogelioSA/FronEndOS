@@ -1949,6 +1949,12 @@ export class ApiService{
     return this.https.put<any>(url, body, { headers });
   }
 
+  regularizarRegistroAsistencia(body: any): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `${this.baseUrl}/rrhh/RegistroAsistencia/regularizar`;
+    return this.https.put<any>(url, body, { headers });
+  }
+
   //
   //subir foto
 
