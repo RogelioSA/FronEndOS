@@ -1,0 +1,532 @@
+/* Estilos para el reporte de marcaciones tipo calendario */
+
+.table-responsive {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.table {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.table thead th {
+    vertical-align: middle;
+    font-size: 11px;
+    padding: 8px 4px;
+    border: 1px solid #dee2e6;
+}
+
+.table tbody td {
+    padding: 6px 4px;
+    border: 1px solid #dee2e6;
+    font-size: 11px;
+}
+
+/* Celdas clickeables */
+.celda-clickeable.tiene-datos:hover {
+    background-color: #e3f2fd !important;
+    box-shadow: inset 0 0 0 2px #2196F3;
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+}
+
+.celda-clickeable.tiene-datos.bg-danger:hover {
+    background-color: #c62828 !important;
+    box-shadow: inset 0 0 0 2px #ffcdd2;
+}
+
+.hora-marcacion {
+    display: block;
+    width: 100%;
+    padding: 2px 4px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+.hora-marcacion + .hora-marcacion {
+    margin-top: 2px;
+    border-top: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.hora-marcacion:hover,
+.hora-marcacion:focus-visible {
+    background-color: rgba(33, 150, 243, 0.18);
+    outline: 1px solid #2196f3;
+}
+
+/* Columnas fijas */
+.table thead th:nth-child(1),
+.table thead th:nth-child(2),
+.table tbody td:nth-child(1),
+.table tbody td:nth-child(2) {
+    position: sticky;
+    z-index: 5;
+}
+
+.table thead th:nth-child(1),
+.table tbody td:nth-child(1) {
+    left: 0;
+}
+
+.table thead th:nth-child(2),
+.table tbody td:nth-child(2) {
+    left: 100px;
+}
+
+.orden-row td {
+    position: static !important;
+    left: auto !important;
+    background-color: #eef2f7;
+    font-size: 12px;
+    border: 1px solid #dee2e6;
+}
+
+/* Fondo para días especiales */
+.table-info {
+    background-color: #cfe2ff !important;
+}
+
+.table-warning {
+    background-color: #fff3cd !important;
+}
+
+/* Efecto hover en las filas */
+.table-hover tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+.table-hover tbody tr:hover td {
+    background-color: inherit;
+}
+
+/* Tardanzas en rojo */
+.bg-danger {
+    background-color: #dc3545 !important;
+    font-weight: bold;
+}
+
+/* Scrollbar personalizado */
+.table-responsive::-webkit-scrollbar {
+    height: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ========== ESTILOS PARA BOTONES DE DESCARGA ========== */
+
+.d-flex.gap-2 {
+    gap: 0.5rem;
+}
+
+.acciones-reporte {
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.leyenda-marcaciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.buscador-personal {
+    width: min(320px, 100%);
+}
+
+.buscador-personal .input-group-text {
+    background-color: #fff;
+    color: #6c757d;
+}
+
+@media (max-width: 767.98px) {
+    .encabezado-reporte {
+        align-items: stretch !important;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .acciones-reporte {
+        width: 100%;
+    }
+
+    .buscador-personal {
+        flex: 1 1 100%;
+    }
+}
+
+/* Estilos adicionales para los botones si necesitas personalizarlos más */
+.dx-button {
+    transition: all 0.3s ease;
+}
+
+.dx-button:hover:not(.dx-state-disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dx-button:active:not(.dx-state-disabled) {
+    transform: translateY(0);
+}
+
+.dx-button.dx-state-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ========== ESTILOS DEL MODAL ========== */
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.62);
+    backdrop-filter: blur(3px);
+    z-index: 1040;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-detalle {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    padding: 20px;
+}
+
+.modal-content-detalle {
+    background: white;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 18px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideDown 0.2s ease;
+}
+
+.modal-header-detalle {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #0f3d68 0%, #176b87 100%);
+    border-bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header-detalle .modal-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.modal-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.modal-heading-icon { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px; border-radius: 12px; color: #fff; background: rgba(255,255,255,.16); font-size: 1.2rem; }
+.modal-eyebrow { display: block; color: #bae6fd; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.evento-badge { padding: 6px 11px; border-radius: 999px; color: #164e63; background: #cffafe; font-size: .76rem; font-weight: 800; white-space: nowrap; }
+
+.btn-close-detalle {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-close-detalle:hover {
+    background-color: rgba(255,255,255,.18);
+    color: #fff;
+}
+
+.modal-body-detalle {
+    padding: 24px;
+    background: #f8fafc;
+}
+
+.detalle-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, .9fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.detalle-col {
+    background-color: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, .05);
+}
+
+.detalle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(120px, .65fr);
+    margin-top: 4px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.info-item {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+    padding: 11px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.info-item:nth-child(odd) { border-right: 1px solid #e2e8f0; }
+.info-item:nth-last-child(-n + 2) { border-bottom: 0; }
+
+.info-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.info-line.stacked {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.info-line.stacked:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.info-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+    margin: 0;
+}
+
+.info-value {
+    font-size: 0.9rem;
+    color: #212529;
+    font-weight: 400;
+}
+
+.detalle-extra {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.imagen-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rostro-imagen {
+    width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    background-color: #f8f9fa;
+}
+
+.section-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #343a40;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.imagen-placeholder {
+    background-color: #f8f9fa;
+    border: 1px dashed #ced4da;
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ubicacion-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.link-ubicacion {
+    color: #0d6efd;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s ease;
+}
+
+.link-ubicacion:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+.mapa-wrapper {
+    width: 100%;
+}
+
+.mapa-container {
+    width: 100%;
+    height: 300px;
+    margin-top: 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.modal-footer-detalle {
+    padding: 16px 24px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    background-color: #ffffff;
+}
+
+.btn-cerrar {
+    padding: 8px 20px;
+    font-size: 0.95rem;
+    border: 1px solid #dee2e6;
+    background-color: #ffffff;
+    color: #212529;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-cerrar:hover {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsivo para pantallas pequeñas */
+@media (max-width: 768px) {
+    .table {
+        font-size: 10px;
+    }
+    
+    .table thead th,
+    .table tbody td {
+        padding: 4px 2px;
+    }
+
+    .modal-content-detalle {
+        max-width: 95%;
+        margin: 10px;
+    }
+
+    .modal-body-detalle {
+        padding: 15px;
+    }
+
+    .seccion-detalle {
+        padding: 10px;
+    }
+
+    .detalle-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-heading { flex-wrap: wrap; }
+    .modal-heading > div { flex: 1 1 150px; }
+    .info-grid { grid-template-columns: 1fr; }
+    .info-item, .info-item:nth-child(odd), .info-item:nth-last-child(-n + 2) {
+        border-right: 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .info-item:last-child { border-bottom: 0; }
+
+    /* Botones responsivos */
+    .d-flex.gap-2 {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .d-flex.gap-2 dx-button {
+        width: 100% !important;
+    }
+}
+
+/* Asignaciones de ausencia. */
+.celda-clickeable.vacaciones-sin-marcacion {
+    background-color: #ffeb3b !important;
+    color: #212529;
+    font-weight: 700;
+}
+
+.celda-clickeable.vacaciones-sin-marcacion:hover {
+    box-shadow: inset 0 0 0 2px #9a6700;
+}
