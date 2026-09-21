@@ -181,9 +181,7 @@
                 </table>
             </div>
 
-            <div id="messageBox"
-                style="display: none; background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;">
-            </div>
+            <div id="messageBox" class="message-box message-box-error" role="status" aria-live="polite"></div>
 
             <!-- Modal de detalle de marcación -->
             <div class="modal-backdrop" *ngIf="mostrarModal" (click)="cerrarModal()"></div>

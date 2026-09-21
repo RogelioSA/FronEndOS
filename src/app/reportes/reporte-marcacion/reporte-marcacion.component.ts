@@ -627,7 +627,9 @@ export class ReporteMarcacionComponent {
       longitud: datos.longitud,
       politica: datos.registroAsistenciaPolitica?.nombreCorto || datos.registroAsistenciaPolitica?.nombre || 'N/A',
       horaProgramada: datos.horarioDetalleEvento?.hora || 'N/A',
-      ordenTrabajoId: datos.ordenTrabajo?.id ?? null,
+      // Las marcaciones de oficina llegan sin una orden asociada; en el formulario
+      // se representan con 0, pero el payload de edición omite ordenTrabajoId.
+      ordenTrabajoId: datos.ordenTrabajo?.id ?? this.ordenTrabajoOficinaId,
       linkGoogleMaps: linkGoogleMaps,
       personalId: Number(datos.personalId ?? empleado.personalId),
       empresaId: Number(datos.empresaId ?? datos.empresa?.id ?? 0),
@@ -784,16 +786,24 @@ export class ReporteMarcacionComponent {
       this.guardandoMarcacion = true;
       this.blockUI.start(this.editandoMarcacion ? 'Actualizando marcación...' : 'Registrando regularización...');
 
-      if (this.editandoMarcacion && this.detalleMarcacion) {
+      let resultadoPersistencia: any;
+      let registroAsistenciaId: number | null = null;
+      const esEdicion = this.editandoMarcacion && !!this.detalleMarcacion;
+
+      if (esEdicion && this.detalleMarcacion) {
         if (!Number.isFinite(this.detalleMarcacion.id) || this.detalleMarcacion.id <= 0) {
           this.showMessage('No se pudo identificar la marcación a actualizar');
           return;
         }
 
+        registroAsistenciaId = this.detalleMarcacion.id;
+
         const bodyActualizacion = {
           registroAsistenciaId: this.detalleMarcacion.id,
           observacion: `actualizado ${this.obtenerNombreUsuarioToken()}`.trim(),
-          ordenTrabajoId: this.regularizacion.ordenTrabajoId,
+          ...(this.regularizacion.ordenTrabajoId !== this.ordenTrabajoOficinaId && {
+            ordenTrabajoId: this.regularizacion.ordenTrabajoId
+          }),
           // El backend espera la hora de pared seleccionada en Lima, sin convertirla
           // nuevamente a UTC (11:59:59 debe enviarse como 11:59:59.000Z).
           fecha: `${fechaLocal}.000Z`,
@@ -805,12 +815,23 @@ export class ReporteMarcacionComponent {
           '📤 PUT /rrhh/RegistroAsistencia/regularizar - body:',
           JSON.stringify(bodyActualizacion, null, 2)
         );
-        await firstValueFrom(this.apiService.regularizarRegistroAsistencia(bodyActualizacion));
-        this.showMessage('Marcación actualizada correctamente');
+        resultadoPersistencia = await firstValueFrom(
+          this.apiService.regularizarRegistroAsistencia(bodyActualizacion)
+        );
       } else {
-        await firstValueFrom(this.apiService.registrarMarcacionEspecifica(payload));
-        this.showMessage('Regularización registrada correctamente');
+        resultadoPersistencia = await firstValueFrom(
+          this.apiService.registrarMarcacionEspecifica(payload)
+        );
+        registroAsistenciaId = this.obtenerRegistroAsistenciaId(resultadoPersistencia);
       }
+      await this.confirmarMarcacionPersistida({
+        fechaJornal: this.regularizacion.jornal,
+        fecha: `${fechaLocal}.000Z`,
+        personalId,
+        eventoTipo: Number(this.regularizacion.evento),
+        registroAsistenciaId
+      });
+
       if (this.mostrarRegularizacionNueva) {
         this.cerrarRegularizacionNueva();
       } else {
@@ -818,7 +839,10 @@ export class ReporteMarcacionComponent {
         this.detalleMarcacion = null;
         this.mostrarModal = false;
       }
-      await this.traerMarcaciones();
+      this.showMessage(
+        esEdicion ? 'Marcación editada correctamente' : 'Marcación regularizada correctamente',
+        'success'
+      );
     } catch (error) {
       console.error('❌ Error al regularizar la marcación:', error);
       this.showMessage('Error al regularizar la marcación');
@@ -826,6 +850,55 @@ export class ReporteMarcacionComponent {
       this.guardandoMarcacion = false;
       this.blockUI.stop();
     }
+  }
+
+  private obtenerRegistroAsistenciaId(resultado: any): number | null {
+    const id = Number(
+      resultado?.registroAsistenciaId ??
+      resultado?.id ??
+      resultado?.data?.registroAsistenciaId ??
+      resultado?.data?.id
+    );
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  private async confirmarMarcacionPersistida(criterio: {
+    fechaJornal: string;
+    fecha: string;
+    personalId: number;
+    eventoTipo: number;
+    registroAsistenciaId: number | null;
+  }): Promise<void> {
+    const resultadoDia = await firstValueFrom(
+      this.apiService.getRegistroAsistencia(
+        criterio.fechaJornal,
+        `${criterio.fechaJornal}T23:59:59`
+      )
+    );
+    const marcacionesDia = (Array.isArray(resultadoDia) ? resultadoDia : resultadoDia?.data ?? [])
+      .map((marcacion: any) => this.normalizarDescripcionOrdenes(marcacion));
+
+    const marcacionConfirmada = marcacionesDia.find((marcacion: any) =>
+      criterio.registroAsistenciaId !== null && Number(marcacion.id) === criterio.registroAsistenciaId
+    ) ?? marcacionesDia.find((marcacion: any) =>
+      Number(marcacion.personalId) === criterio.personalId &&
+      Number(marcacion.tipoEvento ?? 99) === criterio.eventoTipo &&
+      new Date(marcacion.fecha).getTime() === new Date(criterio.fecha).getTime()
+    );
+
+    if (!marcacionConfirmada) {
+      throw new Error('No se pudo confirmar la marcación persistida');
+    }
+
+    const indiceMarcacion = this.marcaciones.findIndex(
+      (marcacion) => Number(marcacion.id) === Number(marcacionConfirmada.id)
+    );
+    if (indiceMarcacion >= 0) {
+      this.marcaciones[indiceMarcacion] = marcacionConfirmada;
+    } else {
+      this.marcaciones.push(marcacionConfirmada);
+    }
+    this.procesarDatosParaReporte();
   }
 
   private obtenerNombreUsuarioToken(): string {
@@ -1851,10 +1924,11 @@ export class ReporteMarcacionComponent {
     return '';
   }
 
-  showMessage(message: string) {
+  showMessage(message: string, type: 'error' | 'success' = 'error') {
     const messageBox = document.getElementById('messageBox');
     if (messageBox) {
       messageBox.innerText = message;
+      messageBox.className = `message-box message-box-${type}`;
       messageBox.style.display = 'block';
       setTimeout(() => {
         messageBox.style.display = 'none';

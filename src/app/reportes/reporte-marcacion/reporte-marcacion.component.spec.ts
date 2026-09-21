@@ -11,10 +11,12 @@ describe('ReporteMarcacionComponent', () => {
     apiService = jasmine.createSpyObj('ApiService', [
       'regularizarRegistroAsistencia',
       'registrarMarcacionEspecifica',
+      'getRegistroAsistencia',
       'obtenerAdjuntoImagen',
       'listarOrdenTrabajoCabeceraSimplificado'
     ]);
     apiService.regularizarRegistroAsistencia.and.returnValue(of({}));
+    apiService.getRegistroAsistencia.and.returnValue(of([]));
     apiService.obtenerAdjuntoImagen.and.returnValue(of('foto.jpg'));
     apiService.listarOrdenTrabajoCabeceraSimplificado.and.returnValue(of([]));
     localStorage.setItem('auth_token', 'eyJhbGciOiJub25lIn0.eyJjVXN1YXJpbyI6ImpwZXJleiJ9.');
@@ -51,6 +53,14 @@ describe('ReporteMarcacionComponent', () => {
     component.regularizacion.evento = 0;
     component.regularizacion.hora = '08:15:30';
     component.regularizacion.ordenTrabajoId = 24;
+    apiService.getRegistroAsistencia.and.returnValue(of([{
+      id: 199,
+      personalId: 15,
+      fecha: '2026-09-11T08:15:30.000Z',
+      fechaJornal: '2026-09-11',
+      tipoEvento: 0,
+      ordenTrabajo: { id: 24, descripcion: 'OT 24' }
+    }]));
 
     await component.regularizarMarcacion();
 
@@ -63,5 +73,52 @@ describe('ReporteMarcacionComponent', () => {
       eventoTipo: 0
     });
     expect(apiService.registrarMarcacionEspecifica).not.toHaveBeenCalled();
+  });
+
+  it('omite la orden de trabajo al editar una marcación de oficina', async () => {
+    component.marcaciones = [{
+      id: 50,
+      personalId: 20,
+      fecha: '2026-09-10T08:00:00.000Z',
+      fechaJornal: '2026-09-10',
+      tipoEvento: 0
+    }];
+    component.abrirDetalleDatosMarcacion(
+      { personal: 'Ana Pérez', dni: '12345678', personalId: 15 } as any,
+      {
+        id: 200,
+        empresaId: 2,
+        personalId: 15,
+        fecha: '2026-09-11T17:46:24.037Z',
+        fechaJornal: '2026-09-11',
+        tipoEvento: 1,
+        ordenTrabajo: null,
+        adjuntoId: 8
+      }
+    );
+    component.iniciarRegularizacion();
+    component.regularizacion.hora = '17:30:00';
+    apiService.getRegistroAsistencia.and.returnValue(of([{
+      id: 200,
+      personalId: 15,
+      fecha: '2026-09-11T17:30:00.000Z',
+      fechaJornal: '2026-09-11',
+      tipoEvento: 1,
+      ordenTrabajo: null
+    }]));
+
+    expect(component.regularizacion.ordenTrabajoId).toBe(0);
+
+    await component.regularizarMarcacion();
+
+    const body = apiService.regularizarRegistroAsistencia.calls.mostRecent().args[0];
+    expect(body.registroAsistenciaId).toBe(200);
+    expect(body.ordenTrabajoId).toBeUndefined();
+    expect(apiService.getRegistroAsistencia).toHaveBeenCalledWith(
+      '2026-09-11',
+      '2026-09-11T23:59:59'
+    );
+    expect(component.marcaciones.map((marcacion) => marcacion.id)).toEqual([50, 200]);
+    expect(component.traerMarcaciones).not.toHaveBeenCalled();
   });
 });

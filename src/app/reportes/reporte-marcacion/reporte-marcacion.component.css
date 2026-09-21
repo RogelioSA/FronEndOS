@@ -1,5 +1,32 @@
 /* Estilos para el reporte de marcaciones tipo calendario */
 
+.message-box {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 1100;
+    display: none;
+    min-width: 280px;
+    max-width: min(420px, calc(100vw - 2.5rem));
+    padding: 12px 16px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+}
+
+.message-box-success {
+    border-color: #badbcc;
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.message-box-error {
+    border-color: #f5c2c7;
+    background-color: #f8d7da;
+    color: #842029;
+}
+
 .table-responsive {
     border: 1px solid #dee2e6;
     border-radius: 4px;
