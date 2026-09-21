@@ -181,9 +181,7 @@
                 </table>
             </div>
 
-            <div id="messageBox"
-                style="display: none; background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-top: 10px; font-weight: bold;">
-            </div>
+            <div id="messageBox" class="message-box message-box-error" role="status" aria-live="polite"></div>
 
             <!-- Modal de detalle de marcación -->
             <div class="modal-backdrop" *ngIf="mostrarModal" (click)="cerrarModal()"></div>
@@ -311,9 +309,21 @@
                         <span class="regularizacion-icon"><i class="fa-solid fa-pen"></i></span>
                         <div>
                             <h6>Editar marcación</h6>
-                            <p>Corrige la fecha, hora o tipo de evento. Los demás datos se conservarán.</p>
+                            <p>Corrige la orden de trabajo, fecha, hora o tipo de evento.</p>
                         </div>
                     </div>
+                    <div class="info-line stacked">
+                        <span class="info-label">Orden de Trabajo:</span>
+                        <dx-select-box
+                            [dataSource]="ordenesTrabajo"
+                            displayExpr="cOrdenInterna"
+                            valueExpr="id"
+                            [(value)]="regularizacion.ordenTrabajoId"
+                            placeholder="Seleccione una orden de trabajo"
+                            [width]="'100%'"
+                        ></dx-select-box>
+                    </div>
+
                     <div class="info-line stacked">
                         <span class="info-label">Jornal:</span>
                         <input
@@ -330,18 +340,6 @@
                                 {{ evento.nombre }}
                             </option>
                         </select>
-                    </div>
-
-                    <div class="info-line stacked" *ngIf="!editandoMarcacion">
-                        <span class="info-label">Orden de Trabajo:</span>
-                        <dx-select-box
-                            [dataSource]="ordenesTrabajo"
-                            displayExpr="cOrdenInterna"
-                            valueExpr="id"
-                            [(value)]="regularizacion.ordenTrabajoId"
-                            placeholder="Seleccione una orden de trabajo"
-                            [width]="'100%'"
-                        ></dx-select-box>
                     </div>
 
                     <div class="info-line stacked">
