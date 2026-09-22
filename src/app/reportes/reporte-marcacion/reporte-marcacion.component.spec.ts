@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { of } from 'rxjs';
 
 import { ReporteMarcacionComponent } from './reporte-marcacion.component';
+import { MantoMarcacionesComponent } from '../manto-marcaciones/manto-marcaciones.component';
 
 describe('ReporteMarcacionComponent', () => {
   let component: ReporteMarcacionComponent;
@@ -30,6 +31,19 @@ describe('ReporteMarcacionComponent', () => {
     await component.ngOnInit();
 
     expect(component.traerMarcaciones).not.toHaveBeenCalled();
+  });
+
+  it('mantiene OFICINA disponible cuando se usa el reporte original directamente', async () => {
+    apiService.listarOrdenTrabajoCabeceraSimplificado.and.returnValue(of([
+      { id: 24, estado: 1, nombre: 'OT 24', descripcion: 'Servicio' }
+    ]));
+
+    await component.cargarOrdenesTrabajo();
+
+    expect(component.ordenesTrabajo).toEqual(jasmine.arrayContaining([
+      jasmine.objectContaining({ id: 0, cOrdenInterna: 'OFICINA' }),
+      jasmine.objectContaining({ id: 24, cOrdenInterna: 'OT 24 - Servicio' })
+    ]));
   });
 
   it('regulariza la marcación con la orden seleccionada y el usuario del token', async () => {
@@ -120,5 +134,77 @@ describe('ReporteMarcacionComponent', () => {
     );
     expect(component.marcaciones.map((marcacion) => marcacion.id)).toEqual([50, 200]);
     expect(component.traerMarcaciones).not.toHaveBeenCalled();
+  });
+});
+
+describe('MantoMarcacionesComponent', () => {
+  let component: MantoMarcacionesComponent;
+  let apiService: jasmine.SpyObj<any>;
+
+  beforeEach(() => {
+    apiService = jasmine.createSpyObj('ApiService', [
+      'listarOrdenTrabajoCabeceraSimplificado',
+      'obtenerAdjuntoImagen'
+    ]);
+    apiService.listarOrdenTrabajoCabeceraSimplificado.and.returnValue(of([
+      { id: 24, estado: 1, nombre: 'OT 24', descripcion: 'Servicio' }
+    ]));
+    apiService.obtenerAdjuntoImagen.and.returnValue(of('foto.jpg'));
+    component = new MantoMarcacionesComponent(apiService, new DatePipe('es-PE'));
+  });
+
+  it('excluye OFICINA sin eliminar las órdenes de trabajo seleccionables', async () => {
+    await component.cargarOrdenesTrabajo();
+
+    expect(component.ordenesTrabajo).toEqual([
+      jasmine.objectContaining({ id: 24, cOrdenInterna: 'OT 24 - Servicio' })
+    ]);
+    expect(component.ordenesTrabajo.some((orden) => orden.id === 0)).toBeFalse();
+  });
+
+  it('permite visualizar una marcación de oficina pero no editarla', () => {
+    component.abrirDetalleDatosMarcacion(
+      { personal: 'Ana Pérez', dni: '12345678', personalId: 15 } as any,
+      {
+        id: 200,
+        empresaId: 2,
+        personalId: 15,
+        fecha: '2026-09-11T17:46:24.037Z',
+        fechaJornal: '2026-09-11',
+        tipoEvento: 1,
+        ordenTrabajo: null,
+        adjuntoId: 8
+      }
+    );
+
+    expect(component.mostrarModal).toBeTrue();
+    expect(component.detalleMarcacion?.ordenTrabajoId).toBe(0);
+    expect(component.puedeEditarDetalleMarcacion()).toBeFalse();
+
+    component.iniciarRegularizacion();
+
+    expect(component.editandoMarcacion).toBeFalse();
+  });
+
+  it('conserva la edición para marcaciones con orden de trabajo', () => {
+    component.abrirDetalleDatosMarcacion(
+      { personal: 'Ana Pérez', dni: '12345678', personalId: 15 } as any,
+      {
+        id: 201,
+        empresaId: 2,
+        personalId: 15,
+        fecha: '2026-09-11T08:00:00.000Z',
+        fechaJornal: '2026-09-11',
+        tipoEvento: 0,
+        ordenTrabajo: { id: 24 },
+        adjuntoId: 8
+      }
+    );
+
+    expect(component.puedeEditarDetalleMarcacion()).toBeTrue();
+
+    component.iniciarRegularizacion();
+
+    expect(component.editandoMarcacion).toBeTrue();
   });
 });

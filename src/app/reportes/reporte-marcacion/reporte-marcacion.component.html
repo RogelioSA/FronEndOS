@@ -232,7 +232,7 @@
                                         type="button"
                                         class="btn btn-warning btn-regularizar"
                                         (click)="iniciarRegularizacion()"
-                                        *ngIf="!editandoMarcacion"
+                                        *ngIf="!editandoMarcacion && puedeEditarDetalleMarcacion()"
                                     >
                                         <i class="fa-solid fa-pen-to-square"></i> REGULARIZAR
                                     </button>

@@ -74,6 +74,7 @@ interface DetalleMarcacion {
 export class ReporteMarcacionComponent {
 
   private readonly ordenTrabajoOficinaId = 0;
+  protected readonly restringirMarcacionesOficina: boolean = false;
   private readonly ordenTrabajoVacacionesId = 37;
   private readonly codigosAusencia = new Set(['VAC', 'LIC', 'DM', 'DP']);
 
@@ -149,10 +150,10 @@ export class ReporteMarcacionComponent {
 
       const ordenes = Array.isArray(response) ? response : response?.data ?? [];
       this.ordenesTrabajo = [
-        {
+        ...(!this.restringirMarcacionesOficina ? [{
           id: this.ordenTrabajoOficinaId,
           cOrdenInterna: 'OFICINA'
-        },
+        }] : []),
         ...ordenes
           .filter((ot: any) => Number(ot.estado) === 1)
           .map((ot: any) => ({
@@ -665,8 +666,18 @@ export class ReporteMarcacionComponent {
   }
 
   iniciarRegularizacion() {
+    if (!this.puedeEditarDetalleMarcacion()) {
+      this.showMessage('Las marcaciones de oficina son de solo lectura');
+      return;
+    }
+
     this.editandoMarcacion = true;
     this.prepararDatosRegularizacion();
+  }
+
+  puedeEditarDetalleMarcacion(): boolean {
+    return !this.restringirMarcacionesOficina
+      || this.detalleMarcacion?.ordenTrabajoId !== this.ordenTrabajoOficinaId;
   }
 
   cancelarRegularizacion() {
@@ -751,6 +762,14 @@ export class ReporteMarcacionComponent {
 
     if (!this.regularizacion.jornal || !this.regularizacion.hora) {
       this.showMessage('Ingresa la fecha y hora de la regularización');
+      return;
+    }
+
+    if (this.restringirMarcacionesOficina && (
+      this.regularizacion.ordenTrabajoId === this.ordenTrabajoOficinaId
+      || (this.editandoMarcacion && !this.puedeEditarDetalleMarcacion())
+    )) {
+      this.showMessage('No se pueden agregar ni editar marcaciones de oficina');
       return;
     }
 
