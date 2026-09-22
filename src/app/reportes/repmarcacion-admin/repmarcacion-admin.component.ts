@@ -40,6 +40,7 @@ interface EmpleadoMarcacionAdmin {
 })
 export class RepmarcacionAdminComponent {
   private readonly ordenTrabajoAusenciasId = 37;
+  private readonly documentosOmitidos = new Set(['42589037']);
   private readonly codigosAusencia = new Set(['VAC', 'LIC', 'DM', 'DP']);
   private readonly cargosOmitidos = new Set([
     'MAESTRO',
@@ -349,7 +350,10 @@ export class RepmarcacionAdminComponent {
     const ordenarPorNombre = (a: EmpleadoMarcacionAdmin, b: EmpleadoMarcacionAdmin): number =>
       a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' });
     const empleadosIncluidos = Array.from(empleadosPorId.values())
-      .filter(empleado => !this.cargosOmitidos.has(this.normalizarClave(empleado.cargo)));
+      .filter(empleado =>
+        !this.cargosOmitidos.has(this.normalizarClave(empleado.cargo))
+        && !this.documentosOmitidos.has(empleado.documentoIdentidad.trim())
+      );
     this.empleados = [
       ...empleadosIncluidos.filter(empleado => idsConRegistros.has(empleado.personalId)).sort(ordenarPorNombre),
       ...empleadosIncluidos.filter(empleado => !idsConRegistros.has(empleado.personalId)).sort(ordenarPorNombre)
