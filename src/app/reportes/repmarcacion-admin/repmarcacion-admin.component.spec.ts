@@ -102,8 +102,9 @@ describe('RepmarcacionAdminComponent', () => {
     (component as any).generarColumnasFechas();
     const personal = [
       { persona: { id: 1, nombres: 'Carlos' }, personalCargoExterno: { cargoId: 20 } },
-      { persona: { id: 2, nombres: 'Ana' }, personalCargoExterno: { cargoId: 20 } },
-      { persona: { id: 3, nombres: 'Beatriz' }, personalCargoExterno: { cargoId: 10 } }
+      { persona: { id: 2, nombres: 'Ana', estado: true }, personalCargoExterno: { cargoId: 20 } },
+      { persona: { id: 3, nombres: 'Beatriz', estado: true }, personalCargoExterno: { cargoId: 10 } },
+      { persona: { id: 4, nombres: 'Daniel', estado: false }, personalCargoExterno: { cargoId: 20 } }
     ];
     const marcaciones = [{
       personalId: 1,
@@ -126,6 +127,7 @@ describe('RepmarcacionAdminComponent', () => {
     expect(component.empleados[1].dias['2026-09-07']).toEqual({
       entrada: '', salida: '', tardanza: 0, ausencia: '', horasTrabajadas: 0
     });
+    expect(component.empleados.some(empleado => empleado.personalId === 4)).toBeFalse();
   });
 
   it('calcula tardanza contra las 08:00 y no usa diferenciaMinutos', () => {

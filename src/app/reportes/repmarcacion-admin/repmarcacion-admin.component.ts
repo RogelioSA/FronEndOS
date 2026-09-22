@@ -320,7 +320,7 @@ export class RepmarcacionAdminComponent {
     });
 
     const idsConRegistros = new Set(empleadosPorId.keys());
-    personal.forEach(detalle => {
+    personal.filter(detalle => this.esPersonalActivo(detalle)).forEach(detalle => {
       const personalId = Number(detalle?.persona?.id ?? detalle?.personaId ?? detalle?.id);
       if (!Number.isFinite(personalId) || empleadosPorId.has(personalId)) return;
 
@@ -413,6 +413,11 @@ export class RepmarcacionAdminComponent {
     if (persona?.nombreCompleto) return String(persona.nombreCompleto);
     const apellidos = [persona?.apellidoPaterno, persona?.apellidoMaterno].filter(Boolean).join(' ');
     return [apellidos, persona?.nombres].filter(Boolean).join(', ') || 'Sin información';
+  }
+
+  private esPersonalActivo(detalle: any): boolean {
+    const estado = detalle?.persona?.estado ?? detalle?.estado;
+    return estado === true || estado === 1 || estado === '1' || String(estado).toLowerCase() === 'true';
   }
 
   private generarColumnasFechas(): void {
