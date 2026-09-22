@@ -61,6 +61,7 @@ import { MarcacionespecificaComponent } from './marcacionespecifica/marcacionesp
 import { RepmarcacionAdminComponent } from './reportes/repmarcacion-admin/repmarcacion-admin.component';
 import { RepmarcacionServicioComponent } from './reportes/repmarcacion-servicio/repmarcacion-servicio.component';
 import { IndicadoresAsistenciaComponent } from './reportes/indicadoresasistencia/indicadoresasistencia.component';
+import { MantoMarcacionesComponent } from './reportes/manto-marcaciones/manto-marcaciones.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -95,6 +96,7 @@ const routes: Routes = [
   { path: 'mantenimiento/grupoHorario/horario', component: HorarioComponent, canActivate: [AuthGuard]  },
   { path: 'procesos/marcacion', component: MarcacionComponent, canActivate: [AuthGuard]  },
   { path: 'reporte/marcacion', component: ReporteMarcacionComponent, canActivate: [AuthGuard]  },
+  { path: 'reporte/mantomarcaciones', component: MantoMarcacionesComponent, canActivate: [AuthGuard]  },
   { path: 'reporte/pmarcaciones', component: ReporteAsistenciaComponent, canActivate: [AuthGuard]  },
   { path: 'procesos/Servicio', component: OrdenesServicioComponent, canActivate: [AuthGuard]},
   { path: 'patrimonial/UbicacionTecnica', component: UbicacionTecnicaComponent, canActivate: [AuthGuard]},
