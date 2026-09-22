@@ -135,6 +135,18 @@ describe('ReporteMarcacionComponent', () => {
     expect(component.marcaciones.map((marcacion) => marcacion.id)).toEqual([50, 200]);
     expect(component.traerMarcaciones).not.toHaveBeenCalled();
   });
+
+  it('muestra OFI en la labor del tareo para una marcación sin orden de trabajo', () => {
+    const marcacion = {
+      eventosPorTipo: {
+        0: [{ ordenTrabajo: null }],
+        1: [{ ordenTrabajo: null }]
+      }
+    };
+
+    expect((component as any).obtenerLaborTareo(marcacion, undefined, [])).toBe('OFI');
+    expect((component as any).obtenerLaborTareo(marcacion, 'VAC', [])).toBe('VAC');
+  });
 });
 
 describe('MantoMarcacionesComponent', () => {
@@ -206,5 +218,13 @@ describe('MantoMarcacionesComponent', () => {
     component.iniciarRegularizacion();
 
     expect(component.editandoMarcacion).toBeTrue();
+  });
+
+  it('hereda OFI para la labor del tareo en marcaciones de oficina', () => {
+    const marcacion = {
+      datosEntrada: { ordenTrabajo: null }
+    };
+
+    expect((component as any).obtenerLaborTareo(marcacion, undefined, [])).toBe('OFI');
   });
 });

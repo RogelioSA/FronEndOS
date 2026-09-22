@@ -1332,12 +1332,10 @@ export class ReporteMarcacionComponent {
           );
           const ordenesDelDia = marcacion ? this.obtenerOrdenesTareo(marcacion) : [];
           // L identifica la labor. En jornadas con varias OT se muestran todos
-          // los valores, y una asignación de ausencia tiene prioridad ese día.
+          // los valores, una asignación de ausencia tiene prioridad ese día y
+          // las marcaciones de oficina sin OT se identifican como OFI.
           const existeCruceOrdenTrabajo = empleado.fechasConCruceOrdenTrabajo.has(col.fecha);
-          const letra = codigoAusencia || ordenesDelDia
-            .map(orden => orden.descripcion.slice(0, 5))
-            .filter(Boolean)
-            .join(' / ');
+          const letra = this.obtenerLaborTareo(marcacion, codigoAusencia, ordenesDelDia);
 
           if (existeCruceOrdenTrabajo) {
             celdasCruceOrdenTrabajo.push(7 + diaIndex * 3);
@@ -1723,6 +1721,32 @@ export class ReporteMarcacionComponent {
     });
 
     return Array.from(ordenes.values());
+  }
+
+  private esMarcacionOficina(marcacion?: MarcacionPorDia): boolean {
+    if (!marcacion) return false;
+
+    const eventos = Object.values(marcacion.eventosPorTipo ?? {}).flat();
+    const datos = eventos.length > 0
+      ? eventos
+      : [this.obtenerDatosMarcacion(marcacion)].filter(Boolean);
+
+    return datos.some((dato: any) => dato?.ordenTrabajo?.id == null);
+  }
+
+  private obtenerLaborTareo(
+    marcacion: MarcacionPorDia | undefined,
+    codigoAusencia: string | undefined,
+    ordenes: Array<{ descripcion: string; nombre: string }>
+  ): string {
+    if (codigoAusencia) return codigoAusencia;
+
+    const labores = ordenes
+      .map(orden => orden.descripcion.slice(0, 5))
+      .filter(Boolean)
+      .join(' / ');
+
+    return labores || (this.esMarcacionOficina(marcacion) ? 'OFI' : '');
   }
 
   /**
