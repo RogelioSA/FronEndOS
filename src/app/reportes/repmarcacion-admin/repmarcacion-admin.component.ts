@@ -40,6 +40,7 @@ interface EmpleadoMarcacionAdmin {
 })
 export class RepmarcacionAdminComponent {
   private readonly ordenTrabajoAusenciasId = 37;
+  private readonly documentosOmitidos = new Set(['42589037']);
   private readonly codigosAusencia = new Set(['VAC', 'LIC', 'DM', 'DP']);
   private readonly cargosOmitidos = new Set([
     'MAESTRO',
@@ -319,6 +320,24 @@ export class RepmarcacionAdminComponent {
       if (fecha && empleado.dias[fecha]) empleado.dias[fecha].ausencia = codigo;
     });
 
+    const idsConRegistros = new Set(empleadosPorId.keys());
+    personal.filter(detalle => this.esPersonalActivo(detalle)).forEach(detalle => {
+      const personalId = Number(detalle?.persona?.id ?? detalle?.personaId ?? detalle?.id);
+      if (!Number.isFinite(personalId) || empleadosPorId.has(personalId)) return;
+
+      const cargoId = Number(
+        detalle?.personalCargoExterno?.cargoId
+        ?? detalle?.personalCargoExterno?.cargo?.id
+        ?? detalle?.cargoId
+      );
+      const cargo = Number.isFinite(cargoId)
+        ? cargosPorId.get(cargoId) ?? detalle?.personalCargoExterno?.cargo?.nombre ?? ''
+        : detalle?.personalCargoExterno?.cargo?.nombre ?? '';
+      if (this.cargosOmitidos.has(this.normalizarClave(cargo))) return;
+
+      this.obtenerOCrearEmpleado(empleadosPorId, personalPorId, cargosPorId, personalId);
+    });
+
     empleadosPorId.forEach(empleado => {
       empleado.totalHorasTrabajadas = 0;
       Object.values(empleado.dias).forEach(dia => {
@@ -328,11 +347,17 @@ export class RepmarcacionAdminComponent {
       empleado.totalHorasTrabajadas = this.redondearHoras(empleado.totalHorasTrabajadas);
     });
 
-    this.empleados = Array.from(empleadosPorId.values())
-      .filter(empleado => !this.cargosOmitidos.has(this.normalizarClave(empleado.cargo)))
-      .sort((a, b) =>
-      a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
-    );
+    const ordenarPorNombre = (a: EmpleadoMarcacionAdmin, b: EmpleadoMarcacionAdmin): number =>
+      a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' });
+    const empleadosIncluidos = Array.from(empleadosPorId.values())
+      .filter(empleado =>
+        !this.cargosOmitidos.has(this.normalizarClave(empleado.cargo))
+        && !this.documentosOmitidos.has(empleado.documentoIdentidad.trim())
+      );
+    this.empleados = [
+      ...empleadosIncluidos.filter(empleado => idsConRegistros.has(empleado.personalId)).sort(ordenarPorNombre),
+      ...empleadosIncluidos.filter(empleado => !idsConRegistros.has(empleado.personalId)).sort(ordenarPorNombre)
+    ];
     this.aplicarFiltroPersonal();
   }
 
@@ -349,7 +374,10 @@ export class RepmarcacionAdminComponent {
     const persona = marcacion?.persona ?? detalle?.persona ?? marcacion?.personal?.persona ?? {};
     const documento = String(persona.documentoIdentidad ?? 'N/A');
     const cargoId = Number(
-      marcacion?.personalCargoExterno?.cargoId ?? detalle?.personalCargoExterno?.cargoId
+      marcacion?.personalCargoExterno?.cargoId
+      ?? detalle?.personalCargoExterno?.cargoId
+      ?? detalle?.personalCargoExterno?.cargo?.id
+      ?? detalle?.cargoId
     );
     const cargo = Number.isFinite(cargoId)
       ? cargosPorId.get(cargoId) ?? detalle?.personalCargoExterno?.cargo?.nombre ?? ''
@@ -389,6 +417,11 @@ export class RepmarcacionAdminComponent {
     if (persona?.nombreCompleto) return String(persona.nombreCompleto);
     const apellidos = [persona?.apellidoPaterno, persona?.apellidoMaterno].filter(Boolean).join(' ');
     return [apellidos, persona?.nombres].filter(Boolean).join(', ') || 'Sin información';
+  }
+
+  private esPersonalActivo(detalle: any): boolean {
+    const estado = detalle?.persona?.estado ?? detalle?.estado;
+    return estado === true || estado === 1 || estado === '1' || String(estado).toLowerCase() === 'true';
   }
 
   private generarColumnasFechas(): void {

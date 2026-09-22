@@ -96,6 +96,74 @@ describe('RepmarcacionAdminComponent', () => {
     expect(component.empleados.find(empleado => empleado.cargo === 'ASISTENTE DE ALMACEN')?.area).toBe('ALMACEN');
   });
 
+  it('agrega al final el personal administrativo que no tiene marcaciones', () => {
+    component.fechaInicial = new Date(2026, 8, 7);
+    component.fechaFinal = new Date(2026, 8, 7);
+    (component as any).generarColumnasFechas();
+    const personal = [
+      { persona: { id: 1, nombres: 'Carlos' }, personalCargoExterno: { cargoId: 20 } },
+      { persona: { id: 2, nombres: 'Ana', estado: true }, personalCargoExterno: { cargoId: 20 } },
+      { persona: { id: 3, nombres: 'Beatriz', estado: true }, personalCargoExterno: { cargoId: 10 } },
+      { persona: { id: 4, nombres: 'Daniel', estado: false }, personalCargoExterno: { cargoId: 20 } }
+    ];
+    const marcaciones = [{
+      personalId: 1,
+      persona: personal[0].persona,
+      personalCargoExterno: personal[0].personalCargoExterno,
+      ordenTrabajo: { id: null },
+      fechaJornal: '2026-09-07',
+      fecha: '2026-09-07T08:00:00',
+      tipoEvento: 0
+    }];
+
+    (component as any).procesarDatos(marcaciones, [], personal, [
+      { id: 10, nombre: 'TÉCNICO' },
+      { id: 20, nombre: 'JEFE COMERCIAL' }
+    ]);
+
+    expect(component.empleados.map(empleado => empleado.personalId)).toEqual([1, 2]);
+    expect(component.empleados[1].nombreCompleto).toBe('Ana');
+    expect(component.empleados[1].totalMarcas).toBe(0);
+    expect(component.empleados[1].dias['2026-09-07']).toEqual({
+      entrada: '', salida: '', tardanza: 0, ausencia: '', horasTrabajadas: 0
+    });
+    expect(component.empleados.some(empleado => empleado.personalId === 4)).toBeFalse();
+  });
+
+  it('omite al administrador del sistema por número de documento', () => {
+    component.fechaInicial = new Date(2026, 8, 7);
+    component.fechaFinal = new Date(2026, 8, 7);
+    (component as any).generarColumnasFechas();
+    const personal = [
+      {
+        persona: { id: 1, nombres: 'Administrador', documentoIdentidad: '42589037', estado: true },
+        personalCargoExterno: { cargoId: 20 }
+      },
+      {
+        persona: { id: 2, nombres: 'Ana', documentoIdentidad: '12345678', estado: true },
+        personalCargoExterno: { cargoId: 20 }
+      }
+    ];
+    const marcaciones = [{
+      personalId: 1,
+      persona: personal[0].persona,
+      personalCargoExterno: personal[0].personalCargoExterno,
+      ordenTrabajo: { id: null },
+      fechaJornal: '2026-09-07',
+      fecha: '2026-09-07T08:00:00',
+      tipoEvento: 0
+    }];
+
+    (component as any).procesarDatos(
+      marcaciones,
+      [],
+      personal,
+      [{ id: 20, nombre: 'JEFE COMERCIAL' }]
+    );
+
+    expect(component.empleados.map(empleado => empleado.personalId)).toEqual([2]);
+  });
+
   it('calcula tardanza contra las 08:00 y no usa diferenciaMinutos', () => {
     component.fechaInicial = new Date(2026, 8, 7);
     component.fechaFinal = new Date(2026, 8, 7);
