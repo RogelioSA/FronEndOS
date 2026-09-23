@@ -1,6 +1,7 @@
 import { HttpClient, HttpHeaders, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
+import { RegistroAsistenciaRangeDate } from "../models/registro-asistencia.model";
 
 interface PersonaUpdateRequest {
   id: number;
@@ -373,8 +374,8 @@ export class ApiService{
       );
     }
 
-    getRegistroAsistencia(fechaInicio: string, fechaFin: string): Observable<any> {
-      return this.https.get(
+    getRegistroAsistencia(fechaInicio: string, fechaFin: string): Observable<RegistroAsistenciaRangeDate[]> {
+      return this.https.get<RegistroAsistenciaRangeDate[]>(
         `${this.baseUrl}/rrhh/RegistroAsistencia/range_date`,
         {
           headers: this.getHttpHeaders(),
