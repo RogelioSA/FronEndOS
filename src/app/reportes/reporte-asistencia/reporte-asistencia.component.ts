@@ -48,8 +48,6 @@ interface DetalleMarcacion {
   diferenciaMinutos: number;
   latitud: number | null;
   longitud: number | null;
-  politica: string;
-  horaProgramada: string;
   ordenTrabajoId: number | null;
   linkGoogleMaps: string;
   personalId: number;
@@ -605,8 +603,6 @@ export class ReporteAsistenciaComponent {
       diferenciaMinutos: datos.diferenciaMinutos,
       latitud: datos.latitud,
       longitud: datos.longitud,
-      politica: datos.registroAsistenciaPolitica?.nombreCorto || datos.registroAsistenciaPolitica?.nombre || 'N/A',
-      horaProgramada: datos.horarioDetalleEvento?.hora || 'N/A',
       ordenTrabajoId: datos.ordenTrabajo?.id ?? null,
       linkGoogleMaps: linkGoogleMaps,
       personalId: Number(datos.personalId ?? empleado.personalId),

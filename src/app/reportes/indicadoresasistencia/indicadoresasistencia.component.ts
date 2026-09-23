@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import * as ExcelJS from 'exceljs';
 import { ApiService } from '../../services/api.service';
+import { RegistroAsistenciaRangeDate } from '../../models/registro-asistencia.model';
 
 export interface IndicadorArea {
   area: string;
@@ -108,7 +109,7 @@ export class IndicadoresAsistenciaComponent {
 
   claseSemaforo(valor: number): string { return valor > 95 ? 'semaforo-verde' : valor >= 80 ? 'semaforo-ambar' : 'semaforo-rojo'; }
 
-  private procesar(marcaciones: any[], personal: any[], cargos: any[], asignaciones: any[], ausencias: any[]): void {
+  private procesar(marcaciones: RegistroAsistenciaRangeDate[], personal: any[], cargos: any[], asignaciones: any[], ausencias: any[]): void {
     const cargosPorId = new Map(cargos.map(c => [Number(c.id), String(c.nombre ?? '')]));
     const activos = personal.filter(p => p?.persona?.estado !== false && p?.estado !== false);
     const porId = new Map<number, ResumenPersonal>();
@@ -149,7 +150,7 @@ export class IndicadoresAsistenciaComponent {
 
     const grupos = new Map<string, { entrada: boolean; salida: boolean; primeraEntrada: any }>();
     marcaciones.forEach(m => {
-      const id = Number(m.personalId ?? m.personal?.persona?.id ?? m.persona?.id); const fecha = this.fechaClave(m.fechaJornal ?? m.fecha);
+      const id = Number(m.personalId); const fecha = this.fechaClave(m.fechaJornal ?? m.fecha);
       const p = porId.get(id); if (!p || !fecha) return;
       p.tieneMarcacion = true;
       const evento = Number(m.tipoEvento);

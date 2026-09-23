@@ -44,4 +44,41 @@ describe('IndicadoresAsistenciaComponent', () => {
     expect(componente.total.marcacionesEsperadas).toBe(4);
     expect(componente.total.marcacionesRealizadas).toBe(3);
   });
+
+  it('calcula los indicadores con el contrato reducido de range_date', () => {
+    const componente = new IndicadoresAsistenciaComponent({} as any, new DatePipe('es-PE'));
+    componente.fechaInicial = new Date(2026, 8, 21);
+    componente.fechaFinal = new Date(2026, 8, 21);
+    const personal = [
+      { id: 334, persona: { estado: true }, personalCargoExterno: { cargoId: 10 } }
+    ];
+    const cargos = [{ id: 10, nombre: 'ASISTENTE DE CONTABILIDAD' }];
+    const marcaciones = [
+      {
+        empresaId: 1, id: 14896, personalId: 334,
+        fecha: '2026-09-21T07:55:00', fechaJornal: '2026-09-21', tipoEvento: 0,
+        esTardanza: false, diferenciaMinutos: -5, latitud: null, longitud: null,
+        adjuntoId: null, adjuntoUrl: null, minutosDescanso: 60, minutosTraslado: 0,
+        personal: { horarioCabeceraId: 1 },
+        persona: { nombreCompleto: 'TAPIA RUIZ, JOSE LUIS', documentoIdentidad: '41383331' },
+        ordenTrabajo: null, ordenServicio: null, personalCargoExterno: null
+      },
+      {
+        empresaId: 1, id: 14897, personalId: 334,
+        fecha: '2026-09-21T17:00:00', fechaJornal: '2026-09-21', tipoEvento: 1,
+        esTardanza: false, diferenciaMinutos: 0, latitud: null, longitud: null,
+        adjuntoId: null, adjuntoUrl: null, minutosDescanso: 60, minutosTraslado: 0,
+        personal: { horarioCabeceraId: 1 },
+        persona: { nombreCompleto: 'TAPIA RUIZ, JOSE LUIS', documentoIdentidad: '41383331' },
+        ordenTrabajo: null, ordenServicio: null, personalCargoExterno: null
+      }
+    ];
+
+    (componente as any).procesar(marcaciones, personal, cargos, [], []);
+
+    expect(componente.total.marcacionesRealizadas).toBe(2);
+    expect(componente.total.marcacionesEsperadas).toBe(2);
+    expect(componente.total.cumplimiento).toBe(100);
+    expect(componente.total.personasPuntuales).toBe(1);
+  });
 });
