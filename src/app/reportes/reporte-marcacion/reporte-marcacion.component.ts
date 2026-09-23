@@ -55,8 +55,6 @@ interface DetalleMarcacion {
   diferenciaMinutos: number;
   latitud: number | null;
   longitud: number | null;
-  politica: string;
-  horaProgramada: string;
   ordenTrabajoId: number | null;
   linkGoogleMaps: string;
   personalId: number;
@@ -626,8 +624,6 @@ export class ReporteMarcacionComponent {
       diferenciaMinutos: datos.diferenciaMinutos,
       latitud: datos.latitud,
       longitud: datos.longitud,
-      politica: datos.registroAsistenciaPolitica?.nombreCorto || datos.registroAsistenciaPolitica?.nombre || 'N/A',
-      horaProgramada: datos.horarioDetalleEvento?.hora || 'N/A',
       // Las marcaciones de oficina llegan sin una orden asociada; en el formulario
       // se representan con 0, pero el payload de edición omite ordenTrabajoId.
       ordenTrabajoId: datos.ordenTrabajo?.id ?? this.ordenTrabajoOficinaId,
@@ -719,8 +715,6 @@ export class ReporteMarcacionComponent {
       diferenciaMinutos: 0,
       latitud: null,
       longitud: null,
-      politica: '',
-      horaProgramada: '',
       ordenTrabajoId: null,
       linkGoogleMaps: '',
       personalId: empleado.personalId,
@@ -894,8 +888,8 @@ export class ReporteMarcacionComponent {
         `${criterio.fechaJornal}T23:59:59`
       )
     );
-    const marcacionesDia = (Array.isArray(resultadoDia) ? resultadoDia : resultadoDia?.data ?? [])
-      .map((marcacion: any) => this.normalizarDescripcionOrdenes(marcacion));
+    const marcacionesDia = resultadoDia
+      .map((marcacion) => this.normalizarDescripcionOrdenes(marcacion));
 
     const marcacionConfirmada = marcacionesDia.find((marcacion: any) =>
       criterio.registroAsistenciaId !== null && Number(marcacion.id) === criterio.registroAsistenciaId
