@@ -130,6 +130,25 @@ describe('RepmarcacionAdminComponent', () => {
     expect(component.empleados.some(empleado => empleado.personalId === 4)).toBeFalse();
   });
 
+  it('reconoce las ausencias mediante nombreOt en la respuesta de horarios', () => {
+    component.fechaInicial = new Date(2026, 8, 7);
+    component.fechaFinal = new Date(2026, 8, 7);
+    (component as any).generarColumnasFechas();
+    const personal = [{
+      persona: { id: 1, nombres: 'Ana', estado: true },
+      personalCargoExterno: { cargoId: 20 }
+    }];
+
+    (component as any).procesarDatos(
+      [],
+      [{ personalId: 1, fecha: '2026-09-07', nombreOt: ' vac ' }],
+      personal,
+      [{ id: 20, nombre: 'JEFE COMERCIAL' }]
+    );
+
+    expect(component.empleados[0].dias['2026-09-07'].ausencia).toBe('VAC');
+  });
+
   it('omite al administrador del sistema por número de documento', () => {
     component.fechaInicial = new Date(2026, 8, 7);
     component.fechaFinal = new Date(2026, 8, 7);

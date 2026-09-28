@@ -30,8 +30,8 @@ describe('IndicadoresAsistenciaComponent', () => {
       { personalId: 2, fecha: '2026-01-06', ordenConsultadaId: 100 }
     ];
     const ausencias = [
-      { personalId: 1, fecha: '2026-01-05', horarioCabecera: { nombre: 'LP' } },
-      { personalId: 2, fecha: '2026-01-06', horarioCabecera: { nombre: 'PSG' } }
+      { personalId: 1, fecha: '2026-01-05', nombreOt: 'LP' },
+      { personalId: 2, fecha: '2026-01-06', nombreOt: 'PSG' }
     ];
     const marcaciones = [
       { personalId: 1, fecha: '2026-01-06T08:00:00', fechaJornal: '2026-01-06', tipoEvento: 0 },

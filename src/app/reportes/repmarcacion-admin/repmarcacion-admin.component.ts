@@ -311,7 +311,7 @@ export class RepmarcacionAdminComponent {
     });
 
     horarios.forEach(horario => {
-      const codigo = String(horario?.horarioCabecera?.nombre ?? '').trim().toUpperCase();
+      const codigo = String(horario?.nombreOt ?? '').trim().toUpperCase();
       if (!this.codigosAusencia.has(codigo)) return;
       const personalId = Number(horario.personalId);
       if (!Number.isFinite(personalId)) return;

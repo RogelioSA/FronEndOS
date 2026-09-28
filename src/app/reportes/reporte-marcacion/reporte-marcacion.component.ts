@@ -227,7 +227,7 @@ export class ReporteMarcacionComponent {
         (Array.isArray(horarios) ? horarios : horarios?.data ?? [])
           .map((horario: any): [string, string] => [
             this.crearClaveVacacion(horario.personalId, horario.fecha),
-            horario?.horarioCabecera?.nombre?.trim().toUpperCase() ?? ''
+            horario?.nombreOt?.trim().toUpperCase() ?? ''
           ])
           .filter(([clave, codigo]: [string, string]) => !!clave && this.codigosAusencia.has(codigo))
       );
