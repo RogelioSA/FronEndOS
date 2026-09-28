@@ -126,7 +126,7 @@ export class IndicadoresAsistenciaComponent {
     ausencias.forEach(a => {
       const personalId = Number(a.personalId);
       const fecha = this.fechaClave(a.fecha);
-      const codigo = this.clave(a?.horarioCabecera?.nombre);
+      const codigo = this.clave(a?.nombreOt);
       if (porId.has(personalId) && fecha && this.codigosSinMarcacionEsperada.has(codigo)) {
         ausenciasPorPersonaFecha.add(`${personalId}|${fecha}`);
       }
