@@ -832,6 +832,10 @@ export class ReporteMarcacionComponent {
           this.apiService.regularizarRegistroAsistencia(bodyActualizacion)
         );
       } else {
+        console.log(
+          '📤 POST /rrhh/RegistroAsistencia/regularizar - body:',
+          JSON.stringify(payload, null, 2)
+        );
         resultadoPersistencia = await firstValueFrom(
           this.apiService.registrarMarcacionEspecifica(payload)
         );
