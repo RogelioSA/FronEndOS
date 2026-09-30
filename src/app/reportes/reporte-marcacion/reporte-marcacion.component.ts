@@ -789,7 +789,9 @@ export class ReporteMarcacionComponent {
       longitud: 0,
       adjuntoId: 0,
       observacion: this.regularizacion.observacion.trim(),
-      ordenTrabajoId: this.regularizacion.ordenTrabajoId,
+      ...(this.regularizacion.ordenTrabajoId !== this.ordenTrabajoOficinaId && {
+        ordenTrabajoId: this.regularizacion.ordenTrabajoId
+      }),
       obseracion: this.regularizacion.observacion.trim(),
       eventoTipo: this.regularizacion.evento,
       tipoRegularizacion: 0

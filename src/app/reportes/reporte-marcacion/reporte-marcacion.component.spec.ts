@@ -17,6 +17,7 @@ describe('ReporteMarcacionComponent', () => {
       'listarOrdenTrabajoCabeceraSimplificado'
     ]);
     apiService.regularizarRegistroAsistencia.and.returnValue(of({}));
+    apiService.registrarMarcacionEspecifica.and.returnValue(of({ id: 201 }));
     apiService.getRegistroAsistencia.and.returnValue(of([]));
     apiService.obtenerAdjuntoImagen.and.returnValue(of('foto.jpg'));
     apiService.listarOrdenTrabajoCabeceraSimplificado.and.returnValue(of([]));
@@ -134,6 +135,42 @@ describe('ReporteMarcacionComponent', () => {
     );
     expect(component.marcaciones.map((marcacion) => marcacion.id)).toEqual([50, 200]);
     expect(component.traerMarcaciones).not.toHaveBeenCalled();
+  });
+
+  it('omite la orden de trabajo al crear una marcación de oficina', async () => {
+    localStorage.setItem('empresa_id', '1');
+    component.abrirRegularizacionNueva(
+      { personal: 'Ana Pérez', dni: '12345678', personalId: 113 } as any,
+      '2026-09-28',
+      1
+    );
+    component.regularizacion.hora = '18:00:00';
+    component.regularizacion.ordenTrabajoId = 0;
+    component.regularizacion.observacion = 'REGULARIZADO';
+    apiService.getRegistroAsistencia.and.returnValue(of([{
+      id: 201,
+      personalId: 113,
+      fecha: '2026-09-28T18:00:00.000Z',
+      fechaJornal: '2026-09-28',
+      tipoEvento: 1,
+      ordenTrabajo: null
+    }]));
+
+    await component.regularizarMarcacion();
+
+    expect(apiService.registrarMarcacionEspecifica).toHaveBeenCalledWith({
+      empresaId: 1,
+      personalId: 113,
+      fecha: '2026-09-28T18:00:00',
+      latitud: 0,
+      longitud: 0,
+      adjuntoId: 0,
+      observacion: 'REGULARIZADO',
+      obseracion: 'REGULARIZADO',
+      eventoTipo: 1,
+      tipoRegularizacion: 0
+    });
+    expect(apiService.regularizarRegistroAsistencia).not.toHaveBeenCalled();
   });
 
   it('muestra OFI en la labor del tareo para una marcación sin orden de trabajo', () => {
