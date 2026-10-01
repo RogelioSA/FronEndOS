@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
+import { DxDataGridComponent } from 'devextreme-angular';
 
 // Declarar Leaflet para TypeScript
 declare var L: any;
@@ -33,12 +34,15 @@ interface RegistroAsistencia {
 })
 export class PersonalMarcacionComponent implements OnInit {
   @BlockUI() blockUI!: NgBlockUI;
+  @ViewChild(DxDataGridComponent) dataGrid?: DxDataGridComponent;
 
   registrosAsistencia: RegistroAsistencia[] = [];
   usuarioId: string = '0';
   fechaInicio: string = '';
   fechaFin: string = '';
   mesActual: string = '';
+  cargando: boolean = false;
+  private periodoActual: Date = new Date();
   
   // Variables para estadísticas
   totalRegistros: number = 0;
@@ -85,13 +89,17 @@ export class PersonalMarcacionComponent implements OnInit {
 
   calcularFechasMes() {
     const ahora = new Date();
-    const primerDia = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-    const ultimoDia = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0);
-    
-    this.fechaInicio = this.formatearFechaISO(primerDia);
-    this.fechaFin = this.formatearFechaISO(ultimoDia);
-    
-    this.mesActual = ahora.toLocaleDateString('es-ES', { 
+    this.periodoActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    this.actualizarPeriodoSeleccionado();
+  }
+
+  private actualizarPeriodoSeleccionado() {
+    const year = this.periodoActual.getFullYear();
+    const month = this.periodoActual.getMonth();
+
+    this.fechaInicio = this.formatearFechaISO(new Date(year, month, 1));
+    this.fechaFin = this.formatearFechaISO(new Date(year, month + 1, 0));
+    this.mesActual = this.periodoActual.toLocaleDateString('es-ES', {
       month: 'long', 
       year: 'numeric' 
     });
@@ -110,7 +118,8 @@ export class PersonalMarcacionComponent implements OnInit {
       return;
     }
 
-    try { 
+    try {
+      this.cargando = true;
       this.blockUI.start('Cargando registros de asistencia...');
 
       const response = await firstValueFrom(
@@ -123,14 +132,14 @@ export class PersonalMarcacionComponent implements OnInit {
 
       console.log('✅ Registros de asistencia obtenidos:', response);
       
-      this.registrosAsistencia = response;
+      this.registrosAsistencia = Array.isArray(response) ? response : [];
       this.calcularEstadisticas();
-
-      this.blockUI.stop();
     } catch (error) {
       console.error('❌ Error al cargar registros:', error);
-      this.blockUI.stop();
       alert('Error al cargar los registros de asistencia');
+    } finally {
+      this.cargando = false;
+      this.blockUI.stop();
     }
   }
   calcularEstadisticas() {
@@ -154,20 +163,25 @@ export class PersonalMarcacionComponent implements OnInit {
   }
 
   async cambiarMes(direccion: number) {
-    const fechaActual = new Date(this.fechaInicio);
-    fechaActual.setMonth(fechaActual.getMonth() + direccion);
-    
-    const primerDia = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
-    const ultimoDia = new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 0);
-    
-    this.fechaInicio = this.formatearFechaISO(primerDia);
-    this.fechaFin = this.formatearFechaISO(ultimoDia);
-    
-    this.mesActual = fechaActual.toLocaleDateString('es-ES', { 
-      month: 'long', 
-      year: 'numeric' 
-    });
-    
+    if (this.cargando || !Number.isInteger(direccion) || direccion === 0) return;
+
+    this.periodoActual = new Date(
+      this.periodoActual.getFullYear(),
+      this.periodoActual.getMonth() + direccion,
+      1
+    );
+    this.actualizarPeriodoSeleccionado();
+    await this.cargarRegistros();
+  }
+
+  async actualizarMarcaciones() {
+    if (this.cargando) return;
+
+    this.registrosAsistencia = [];
+    this.calcularEstadisticas();
+    this.dataGrid?.instance.clearFilter();
+    this.dataGrid?.instance.searchByText('');
+    this.dataGrid?.instance.pageIndex(0);
     await this.cargarRegistros();
   }
 
