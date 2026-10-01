@@ -97,7 +97,13 @@
               [disabled]="cargando"
               aria-label="Actualizar marcaciones"
             >
-              <i class="bi" [class.bi-arrow-clockwise]="!cargando" [class.bi-hourglass-split]="cargando"></i>
+              <i
+                class="fa-solid"
+                [class.fa-arrows-rotate]="!cargando"
+                [class.fa-spinner]="cargando"
+                [class.fa-spin]="cargando"
+                aria-hidden="true"
+              ></i>
               <span>ACTUALIZAR</span>
             </button>
           </div>
@@ -156,30 +162,6 @@
               ></dxi-column>
 
               <dxi-column
-                caption="Hora Prog."
-                alignment="center"
-                [calculateCellValue]="calcularHoraProgramada"
-                [hidingPriority]="3"
-              ></dxi-column>
-
-              <dxi-column
-                dataField="esTardanza"
-                caption="Tardanza"
-                dataType="boolean"
-                alignment="center"
-                cellTemplate="tardanzaTemplate"
-                [hidingPriority]="5"
-              ></dxi-column>
-
-              <dxi-column
-                dataField="diferenciaMinutos"
-                caption="Dif. (min)"
-                alignment="center"
-                cellTemplate="diferenciaTemplate"
-                [hidingPriority]="4"
-              ></dxi-column>
-
-              <dxi-column
                 type="buttons"
                 [width]="60"
                 caption="Mapa"
@@ -201,30 +183,6 @@
                 </span>
               </div>
 
-              <div *dxTemplate="let cell of 'tardanzaTemplate'">
-                <span *ngIf="cell.data.esTardanza" class="badge bg-warning">
-                  <i class="bi bi-exclamation-triangle"></i>
-                  <span class="d-none d-sm-inline"> Sí</span>
-                </span>
-                <span *ngIf="!cell.data.esTardanza" class="badge bg-success">
-                  <i class="bi bi-check-circle"></i>
-                  <span class="d-none d-sm-inline"> No</span>
-                </span>
-              </div>
-
-              <div *dxTemplate="let cell of 'diferenciaTemplate'">
-                <span
-                  *ngIf="cell.data.diferenciaMinutos > 0"
-                  [class]="'badge ' + (cell.data.esTardanza ? 'bg-danger' : 'bg-info')"
-                >
-                  {{ cell.data.diferenciaMinutos }}
-                  <span class="d-none d-sm-inline"> min</span>
-                </span>
-                <span *ngIf="cell.data.diferenciaMinutos === 0" class="badge bg-success">
-                  <span class="d-none d-sm-inline">A tiempo</span>
-                  <i class="bi bi-check d-inline d-sm-none"></i>
-                </span>
-              </div>
             </dx-data-grid>
           </div>
         </div>

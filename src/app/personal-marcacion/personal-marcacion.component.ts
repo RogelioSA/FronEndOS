@@ -271,8 +271,4 @@ export class PersonalMarcacionComponent implements OnInit {
   calcularCellValue = (rowData: any) => {
     return this.obtenerNombreTipoEvento(rowData.tipoEvento);
   }
-
-  calcularHoraProgramada = (rowData: any): string => {
-    return rowData.horarioDetalleEvento?.hora || 'N/A';
-  }
 }
