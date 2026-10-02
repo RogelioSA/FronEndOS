@@ -30,7 +30,7 @@ describe('PersonalMarcacionComponent', () => {
     expect(apiService.getRegistroAsistenciaPersonal).toHaveBeenCalledWith(
       component.usuarioId,
       inicioSiguiente,
-      finSiguiente
+      `${finSiguiente}T23:59:59`
     );
 
     await component.cambiarMes(-1);
@@ -51,9 +51,22 @@ describe('PersonalMarcacionComponent', () => {
     expect(apiService.getRegistroAsistenciaPersonal).toHaveBeenCalledWith(
       component.usuarioId,
       component.fechaInicio,
-      component.fechaFin
+      `${component.fechaFin}T23:59:59`
     );
     expect(component.registrosAsistencia).toEqual([]);
     expect(component.totalRegistros).toBe(0);
+  });
+
+  it('consulta la fecha final del periodo hasta el final del dia', async () => {
+    component.fechaInicio = '2026-09-01';
+    component.fechaFin = '2026-09-30';
+
+    await component.cargarRegistros();
+
+    expect(apiService.getRegistroAsistenciaPersonal).toHaveBeenCalledWith(
+      component.usuarioId,
+      '2026-09-01',
+      '2026-09-30T23:59:59'
+    );
   });
 });
