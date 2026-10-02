@@ -1,7 +1,8 @@
 import { HttpClient, HttpHeaders, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { Observable } from "rxjs";
+import { map, Observable } from "rxjs";
 import { RegistroAsistenciaRangeDate } from "../models/registro-asistencia.model";
+import { consolidarRespuestaHorariosAsignados } from "../utils/orden-trabajo-horario.utils";
 
 interface PersonaUpdateRequest {
   id: number;
@@ -2020,6 +2021,8 @@ export class ApiService{
     return this.https.get(
       'https://shy3r9ti3f.execute-api.us-east-1.amazonaws.com/mantto/OrdenTrabajoHorario/by_ot_and_date_range',
       { headers, params }
+    ).pipe(
+      map(response => consolidarRespuestaHorariosAsignados(response))
     );
   }
 
