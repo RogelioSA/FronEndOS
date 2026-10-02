@@ -688,8 +688,12 @@ export class PersonalHorarioComponent {
 
     if (horarioId) {
       console.log('🔄 Actualizando registro existente con PUT. ID:', horarioId);
+      const payloadActualizacion = {
+        ...payload,
+        fechaVigencia: this.formatearFechaVigenciaLima(new Date())
+      };
       const response = await firstValueFrom(
-        this.apiService.actualizarOrdenTrabajoHorario(horarioId, payload)
+        this.apiService.actualizarOrdenTrabajoHorario(horarioId, payloadActualizacion)
       );
       console.log('✅ Horario actualizado correctamente. Response:', response);
       return response;
