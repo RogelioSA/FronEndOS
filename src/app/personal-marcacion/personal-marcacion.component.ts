@@ -126,7 +126,7 @@ export class PersonalMarcacionComponent implements OnInit {
         this.apiService.getRegistroAsistenciaPersonal(
           this.usuarioId, // Cambiado de this.personalId
           this.fechaInicio,
-          this.fechaFin
+          `${this.fechaFin}T23:59:59`
         )
       );
 
