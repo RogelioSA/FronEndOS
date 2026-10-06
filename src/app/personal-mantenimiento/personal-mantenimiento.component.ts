@@ -13,6 +13,25 @@ import * as XLSX from 'xlsx';
 export class PersonalMantenimientoComponent {
   private readonly rolPersonalMarcacionId = '10';
 
+  documentoEditorOptions = {
+    mode: 'text',
+    maxLength: 15,
+    inputAttr: {
+      inputmode: 'numeric',
+      autocomplete: 'off'
+    },
+    onInput: (event: any) => {
+      const input = event?.event?.target as HTMLInputElement | undefined;
+      if (!input) return;
+
+      const soloNumeros = input.value.replace(/\D/g, '').slice(0, 15);
+      if (input.value !== soloNumeros) {
+        input.value = soloNumeros;
+        event.component.option('value', soloNumeros);
+      }
+    }
+  };
+
   existeAsignacion: boolean = false;
   personal: any[] = [];
   cargos : any[] = [];

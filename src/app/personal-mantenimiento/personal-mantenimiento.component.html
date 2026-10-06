@@ -90,13 +90,26 @@
               <dxi-validation-rule type="required"></dxi-validation-rule>
             </dxi-column>
 
-            <dxi-column dataField="cDNI" caption="DNI" [width]="100" dataType="number" [editorOptions]="{ format: '#'}" alignment="center" [allowSearch]="true">
+            <dxi-column
+              dataField="cDNI"
+              caption="DNI"
+              [width]="100"
+              dataType="string"
+              [editorOptions]="documentoEditorOptions"
+              alignment="center"
+              [allowSearch]="true"
+            >
               <dxi-validation-rule type="required"></dxi-validation-rule>
+              <dxi-validation-rule
+                type="pattern"
+                pattern="^[0-9]+$"
+                message="El DNI solo puede contener números."
+              ></dxi-validation-rule>
               <dxi-validation-rule
                 type="stringLength"
                 [min]="8"
-                [max]="8"
-                message="El DNI debe tener 8 dígitos."
+                [max]="15"
+                message="El documento debe tener entre 8 y 15 dígitos."
               ></dxi-validation-rule>
             </dxi-column>
 
