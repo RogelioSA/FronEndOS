@@ -767,10 +767,21 @@ export class PersonalMantenimientoComponent {
       console.log('🔍 Columnas detectadas:', Object.keys(data[0]));
       console.log('🔍 Primer registro:', data[0]);
 
-      // Procesar solo personal vigente y con documento válido.
+      // Procesar solo personal vigente y con NRO DOCUMENTO válido.
       const dataFiltrada = data.filter((fila: any) => {
         return this.esSituacionVigente(fila) && this.esDocumentoValidoFila(fila);
       });
+
+      // Las filas sin NRO DOCUMENTO no se procesan. Si traen CODIGO, se usa
+      // únicamente para proteger al registro actual de una inactivación indirecta.
+      const documentosOmitidos = new Set(
+        data
+          .filter((fila: any) => this.esSituacionVigente(fila) && !this.obtenerDniFila(fila))
+          .map((fila: any) => this.normalizarDocumentoComparacion(
+            this.obtenerValorFila(fila, ['CODIGO', 'CÓDIGO'])
+          ))
+          .filter((documento: string) => Boolean(documento))
+      );
 
       console.log(`📊 Registros válidos: ${dataFiltrada.length} de ${data.length}`);
 
@@ -785,7 +796,7 @@ export class PersonalMantenimientoComponent {
       // 🔹 PASO 1: Crear mapa de DNIs del Excel
       const dnisEnExcel = new Map<string, any>();
       dataFiltrada.forEach((fila: any) => {
-        const dni = this.obtenerDniFila(fila);
+        const dni = this.normalizarDocumentoComparacion(this.obtenerDniFila(fila));
         if (this.esDocumentoValidoFila(fila)) {
           dnisEnExcel.set(dni, fila);
         }
@@ -796,8 +807,10 @@ export class PersonalMantenimientoComponent {
 
       // 🔹 PASO 2: Identificar registros a INACTIVAR
       const registrosAInactivar = this.personal.filter((p: any) => {
-        const dniTabla = String(p.cDNI || '').trim();
-        return dniTabla && !dnisEnExcel.has(dniTabla);
+        const dniTabla = this.normalizarDocumentoComparacion(p.cDNI);
+        return dniTabla
+          && !dnisEnExcel.has(dniTabla)
+          && !documentosOmitidos.has(dniTabla);
       });
 
       console.log(`\n🔒 Registros a INACTIVAR: ${registrosAInactivar.length}`);
@@ -836,11 +849,12 @@ export class PersonalMantenimientoComponent {
       for (let i = 0; i < dataFiltrada.length; i++) {
         const fila = dataFiltrada[i];
         const dni = this.obtenerDniFila(fila);
+        const dniComparacion = this.normalizarDocumentoComparacion(dni);
 
         try {
           // Buscar si ya existe
           const registroExistente = this.personal.find((p: any) =>
-            String(p.cDNI || '').trim() === dni
+            this.normalizarDocumentoComparacion(p.cDNI) === dniComparacion
           );
 
           if (registroExistente) {
@@ -1005,7 +1019,28 @@ export class PersonalMantenimientoComponent {
   }
 
   private obtenerDniFila(fila: any): string {
-    return String(this.obtenerValorFila(fila, ['NRO DOCUMENTO', 'NRO.DOCUMENTO', 'DOCUMENTO', 'DNI']) || '').trim();
+    return this.limpiarTextoCelda(
+      this.obtenerValorFila(fila, ['NRO DOCUMENTO', 'NRO.DOCUMENTO', 'DOCUMENTO', 'DNI'])
+    );
+  }
+
+  private normalizarDocumentoComparacion(valor: any): string {
+    const documento = this.limpiarTextoCelda(valor).replace(/\s+/g, '');
+    if (!documento) return '';
+
+    // Evita que un CE con ceros iniciales sea considerado distinto cuando el
+    // servicio devuelve el mismo documento como valor numérico.
+    return /^\d+$/.test(documento)
+      ? documento.replace(/^0+(?=\d)/, '')
+      : documento.toUpperCase();
+  }
+
+  private obtenerCodigoFila(fila: any): string {
+    const codigo = this.limpiarTextoCelda(
+      this.obtenerValorFila(fila, ['CODIGO', 'CÓDIGO'])
+    );
+
+    return codigo || this.obtenerDniFila(fila);
   }
 
   private obtenerEmailFila(fila: any): string {
@@ -1246,7 +1281,10 @@ export class PersonalMantenimientoComponent {
     }
 
     // 🔍 VERIFICAR SI EL DNI YA EXISTE EN LA TABLA
-    const personaExistente = this.personal.find((p: any) => p.cDNI === dni);
+    const dniComparacion = this.normalizarDocumentoComparacion(dni);
+    const personaExistente = this.personal.find((p: any) =>
+      this.normalizarDocumentoComparacion(p.cDNI) === dniComparacion
+    );
 
     // Generar email si no existe
     let email = this.obtenerEmailFila(fila);
@@ -1256,7 +1294,7 @@ export class PersonalMantenimientoComponent {
     }
 
     const telefono = String(this.obtenerValorFila(fila, ['TELEFONO', 'TELÉFONO']) || '').trim();
-    const codigo = String(this.obtenerValorFila(fila, ['CODIGO', 'CÓDIGO']) || '').trim();
+    const codigo = this.obtenerCodigoFila(fila);
 
     // El servicio recibe la inicial M/F; se conserva sexoId por compatibilidad.
     const sexoInicial = this.obtenerSexoInicial(fila);
@@ -1590,15 +1628,33 @@ export class PersonalMantenimientoComponent {
     }
 
     try {
-      // Si es un número (formato Excel serial date)
-      if (typeof fecha === 'number') {
-        const date = XLSX.SSF.parse_date_code(fecha);
-        return new Date(date.y, date.m - 1, date.d).toISOString();
+      // Excel puede entregar su fecha serial como número o como texto numérico.
+      const fechaTexto = typeof fecha === 'string' ? fecha.trim() : '';
+      const esSerialExcel = typeof fecha === 'number'
+        || (/^\d+(?:[.,]\d+)?$/.test(fechaTexto) && Number(fechaTexto.replace(',', '.')) > 0);
+
+      if (esSerialExcel) {
+        const serial = typeof fecha === 'number'
+          ? fecha
+          : Number(fechaTexto.replace(',', '.'));
+        const date = XLSX.SSF.parse_date_code(serial);
+
+        if (date?.y && date?.m && date?.d) {
+          return new Date(Date.UTC(
+            date.y,
+            date.m - 1,
+            date.d,
+            date.H || 0,
+            date.M || 0,
+            Math.floor(date.S || 0)
+          )).toISOString();
+        }
+
+        throw new Error(`Fecha serial de Excel inválida: "${fecha}"`);
       }
 
       // Si es string en formato peruano dd/mm/yyyy o dd-mm-yyyy
       if (typeof fecha === 'string') {
-        const fechaTexto = fecha.trim();
         const partes = fechaTexto.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
 
         if (partes) {
