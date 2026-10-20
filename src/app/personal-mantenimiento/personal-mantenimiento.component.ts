@@ -3,6 +3,10 @@ import { ApiService } from '../services/api.service';
 import { catchError, forkJoin, firstValueFrom, of } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import * as XLSX from 'xlsx';
+import { Workbook } from 'exceljs';
+import { exportDataGrid } from 'devextreme/excel_exporter';
+import { ExportingEvent } from 'devextreme/ui/data_grid';
+import notify from 'devextreme/ui/notify';
 
 @Component({
     selector: 'app-personal-mantenimiento',
@@ -66,6 +70,48 @@ export class PersonalMantenimientoComponent {
   @BlockUI() blockUI!: NgBlockUI;
 
   constructor(private apiService: ApiService,){}
+
+  async exportarExcel(event: ExportingEvent): Promise<void> {
+    event.cancel = true;
+    this.blockUI.start('Exportando personal a Excel...');
+
+    try {
+      const workbook = new Workbook();
+      const worksheet = workbook.addWorksheet('Personal');
+      await exportDataGrid({
+        component: event.component,
+        worksheet,
+        selectedRowsOnly: event.selectedRowsOnly,
+        autoFilterEnabled: true,
+        customizeCell: ({ gridCell, excelCell }) => {
+          if (gridCell?.rowType === 'data' && gridCell.column?.dataField === 'cDNI') {
+            excelCell.value = String(gridCell.value ?? '');
+            excelCell.numFmt = '@';
+          }
+        }
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const url = URL.createObjectURL(new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      }));
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = event.selectedRowsOnly ? 'Personal_seleccionado.xlsx' : 'Personal.xlsx';
+      document.body.appendChild(enlace);
+      try {
+        enlace.click();
+      } finally {
+        enlace.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (error) {
+      console.error('Error exportando personal a Excel:', error);
+      notify('No se pudo exportar el personal a Excel. Intente nuevamente.', 'error', 4000);
+    } finally {
+      this.blockUI.stop();
+    }
+  }
 
   async ngOnInit():Promise<void> {
 
