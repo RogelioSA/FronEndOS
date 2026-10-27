@@ -48,7 +48,7 @@ export class PersonalMantenimientoComponent {
   licencias : any[] = [];
   documentoTipos : any[] = [];
   distritos : any[] = [];
-
+  distritoSelectId: number = 1;
   contratos: any[] = [];
   horarios: any[] = [];
   selectedHorarioId: number | null = null;
@@ -391,6 +391,35 @@ export class PersonalMantenimientoComponent {
     console.log(event);
   }
 
+  private obtenerMensajeError(error: any, mensajePorDefecto: string): string {
+    const erroresValidacion = error?.error?.errors;
+    if (Array.isArray(erroresValidacion)) {
+      const mensajes = erroresValidacion
+        .map((item: any) => item?.message || item?.detail || '')
+        .filter(Boolean)
+        .map(String);
+
+      if (mensajes.length) return `${mensajePorDefecto}: ${mensajes.join(' ')}`;
+    }
+
+    if (erroresValidacion && typeof erroresValidacion === 'object') {
+      const mensajes = Object.values(erroresValidacion)
+        .flatMap((valor: any) => Array.isArray(valor) ? valor : [valor])
+        .map((item: any) => item?.message || item?.detail || item)
+        .filter(Boolean)
+        .map(String);
+
+      if (mensajes.length) return `${mensajePorDefecto}: ${mensajes.join(' ')}`;
+    }
+
+    const detalle = error?.error?.detail
+      || error?.error?.title
+      || error?.error?.message
+      || error?.message;
+
+    return detalle ? `${mensajePorDefecto}: ${String(detalle)}` : mensajePorDefecto;
+  }
+
   async actualizar(event: any) {
     console.log('onRowUpdating event completo:', event);
 
@@ -401,6 +430,7 @@ export class PersonalMantenimientoComponent {
     const id = oldData.id || oldData.nCodigo;
     if (!id) {
       console.error("❌ No se encontró el ID para actualizar.");
+      notify('No se pudo actualizar: no se encontró el identificador del personal.', 'error', 5000);
       return;
     }
 
@@ -442,14 +472,16 @@ export class PersonalMantenimientoComponent {
       );
       console.log("✅ Personal actualizado:", response);
       await this.traerPersonal();
-    } catch (err) {
+      notify('El personal fue actualizado correctamente.', 'success', 3500);
+    } catch (err: any) {
       console.error("❌ Error al actualizar:", err);
+      notify(this.obtenerMensajeError(err, 'No se pudo actualizar el personal'), 'error', 6000);
       throw err;
     }
   }
 
 
-  insertar(event: any) {
+  async insertar(event: any) {
     console.log('onRowInserted event completo:', event);
     const data = event?.data ?? (event?.changes && event.changes[0]?.data) ?? {};
 
@@ -487,12 +519,14 @@ export class PersonalMantenimientoComponent {
       // si viene "1" o 1 convierte a número
       const n = Number(val);
       return isNaN(n) ? null : n;
-    };
-
+    };   
+    const distritoId = this.distritoSelectId; 
     const sexoId = normalizeId(getVal(['cSexo', 'sexoId', 'sexo'], null));
     const licenciaConducirId = normalizeId(getVal(['nLicenciaCategoria', 'licenciaConducirId', 'licencia'], null));
     const documentoIdentidadTipoId = normalizeId(getVal(['nDocumentoIdentidadTipo', 'documentoIdentidadTipoId', 'tipoDocumento'], null));
     const cargoId = normalizeId(getVal(['nCargoId', 'cargoId', 'cargo'], null));
+    const costoHombreIngresado = Number(getVal(['costoHombre'], 0));
+    const costoHombre = Number.isFinite(costoHombreIngresado) ? costoHombreIngresado : 0;
 
     const registro: any = {
       empresaId: 1,
@@ -505,6 +539,7 @@ export class PersonalMantenimientoComponent {
       celular,
       estado,
       sexoId,
+      distritoId,
       licenciaConducirId,
       documentoIdentidadTipoId,
       cargoId
@@ -519,23 +554,61 @@ export class PersonalMantenimientoComponent {
     if (!registro.documentoIdentidad) faltantes.push('documentoIdentidad');
     if (registro.sexoId == null) faltantes.push('sexoId');
     if (registro.licenciaConducirId == null) faltantes.push('licenciaConducirId');
+    if (registro.documentoIdentidadTipoId == null) faltantes.push('documentoIdentidadTipoId');
+    if (cargoId == null) faltantes.push('cargo');
 
     if (faltantes.length) {
       console.warn('Faltan campos obligatorios (no se enviará):', faltantes);
-      // Si prefieres intentar igual, comenta el return y dejará que lo intente
+      notify(`No se pudo crear el personal. Faltan campos obligatorios: ${faltantes.join(', ')}.`, 'error', 6000);
       return;
     }
 
-    // Llamada al API
-    this.apiService.createPersonal(registro).subscribe(
-      (response: any) => {
-        console.log('✅ Personal creado:', response);
-        this.traerPersonal(); // refrescar tabla
-      },
-      (error: any) => {
-        console.error('❌ Error al crear personal:', error);
+    // Replicar el alta completa utilizada por la carga masiva:
+    // Persona -> Usuario/Empresa/Rol -> Personal -> PersonalCargoExterno.
+    try {
+      await this.traerUsuarios();
+      await this.cargarUsuariosRolPersonal();
+
+      const personaCreada: any = await firstValueFrom(this.apiService.createPersonal(registro));
+      const personaId = Number(personaCreada?.id);
+      if (!Number.isFinite(personaId) || personaId <= 0) {
+        throw new Error('El servicio de Persona no devolvió un ID válido.');
       }
-    );
+      console.log('✅ Persona creada:', personaCreada);
+
+      const partesNombre = {
+        nombres: String(nombres || '').trim(),
+        apellidoPaterno: String(apellidoPaterno || '').trim(),
+        apellidoMaterno: String(apellidoMaterno || '').trim()
+      };
+      const usuarioId = await this.crearUsuarioCompleto(
+        String(correo || '').trim(),
+        String(celular || '').trim(),
+        String(dni || '').trim(),
+        partesNombre
+      );
+
+      const personalCreado: any = await this.crearAsignacionPersonal(personaId, usuarioId);
+      const personalId = Number(personalCreado?.id ?? personaId);
+      if (!Number.isFinite(personalId) || personalId <= 0) {
+        throw new Error('El servicio de Personal no devolvió un ID válido.');
+      }
+
+      await this.guardarPersonalCargoExterno(
+        personalId,
+        Number(cargoId),
+        null,
+        Number(registro.empresaId),
+        costoHombre
+      );
+
+      await this.traerPersonal();
+      notify('El personal fue creado correctamente.', 'success', 3500);
+    } catch (error: any) {
+      console.error('❌ Error al crear personal:', error);
+      notify(this.obtenerMensajeError(error, 'No se pudo crear el personal'), 'error', 6000);
+      throw error;
+    }
   }
 
   eliminar(e: any) {
@@ -1390,7 +1463,7 @@ export class PersonalMantenimientoComponent {
       celular: telefono,
       estado: true,
       sexoId: sexoId,
-      distritoId: 1,
+      distritoId: this.distritoSelectId,
       licenciaConducirId: 1,
       documentoIdentidadTipoId: documentoIdentidadTipoId
     };
@@ -1647,7 +1720,10 @@ export class PersonalMantenimientoComponent {
   }
 
   // 🆕 Método auxiliar para crear asignación de personal
-  private async crearAsignacionPersonal(personaId: number, usuarioId: number): Promise<void> {
+  private async crearAsignacionPersonal(
+    personaId: number,
+    usuarioId: string | number
+  ): Promise<any> {
     console.log('\n🔵 Creando registro de Personal...');
     const personalPayload = {
       empresaId: 1,
@@ -1664,8 +1740,9 @@ export class PersonalMantenimientoComponent {
     console.log('📤 Enviando payload de Personal:', personalPayload);
 
     try {
-      await firstValueFrom(this.apiService.crearPersonal(personalPayload));
+      const personalCreado = await firstValueFrom(this.apiService.crearPersonal(personalPayload));
       console.log('✅ Registro de Personal creado exitosamente');
+      return personalCreado;
     } catch (error: any) {
       console.error('❌ Error al crear Personal:', error);
       throw new Error(`Error al crear Personal: ${error?.error?.detail || error?.message || 'Error desconocido'}`);
