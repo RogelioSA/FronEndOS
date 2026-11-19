@@ -74,7 +74,10 @@ export class ReporteMarcacionComponent {
   private readonly ordenTrabajoOficinaId = 0;
   protected readonly restringirMarcacionesOficina: boolean = false;
   private readonly ordenTrabajoVacacionesId = 37;
+  private readonly ordenTrabajoChileId = 53;
   private readonly codigosAusencia = new Set(['VAC', 'LIC', 'DM', 'DP']);
+  private readonly codigosHorarioChile = new Set(['CHILE', 'DCHILE']);
+  private horariosChile = new Map<string, string>();
 
   marcaciones: any[] = [];
   vacaciones = new Map<string, string>();
@@ -209,13 +212,21 @@ export class ReporteMarcacionComponent {
         throw new Error('Fechas inválidas');
       }
 
-      const [result, horarios, personalDetalle, cargos] = await Promise.all([
+      const fechaFinHorarios = fechaFin.slice(0, 10);
+      const [result, horarios, horariosChile, personalDetalle, cargos] = await Promise.all([
         firstValueFrom(this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)),
         firstValueFrom(
           this.apiService.obtenerHorariosPorOrdenYRango(
             this.ordenTrabajoVacacionesId,
             fechaInicio,
-            fechaFin.slice(0, 10)
+            fechaFinHorarios
+          )
+        ),
+        firstValueFrom(
+          this.apiService.obtenerHorariosPorOrdenYRango(
+            this.ordenTrabajoChileId,
+            fechaInicio,
+            fechaFinHorarios
           )
         ),
         firstValueFrom(this.apiService.getPersonalDetalle()),
@@ -223,14 +234,8 @@ export class ReporteMarcacionComponent {
       ]);
 
       this.marcaciones = result.map((marcacion: any) => this.normalizarDescripcionOrdenes(marcacion));
-      this.vacaciones = new Map(
-        (Array.isArray(horarios) ? horarios : horarios?.data ?? [])
-          .map((horario: any): [string, string] => [
-            this.crearClaveVacacion(horario.personalId, horario.fecha),
-            horario?.nombreOt?.trim().toUpperCase() ?? ''
-          ])
-          .filter(([clave, codigo]: [string, string]) => !!clave && this.codigosAusencia.has(codigo))
-      );
+      this.vacaciones = this.indexarHorarios(horarios, this.codigosAusencia);
+      this.horariosChile = this.indexarHorarios(horariosChile, this.codigosHorarioChile);
       const listaPersonal = Array.isArray(personalDetalle) ? personalDetalle : personalDetalle?.data ?? [];
       this.personalPorId = new Map(
         listaPersonal
@@ -553,6 +558,18 @@ export class ReporteMarcacionComponent {
   private crearClaveVacacion(personalId: number, fecha: string): string {
     const fechaNormalizada = typeof fecha === 'string' ? fecha.slice(0, 10) : '';
     return personalId && fechaNormalizada ? `${personalId}|${fechaNormalizada}` : '';
+  }
+
+  private indexarHorarios(horarios: any, codigos: ReadonlySet<string>): Map<string, string> {
+    const asignaciones = Array.isArray(horarios) ? horarios : horarios?.data ?? [];
+    return new Map(
+      asignaciones
+        .map((horario: any): [string, string] => [
+          this.crearClaveVacacion(horario.personalId, horario.fecha),
+          horario.nombreOt?.trim().toUpperCase() ?? ''
+        ])
+        .filter(([clave, codigo]: [string, string]) => !!clave && codigos.has(codigo))
+    );
   }
 
   tieneMarcacionPorTipo(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): boolean {
@@ -1133,14 +1150,19 @@ export class ReporteMarcacionComponent {
   }
 
   /* ================= DESCARGAR REPORTE FORMATO TAREO (ExcelJS con estilos) ================= */
+  get puedeDescargarTareo(): boolean {
+    return this.datosReporte.length > 0 || !!this.horariosChileParaTareo?.size;
+  }
+
+  private get horariosChileParaTareo(): ReadonlyMap<string, string> | undefined {
+    return this.ordenTrabajoSeleccionada == null || this.ordenTrabajoSeleccionada === this.ordenTrabajoChileId
+      ? this.horariosChile
+      : undefined;
+  }
+
   async descargarReporteTareo() {
-    const empleadosTareo = this.unificarEmpleadosParaTareo(this.datosReporte || []).filter(empleado => {
-      const marcacion = this.obtenerPrimeraMarcacionDatos(empleado);
-      // OFICINA no tiene OS ni OT vinculada, pero sigue siendo una marcación
-      // válida para el tareo. Las filas de ausencias quedan fuera porque no
-      // contienen datos de marcación.
-      return marcacion != null;
-    });
+    const horariosChile = this.horariosChileParaTareo;
+    const empleadosTareo = this.obtenerEmpleadosTareo(horariosChile);
 
     if (empleadosTareo.length === 0) {
       this.showMessage('No hay datos para exportar');
@@ -1327,15 +1349,14 @@ export class ReporteMarcacionComponent {
         this.columnasdinamicas.forEach((col, diaIndex) => {
           const marcacion = empleado.marcaciones[col.fecha];
 
-          const codigoAusencia = this.vacaciones.get(
-            this.crearClaveVacacion(empleado.personalId, col.fecha)
-          );
+          const claveHorario = this.crearClaveVacacion(empleado.personalId, col.fecha);
+          const codigoHorario = this.vacaciones.get(claveHorario) ?? horariosChile?.get(claveHorario);
           const ordenesDelDia = marcacion ? this.obtenerOrdenesTareo(marcacion) : [];
           // L identifica la labor. En jornadas con varias OT se muestran todos
-          // los valores, una asignación de ausencia tiene prioridad ese día y
+          // los valores, un horario asignado tiene prioridad ese día y
           // las marcaciones de oficina sin OT se identifican como OFI.
           const existeCruceOrdenTrabajo = empleado.fechasConCruceOrdenTrabajo.has(col.fecha);
-          const letra = this.obtenerLaborTareo(marcacion, codigoAusencia, ordenesDelDia);
+          const letra = this.obtenerLaborTareo(marcacion, codigoHorario, ordenesDelDia);
 
           if (existeCruceOrdenTrabajo) {
             celdasCruceOrdenTrabajo.push(7 + diaIndex * 3);
@@ -1498,6 +1519,42 @@ export class ReporteMarcacionComponent {
   }
 
   /* ================= MÉTODOS AUXILIARES ================= */
+
+  private obtenerEmpleadosTareo(horariosChile: ReadonlyMap<string, string> | undefined): EmpleadoTareo[] {
+    const empleados = [...this.datosReporte];
+    const personalIncluido = new Set(empleados.map(empleado => empleado.personalId));
+    const personalConHorarioChile = new Set<number>();
+    const fechasTareo = new Set(this.columnasdinamicas.map(columna => String(columna.fecha).slice(0, 10)));
+    const ordenChile = this.ordenesTrabajo.find(orden => orden.id === this.ordenTrabajoChileId)?.cOrdenInterna ?? '';
+
+    // Las asignaciones de la OT 53 se incorporan al Excel sin crear marcaciones.
+    for (const clave of horariosChile?.keys() ?? []) {
+      const [id, fecha] = clave.split('|');
+      const personalId = Number(id);
+      if (!Number.isFinite(personalId) || !fechasTareo.has(fecha)) {
+        continue;
+      }
+      personalConHorarioChile.add(personalId);
+      if (personalIncluido.has(personalId)) {
+        continue;
+      }
+
+      const personalDetalle = this.personalPorId.get(personalId);
+      const persona = personalDetalle?.persona;
+      empleados.push({
+        orden: ordenChile,
+        dni: persona?.documentoIdentidad || 'N/A',
+        personal: this.obtenerNombreCompleto(personalDetalle, persona),
+        personalId,
+        marcaciones: {}
+      });
+      personalIncluido.add(personalId);
+    }
+
+    return this.unificarEmpleadosParaTareo(empleados).filter(empleado =>
+      personalConHorarioChile.has(empleado.personalId) || this.obtenerPrimeraMarcacionDatos(empleado) != null
+    );
+  }
 
   /**
    * El tareo presenta una sola fila por trabajador. Las marcaciones del reporte
@@ -1736,10 +1793,10 @@ export class ReporteMarcacionComponent {
 
   private obtenerLaborTareo(
     marcacion: MarcacionPorDia | undefined,
-    codigoAusencia: string | undefined,
+    codigoHorario: string | undefined,
     ordenes: Array<{ descripcion: string; nombre: string }>
   ): string {
-    if (codigoAusencia) return codigoAusencia;
+    if (codigoHorario) return codigoHorario;
 
     const labores = ordenes
       .map(orden => orden.descripcion.slice(0, 5))

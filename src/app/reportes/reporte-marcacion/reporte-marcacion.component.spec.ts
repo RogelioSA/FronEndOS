@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { Workbook } from 'exceljs';
 import { of } from 'rxjs';
 
 import { ReporteMarcacionComponent } from './reporte-marcacion.component';
@@ -264,4 +265,62 @@ describe('MantoMarcacionesComponent', () => {
 
     expect((component as any).obtenerLaborTareo(marcacion, undefined, [])).toBe('OFI');
   });
+});
+
+describe('Reporte Tareo con horarios de la OT 53', () => {
+  for (const TipoComponente of [ReporteMarcacionComponent, MantoMarcacionesComponent]) {
+    it(`exporta CHILE y DCHILE sin marcaciones en ${TipoComponente.name}`, async () => {
+      const api = jasmine.createSpyObj('ApiService', [
+        'getRegistroAsistencia', 'obtenerHorariosPorOrdenYRango', 'getPersonalDetalle', 'getCargos'
+      ]);
+      api.getRegistroAsistencia.and.returnValue(of([]));
+      api.getPersonalDetalle.and.returnValue(of([
+        { persona: { id: 15, documentoIdentidad: '12345678' } }
+      ]));
+      api.getCargos.and.returnValue(of([]));
+      api.obtenerHorariosPorOrdenYRango.and.callFake((ordenId: number) => of({
+        data: ordenId === 53 ? [
+          { personalId: 15, fecha: '2026-09-01', nombreOt: ' chile ' },
+          { personalId: 15, fecha: '2026-09-02', nombreOt: 'DCHILE' }
+        ] : [
+          { personalId: 16, fecha: '2026-09-01', nombreOt: 'LIC' }
+        ]
+      }));
+      const component = new TipoComponente(api, new DatePipe('en-US'));
+      component.blockUI = jasmine.createSpyObj('BlockUI', ['start', 'stop']);
+      component.fechaInicial = new Date(2026, 8, 1);
+      component.fechaFinal = new Date(2026, 8, 2);
+      const descarga = spyOn(URL, 'createObjectURL').and.callThrough();
+      spyOn(HTMLAnchorElement.prototype, 'click');
+
+      await component.traerMarcaciones();
+      expect(api.obtenerHorariosPorOrdenYRango).toHaveBeenCalledWith(37, '2026-09-01', '2026-09-02');
+      expect(api.obtenerHorariosPorOrdenYRango).toHaveBeenCalledWith(53, '2026-09-01', '2026-09-02');
+      expect(component.datosReporte.map(empleado => empleado.personalId)).toEqual([16]);
+
+      component.datosReporte = [];
+      component.ordenTrabajoSeleccionada = 53;
+      expect(component.puedeDescargarTareo).toBeTrue();
+      await component.descargarReporteTareo();
+      expect(descarga).toHaveBeenCalledTimes(1);
+      const archivo = descarga.calls.mostRecent().args[0] as Blob;
+      const libro = new Workbook();
+      await libro.xlsx.load(await archivo.arrayBuffer());
+      const hoja = libro.getWorksheet('Tareo')!;
+      expect(hoja.rowCount).toBe(6);
+      const fila = hoja.getRow(6);
+      expect(fila.getCell('B').value).toBe('12345678');
+      expect(fila.getCell('G').value).toBe('CHILE');
+      expect(fila.getCell('J').value).toBe('DCHILE');
+      for (const columna of ['H', 'I', 'K', 'L', 'P']) {
+        expect(fila.getCell(columna).value).toBe('');
+      }
+      expect(fila.getCell('M').value).toBe(0);
+
+      component.ordenTrabajoSeleccionada = 37;
+      expect(component.puedeDescargarTareo).toBeFalse();
+      await component.descargarReporteTareo();
+      expect(descarga).toHaveBeenCalledTimes(1);
+    });
+  }
 });
