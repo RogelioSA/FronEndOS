@@ -1057,9 +1057,8 @@ export class ReporteMarcacionComponent {
     return columna.fecha;
   }
 
-  trackByGrupo(_index: number, grupo: { orden: string; empleados: EmpleadoReporte[] }): string {
-    return this.claveGrupo(grupo.empleados[0]);
-  }
+  readonly trackByGrupo = (_index: number, grupo: { orden: string; empleados: EmpleadoReporte[] }): string =>
+    this.claveGrupo(grupo.empleados[0]);
 
   private claveGrupo(empleado: EmpleadoReporte): string {
     return empleado.ordenAsignacionId == null
