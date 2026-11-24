@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Workbook } from 'exceljs';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { ReporteMarcacionComponent } from './reporte-marcacion.component';
 import { MantoMarcacionesComponent } from '../manto-marcaciones/manto-marcaciones.component';
@@ -278,12 +278,15 @@ describe('Reportes con horarios de la OT 53', () => {
         { persona: { id: 15, documentoIdentidad: '12345678' } }
       ]));
       api.getCargos.and.returnValue(of([]));
-      api.obtenerHorariosPorOrdenYRango.and.callFake((ordenId: number) => of({
-        data: ordenId === 53 ? [
-          { personalId: 15, fecha: '2026-09-01', nombreOt: ' chile ' },
+      api.obtenerHorariosPorOrdenYRango.and.callFake((ordenId: number) => ordenId === 53 ? of({
+        items: [
+          { personalId: '15', fecha: '2026-09-01', nombreOt: ' chile ' },
           { personalId: 15, fecha: '2026-09-02', nombreOt: 'DCHILE' },
-          { personalId: 17, fecha: '2026-08-31', nombreOt: 'CHILE' }
-        ] : [
+          { personalId: 17, fecha: '2026-08-31', nombreOt: 'CHILE' },
+          null
+        ]
+      }) : of({
+        data: [
           { personalId: 16, fecha: '2026-09-01', nombreOt: 'LIC' }
         ]
       }));
@@ -331,6 +334,39 @@ describe('Reportes con horarios de la OT 53', () => {
       expect(component.puedeDescargarTareo).toBeFalse();
       await component.descargarReporteTareo();
       expect(descarga).toHaveBeenCalledTimes(1);
+    });
+
+    it(`conserva la OT 37 cuando falla la consulta de la OT 53 en ${TipoComponente.name}`, async () => {
+      const api = jasmine.createSpyObj('ApiService', [
+        'getRegistroAsistencia', 'obtenerHorariosPorOrdenYRango', 'getPersonalDetalle', 'getCargos'
+      ]);
+      api.getRegistroAsistencia.and.returnValue(of([{
+        personalId: 18,
+        fecha: '2026-09-01T15:00:00',
+        fechaJornal: '2026-09-01',
+        tipoEvento: 0
+      }]));
+      api.getPersonalDetalle.and.returnValue(of([]));
+      api.getCargos.and.returnValue(of([]));
+      const licencias = [{ personalId: 16, fecha: '2026-09-01', nombreOt: 'LIC' }];
+      const component = new TipoComponente(api, new DatePipe('en-US'));
+      component.blockUI = jasmine.createSpyObj('BlockUI', ['start', 'stop']);
+      component.fechaInicial = component.fechaFinal = new Date(2026, 8, 1);
+      const mensaje = spyOn(component, 'showMessage');
+      spyOn(console, 'error');
+
+      for (const status of [404, 503]) {
+        api.obtenerHorariosPorOrdenYRango.and.callFake((ordenId: number) =>
+          ordenId === 53 ? throwError(() => ({ status })) : of(licencias)
+        );
+        await component.traerMarcaciones();
+        expect(component.datosReporte.map(empleado => empleado.personalId)).toEqual([18, 16]);
+        const empleado = component.datosAgrupados.find(grupo => grupo.orden === 'VACACIONES')!.empleados[0];
+        expect(component.obtenerTextoCelda(empleado, '2026-09-01', 0)).toBe('LIC');
+      }
+      expect(mensaje).toHaveBeenCalledOnceWith(
+        'Se cargaron las marcaciones, pero no se pudieron consultar los horarios de la OT 53'
+      );
     });
   }
 });

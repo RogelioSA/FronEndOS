@@ -1,5 +1,14 @@
 const PROPIEDADES_LISTA = ['data', 'items', 'result', 'value', '$values'] as const;
 
+export function extraerListaHorariosAsignados(response: any): any[] {
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  const propiedadLista = PROPIEDADES_LISTA.find(propiedad => Array.isArray(response?.[propiedad]));
+  return propiedadLista ? response[propiedadLista] : [];
+}
+
 export function seleccionarUltimosHorariosAsignados(horarios: any[]): any[] {
   const ultimosPorAsignacion = new Map<string, any>();
 

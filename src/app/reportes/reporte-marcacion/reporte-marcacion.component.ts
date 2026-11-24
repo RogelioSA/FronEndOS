@@ -6,6 +6,7 @@ import { DatePipe } from '@angular/common';
 import * as ExcelJS from 'exceljs';
 import * as XLSX from 'xlsx';
 import { jwtDecode } from 'jwt-decode';
+import { extraerListaHorariosAsignados } from '../../utils/orden-trabajo-horario.utils';
 
 interface UsuarioToken {
   cUsuario?: string;
@@ -207,29 +208,35 @@ export class ReporteMarcacionComponent {
 
     try {
       const fechaInicio = this.datePipe.transform(this.fechaInicial, 'yyyy-MM-dd');
-      const fechaFin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd') + 'T23:59:59';
+      const fechaFin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd');
 
       if (!fechaInicio || !fechaFin) {
         throw new Error('Fechas inválidas');
       }
 
-      const fechaFinHorarios = fechaFin.slice(0, 10);
+      let errorHorariosChile = false;
       const [result, horarios, horariosChile, personalDetalle, cargos] = await Promise.all([
-        firstValueFrom(this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)),
+        firstValueFrom(this.apiService.getRegistroAsistencia(fechaInicio, `${fechaFin}T23:59:59`)),
         firstValueFrom(
           this.apiService.obtenerHorariosPorOrdenYRango(
             this.ordenTrabajoVacacionesId,
             fechaInicio,
-            fechaFinHorarios
+            fechaFin
           )
         ),
         firstValueFrom(
           this.apiService.obtenerHorariosPorOrdenYRango(
             this.ordenTrabajoChileId,
             fechaInicio,
-            fechaFinHorarios
+            fechaFin
           )
-        ),
+        ).catch(error => {
+          if (error?.status !== 404) {
+            errorHorariosChile = true;
+            console.error('Error al consultar los horarios de la OT 53:', error);
+          }
+          return [];
+        }),
         firstValueFrom(this.apiService.getPersonalDetalle()),
         firstValueFrom(this.apiService.getCargos())
       ]);
@@ -253,6 +260,9 @@ export class ReporteMarcacionComponent {
           .filter(([cargoId, nombre]: [number, string]) => Number.isFinite(cargoId) && !!nombre)
       );
       this.procesarDatosParaReporte();
+      if (errorHorariosChile) {
+        this.showMessage('Se cargaron las marcaciones, pero no se pudieron consultar los horarios de la OT 53');
+      }
 
     } catch (error) {
       console.error('❌ Error trayendo las marcaciones:', error);
@@ -265,6 +275,7 @@ export class ReporteMarcacionComponent {
   procesarDatosParaReporte() {
     const fechaIni = new Date(this.fechaInicial);
     const fechaFin = new Date(this.fechaFinal);
+    fechaFin.setHours(23, 59, 59, 999);
 
     const tiposEventoVisibles = new Set([0, 1, 99]);
     const marcacionesFiltradas = this.marcaciones.filter(m => {
@@ -572,12 +583,12 @@ export class ReporteMarcacionComponent {
   }
 
   private indexarHorarios(horarios: any, codigos: ReadonlySet<string>): Map<string, string> {
-    const asignaciones = Array.isArray(horarios) ? horarios : horarios?.data ?? [];
+    const asignaciones = extraerListaHorariosAsignados(horarios);
     return new Map(
       asignaciones
         .map((horario: any): [string, string] => [
-          this.crearClaveVacacion(horario.personalId, horario.fecha),
-          horario.nombreOt?.trim().toUpperCase() ?? ''
+            this.crearClaveVacacion(Number(horario?.personalId), horario?.fecha),
+            String(horario?.nombreOt ?? '').trim().toUpperCase()
         ])
         .filter(([clave, codigo]: [string, string]) => !!clave && codigos.has(codigo))
     );
