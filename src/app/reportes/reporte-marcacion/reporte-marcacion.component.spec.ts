@@ -267,9 +267,9 @@ describe('MantoMarcacionesComponent', () => {
   });
 });
 
-describe('Reporte Tareo con horarios de la OT 53', () => {
+describe('Reportes con horarios de la OT 53', () => {
   for (const TipoComponente of [ReporteMarcacionComponent, MantoMarcacionesComponent]) {
-    it(`exporta CHILE y DCHILE sin marcaciones en ${TipoComponente.name}`, async () => {
+    it(`muestra y exporta CHILE y DCHILE sin marcaciones en ${TipoComponente.name}`, async () => {
       const api = jasmine.createSpyObj('ApiService', [
         'getRegistroAsistencia', 'obtenerHorariosPorOrdenYRango', 'getPersonalDetalle', 'getCargos'
       ]);
@@ -281,7 +281,8 @@ describe('Reporte Tareo con horarios de la OT 53', () => {
       api.obtenerHorariosPorOrdenYRango.and.callFake((ordenId: number) => of({
         data: ordenId === 53 ? [
           { personalId: 15, fecha: '2026-09-01', nombreOt: ' chile ' },
-          { personalId: 15, fecha: '2026-09-02', nombreOt: 'DCHILE' }
+          { personalId: 15, fecha: '2026-09-02', nombreOt: 'DCHILE' },
+          { personalId: 17, fecha: '2026-08-31', nombreOt: 'CHILE' }
         ] : [
           { personalId: 16, fecha: '2026-09-01', nombreOt: 'LIC' }
         ]
@@ -297,6 +298,15 @@ describe('Reporte Tareo con horarios de la OT 53', () => {
       expect(api.obtenerHorariosPorOrdenYRango).toHaveBeenCalledWith(37, '2026-09-01', '2026-09-02');
       expect(api.obtenerHorariosPorOrdenYRango).toHaveBeenCalledWith(53, '2026-09-01', '2026-09-02');
       expect(component.datosReporte.map(empleado => empleado.personalId)).toEqual([16]);
+
+      const grupoChile = component.datosAgrupados.find(grupo => grupo.orden === 'OT 53')!;
+      expect(grupoChile.empleados.map(empleado => empleado.personalId)).toEqual([15]);
+      const empleadoChile = grupoChile.empleados[0];
+      expect(component.obtenerTextoCelda(empleadoChile, '2026-09-01', 0)).toBe('CHILE');
+      expect(component.obtenerTextoCelda(empleadoChile, '2026-09-02', 1)).toBe('DCHILE');
+      const empleadoAusencia = component.datosReporte[0];
+      expect(component.obtenerTextoCelda(empleadoAusencia, '2026-09-01', 0)).toBe('LIC');
+      expect(component.obtenerTextoCelda(empleadoAusencia, '2026-09-02', 1)).toBe('');
 
       component.datosReporte = [];
       component.ordenTrabajoSeleccionada = 53;
