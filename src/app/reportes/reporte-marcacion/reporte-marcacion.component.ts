@@ -33,7 +33,7 @@ interface EmpleadoReporte {
   dni: string;
   personal: string;
   personalId: number;
-  esAsignacionAusencia?: boolean;
+  ordenAsignacionId?: number;
   marcaciones: { [fecha: string]: MarcacionPorDia };
 }
 
@@ -84,6 +84,7 @@ export class ReporteMarcacionComponent {
   personalPorId = new Map<number, any>();
   cargosPorId = new Map<number, string>();
   datosReporte: EmpleadoReporte[] = [];
+  hayDatosTabla = false;
   datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
   textoBusquedaPersonal: string = '';
   columnasdinamicas: any[] = [];
@@ -342,55 +343,59 @@ export class ReporteMarcacionComponent {
       }
     });
 
-    this.agregarAsignacionesAusencia(empleadosMap);
+    this.agregarFilasAsignacion(empleadosMap, this.ordenTrabajoVacacionesId, this.vacaciones, 'VACACIONES');
 
     this.datosReporte = Array.from(empleadosMap.values());
     this.agruparDatosPorOrden();
     console.log("✅ Datos procesados para reporte:", this.datosReporte);
   }
 
-  private agregarAsignacionesAusencia(empleadosMap: Map<string, EmpleadoReporte>): void {
-    const personalConAusencia = new Set<number>();
-    const ordenAusencias = this.ordenesTrabajo.find(
-      (orden) => orden.id === this.ordenTrabajoVacacionesId
-    )?.cOrdenInterna ?? 'VACACIONES';
+  private agregarFilasAsignacion(
+    empleadosMap: Map<string, EmpleadoReporte>,
+    ordenId: number,
+    asignaciones: ReadonlyMap<string, string>,
+    nombrePorDefecto: string
+  ): void {
+    const fechasConsultadas = new Set(this.columnasdinamicas.map(columna => columna.fecha));
+    const nombreOrden = this.ordenesTrabajo.find(orden => orden.id === ordenId)?.cOrdenInterna ?? nombrePorDefecto;
 
-    this.vacaciones.forEach((_codigo, clave) => {
-      const personalId = Number(clave.split('|')[0]);
-      if (!Number.isFinite(personalId) || personalConAusencia.has(personalId)) {
+    asignaciones.forEach((_codigo, clave) => {
+      const [id, fecha] = clave.split('|');
+      const personalId = Number(id);
+      const claveFila = `asignacion-${ordenId}-${personalId}`;
+      if (!Number.isFinite(personalId) || !fechasConsultadas.has(fecha) || empleadosMap.has(claveFila)) {
         return;
       }
 
       const personalDetalle = this.personalPorId.get(personalId);
       const persona = personalDetalle?.persona;
-      empleadosMap.set(`ausencia-${personalId}`, {
-        orden: ordenAusencias,
+      empleadosMap.set(claveFila, {
+        orden: nombreOrden,
         dni: persona?.documentoIdentidad || 'N/A',
         personal: this.obtenerNombreCompleto(personalDetalle, persona),
         personalId,
-        esAsignacionAusencia: true,
+        ordenAsignacionId: ordenId,
         marcaciones: {}
       });
-      personalConAusencia.add(personalId);
     });
   }
 
   agruparDatosPorOrden() {
     const grupos = new Map<string, EmpleadoReporte[]>();
+    const filasChile = new Map<string, EmpleadoReporte>();
+    this.agregarFilasAsignacion(filasChile, this.ordenTrabajoChileId, this.horariosChile, 'OT 53');
+    const filasTabla = [...this.datosReporte, ...filasChile.values()];
+    this.hayDatosTabla = filasTabla.length > 0;
     const terminoBusqueda = this.normalizarTextoBusqueda(this.textoBusquedaPersonal);
     const empleadosFiltrados = terminoBusqueda
-      ? this.datosReporte.filter((empleado) =>
+      ? filasTabla.filter((empleado) =>
           this.normalizarTextoBusqueda(empleado.dni).includes(terminoBusqueda) ||
           this.normalizarTextoBusqueda(empleado.personal).includes(terminoBusqueda)
         )
-      : this.datosReporte;
+      : filasTabla;
 
     empleadosFiltrados.forEach((empleado) => {
-      // Las asignaciones se conservan como un bloque independiente, incluso si
-      // existen marcaciones asociadas a la Orden de Trabajo 37.
-      const claveGrupo = empleado.esAsignacionAusencia
-        ? `asignaciones-ausencia|${empleado.orden}`
-        : `marcaciones|${empleado.orden}`;
+      const claveGrupo = this.claveGrupo(empleado);
       if (!grupos.has(claveGrupo)) {
         grupos.set(claveGrupo, []);
       }
@@ -530,13 +535,19 @@ export class ReporteMarcacionComponent {
       .join(', ');
   }
 
-  esVacacion(empleado: EmpleadoReporte, fecha: string): boolean {
-    return !!empleado.esAsignacionAusencia &&
-      this.vacaciones.has(this.crearClaveVacacion(empleado.personalId, fecha));
+  tieneHorarioAsignado(empleado: EmpleadoReporte, fecha: string): boolean {
+    return !!this.obtenerCodigoAsignado(empleado, fecha);
   }
 
-  obtenerCodigoAusencia(empleado: EmpleadoReporte, fecha: string): string {
-    return this.vacaciones.get(this.crearClaveVacacion(empleado.personalId, fecha)) ?? '';
+  private obtenerCodigoAsignado(empleado: EmpleadoReporte, fecha: string): string {
+    const clave = this.crearClaveVacacion(empleado.personalId, fecha);
+    if (empleado.ordenAsignacionId === this.ordenTrabajoChileId) {
+      return this.horariosChile.get(clave) ?? '';
+    }
+    if (empleado.ordenAsignacionId === this.ordenTrabajoVacacionesId) {
+      return this.vacaciones.get(clave) ?? '';
+    }
+    return '';
   }
 
   tieneMarcacionEnFecha(empleado: EmpleadoReporte, fecha: string): boolean {
@@ -548,9 +559,9 @@ export class ReporteMarcacionComponent {
 
   obtenerTextoCelda(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): string {
     const valor = this.obtenerMarcacionPorTipo(empleado, fecha, tipoEvento);
-    if (!valor && this.esVacacion(empleado, fecha) && !this.tieneMarcacionEnFecha(empleado, fecha) &&
+    if (!valor && this.tieneHorarioAsignado(empleado, fecha) && !this.tieneMarcacionEnFecha(empleado, fecha) &&
         (tipoEvento === 0 || tipoEvento === 1)) {
-      return this.obtenerCodigoAusencia(empleado, fecha);
+      return this.obtenerCodigoAsignado(empleado, fecha);
     }
     return valor;
   }
@@ -1036,8 +1047,13 @@ export class ReporteMarcacionComponent {
   }
 
   trackByGrupo(_index: number, grupo: { orden: string; empleados: EmpleadoReporte[] }): string {
-    const primerEmpleado = grupo.empleados[0];
-    return `${grupo.orden}-${primerEmpleado?.esAsignacionAusencia ? 'ausencia' : 'marcacion'}`;
+    return this.claveGrupo(grupo.empleados[0]);
+  }
+
+  private claveGrupo(empleado: EmpleadoReporte): string {
+    return empleado.ordenAsignacionId == null
+      ? `marcaciones|${empleado.orden}`
+      : `asignaciones|${empleado.ordenAsignacionId}`;
   }
 
   trackByEmpleado(_index: number, empleado: EmpleadoReporte): string {
