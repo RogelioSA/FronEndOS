@@ -6,6 +6,7 @@ import { DatePipe } from '@angular/common';
 import * as ExcelJS from 'exceljs';
 import * as XLSX from 'xlsx';
 import { jwtDecode } from 'jwt-decode';
+import { extraerListaHorariosAsignados } from '../../utils/orden-trabajo-horario.utils';
 
 interface UsuarioToken {
   cUsuario?: string;
@@ -33,7 +34,7 @@ interface EmpleadoReporte {
   dni: string;
   personal: string;
   personalId: number;
-  esAsignacionAusencia?: boolean;
+  ordenAsignacionId?: number;
   marcaciones: { [fecha: string]: MarcacionPorDia };
 }
 
@@ -84,6 +85,7 @@ export class ReporteMarcacionComponent {
   personalPorId = new Map<number, any>();
   cargosPorId = new Map<number, string>();
   datosReporte: EmpleadoReporte[] = [];
+  hayDatosTabla = false;
   datosAgrupados: { orden: string; empleados: EmpleadoReporte[] }[] = [];
   textoBusquedaPersonal: string = '';
   columnasdinamicas: any[] = [];
@@ -206,29 +208,35 @@ export class ReporteMarcacionComponent {
 
     try {
       const fechaInicio = this.datePipe.transform(this.fechaInicial, 'yyyy-MM-dd');
-      const fechaFin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd') + 'T23:59:59';
+      const fechaFin = this.datePipe.transform(this.fechaFinal, 'yyyy-MM-dd');
 
       if (!fechaInicio || !fechaFin) {
         throw new Error('Fechas inválidas');
       }
 
-      const fechaFinHorarios = fechaFin.slice(0, 10);
+      let errorHorariosChile = false;
       const [result, horarios, horariosChile, personalDetalle, cargos] = await Promise.all([
-        firstValueFrom(this.apiService.getRegistroAsistencia(fechaInicio, fechaFin)),
+        firstValueFrom(this.apiService.getRegistroAsistencia(fechaInicio, `${fechaFin}T23:59:59`)),
         firstValueFrom(
           this.apiService.obtenerHorariosPorOrdenYRango(
             this.ordenTrabajoVacacionesId,
             fechaInicio,
-            fechaFinHorarios
+            fechaFin
           )
         ),
         firstValueFrom(
           this.apiService.obtenerHorariosPorOrdenYRango(
             this.ordenTrabajoChileId,
             fechaInicio,
-            fechaFinHorarios
+            fechaFin
           )
-        ),
+        ).catch(error => {
+          if (error?.status !== 404) {
+            errorHorariosChile = true;
+            console.error('Error al consultar los horarios de la OT 53:', error);
+          }
+          return [];
+        }),
         firstValueFrom(this.apiService.getPersonalDetalle()),
         firstValueFrom(this.apiService.getCargos())
       ]);
@@ -252,6 +260,9 @@ export class ReporteMarcacionComponent {
           .filter(([cargoId, nombre]: [number, string]) => Number.isFinite(cargoId) && !!nombre)
       );
       this.procesarDatosParaReporte();
+      if (errorHorariosChile) {
+        this.showMessage('Se cargaron las marcaciones, pero no se pudieron consultar los horarios de la OT 53');
+      }
 
     } catch (error) {
       console.error('❌ Error trayendo las marcaciones:', error);
@@ -264,6 +275,7 @@ export class ReporteMarcacionComponent {
   procesarDatosParaReporte() {
     const fechaIni = new Date(this.fechaInicial);
     const fechaFin = new Date(this.fechaFinal);
+    fechaFin.setHours(23, 59, 59, 999);
 
     const tiposEventoVisibles = new Set([0, 1, 99]);
     const marcacionesFiltradas = this.marcaciones.filter(m => {
@@ -342,55 +354,59 @@ export class ReporteMarcacionComponent {
       }
     });
 
-    this.agregarAsignacionesAusencia(empleadosMap);
+    this.agregarFilasAsignacion(empleadosMap, this.ordenTrabajoVacacionesId, this.vacaciones, 'VACACIONES');
 
     this.datosReporte = Array.from(empleadosMap.values());
     this.agruparDatosPorOrden();
     console.log("✅ Datos procesados para reporte:", this.datosReporte);
   }
 
-  private agregarAsignacionesAusencia(empleadosMap: Map<string, EmpleadoReporte>): void {
-    const personalConAusencia = new Set<number>();
-    const ordenAusencias = this.ordenesTrabajo.find(
-      (orden) => orden.id === this.ordenTrabajoVacacionesId
-    )?.cOrdenInterna ?? 'VACACIONES';
+  private agregarFilasAsignacion(
+    empleadosMap: Map<string, EmpleadoReporte>,
+    ordenId: number,
+    asignaciones: ReadonlyMap<string, string>,
+    nombrePorDefecto: string
+  ): void {
+    const fechasConsultadas = new Set(this.columnasdinamicas.map(columna => columna.fecha));
+    const nombreOrden = this.ordenesTrabajo.find(orden => orden.id === ordenId)?.cOrdenInterna ?? nombrePorDefecto;
 
-    this.vacaciones.forEach((_codigo, clave) => {
-      const personalId = Number(clave.split('|')[0]);
-      if (!Number.isFinite(personalId) || personalConAusencia.has(personalId)) {
+    asignaciones.forEach((_codigo, clave) => {
+      const [id, fecha] = clave.split('|');
+      const personalId = Number(id);
+      const claveFila = `asignacion-${ordenId}-${personalId}`;
+      if (!Number.isFinite(personalId) || !fechasConsultadas.has(fecha) || empleadosMap.has(claveFila)) {
         return;
       }
 
       const personalDetalle = this.personalPorId.get(personalId);
       const persona = personalDetalle?.persona;
-      empleadosMap.set(`ausencia-${personalId}`, {
-        orden: ordenAusencias,
+      empleadosMap.set(claveFila, {
+        orden: nombreOrden,
         dni: persona?.documentoIdentidad || 'N/A',
         personal: this.obtenerNombreCompleto(personalDetalle, persona),
         personalId,
-        esAsignacionAusencia: true,
+        ordenAsignacionId: ordenId,
         marcaciones: {}
       });
-      personalConAusencia.add(personalId);
     });
   }
 
   agruparDatosPorOrden() {
     const grupos = new Map<string, EmpleadoReporte[]>();
+    const filasChile = new Map<string, EmpleadoReporte>();
+    this.agregarFilasAsignacion(filasChile, this.ordenTrabajoChileId, this.horariosChile, 'OT 53');
+    const filasTabla = [...this.datosReporte, ...filasChile.values()];
+    this.hayDatosTabla = filasTabla.length > 0;
     const terminoBusqueda = this.normalizarTextoBusqueda(this.textoBusquedaPersonal);
     const empleadosFiltrados = terminoBusqueda
-      ? this.datosReporte.filter((empleado) =>
+      ? filasTabla.filter((empleado) =>
           this.normalizarTextoBusqueda(empleado.dni).includes(terminoBusqueda) ||
           this.normalizarTextoBusqueda(empleado.personal).includes(terminoBusqueda)
         )
-      : this.datosReporte;
+      : filasTabla;
 
     empleadosFiltrados.forEach((empleado) => {
-      // Las asignaciones se conservan como un bloque independiente, incluso si
-      // existen marcaciones asociadas a la Orden de Trabajo 37.
-      const claveGrupo = empleado.esAsignacionAusencia
-        ? `asignaciones-ausencia|${empleado.orden}`
-        : `marcaciones|${empleado.orden}`;
+      const claveGrupo = this.claveGrupo(empleado);
       if (!grupos.has(claveGrupo)) {
         grupos.set(claveGrupo, []);
       }
@@ -530,13 +546,19 @@ export class ReporteMarcacionComponent {
       .join(', ');
   }
 
-  esVacacion(empleado: EmpleadoReporte, fecha: string): boolean {
-    return !!empleado.esAsignacionAusencia &&
-      this.vacaciones.has(this.crearClaveVacacion(empleado.personalId, fecha));
+  tieneHorarioAsignado(empleado: EmpleadoReporte, fecha: string): boolean {
+    return !!this.obtenerCodigoAsignado(empleado, fecha);
   }
 
-  obtenerCodigoAusencia(empleado: EmpleadoReporte, fecha: string): string {
-    return this.vacaciones.get(this.crearClaveVacacion(empleado.personalId, fecha)) ?? '';
+  private obtenerCodigoAsignado(empleado: EmpleadoReporte, fecha: string): string {
+    const clave = this.crearClaveVacacion(empleado.personalId, fecha);
+    if (empleado.ordenAsignacionId === this.ordenTrabajoChileId) {
+      return this.horariosChile.get(clave) ?? '';
+    }
+    if (empleado.ordenAsignacionId === this.ordenTrabajoVacacionesId) {
+      return this.vacaciones.get(clave) ?? '';
+    }
+    return '';
   }
 
   tieneMarcacionEnFecha(empleado: EmpleadoReporte, fecha: string): boolean {
@@ -548,9 +570,9 @@ export class ReporteMarcacionComponent {
 
   obtenerTextoCelda(empleado: EmpleadoReporte, fecha: string, tipoEvento: number): string {
     const valor = this.obtenerMarcacionPorTipo(empleado, fecha, tipoEvento);
-    if (!valor && this.esVacacion(empleado, fecha) && !this.tieneMarcacionEnFecha(empleado, fecha) &&
+    if (!valor && this.tieneHorarioAsignado(empleado, fecha) && !this.tieneMarcacionEnFecha(empleado, fecha) &&
         (tipoEvento === 0 || tipoEvento === 1)) {
-      return this.obtenerCodigoAusencia(empleado, fecha);
+      return this.obtenerCodigoAsignado(empleado, fecha);
     }
     return valor;
   }
@@ -561,12 +583,12 @@ export class ReporteMarcacionComponent {
   }
 
   private indexarHorarios(horarios: any, codigos: ReadonlySet<string>): Map<string, string> {
-    const asignaciones = Array.isArray(horarios) ? horarios : horarios?.data ?? [];
+    const asignaciones = extraerListaHorariosAsignados(horarios);
     return new Map(
       asignaciones
         .map((horario: any): [string, string] => [
-          this.crearClaveVacacion(horario.personalId, horario.fecha),
-          horario.nombreOt?.trim().toUpperCase() ?? ''
+            this.crearClaveVacacion(Number(horario?.personalId), horario?.fecha),
+            String(horario?.nombreOt ?? '').trim().toUpperCase()
         ])
         .filter(([clave, codigo]: [string, string]) => !!clave && codigos.has(codigo))
     );
@@ -1035,9 +1057,13 @@ export class ReporteMarcacionComponent {
     return columna.fecha;
   }
 
-  trackByGrupo(_index: number, grupo: { orden: string; empleados: EmpleadoReporte[] }): string {
-    const primerEmpleado = grupo.empleados[0];
-    return `${grupo.orden}-${primerEmpleado?.esAsignacionAusencia ? 'ausencia' : 'marcacion'}`;
+  readonly trackByGrupo = (_index: number, grupo: { orden: string; empleados: EmpleadoReporte[] }): string =>
+    this.claveGrupo(grupo.empleados[0]);
+
+  private claveGrupo(empleado: EmpleadoReporte): string {
+    return empleado.ordenAsignacionId == null
+      ? `marcaciones|${empleado.orden}`
+      : `asignaciones|${empleado.ordenAsignacionId}`;
   }
 
   trackByEmpleado(_index: number, empleado: EmpleadoReporte): string {
