@@ -123,7 +123,7 @@
                                         'bg-danger text-white': esTardanza(empleado, col.fecha, 0),
                                         'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                         'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 0),
-                                        'vacaciones-sin-marcacion': tieneHorarioAsignado(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
+                                        'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
                                     }"
                                     (click)="onCellClick(empleado, col.fecha, 0)" style="cursor: pointer;">
                                     <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 0); trackBy: trackByMarcacion"
@@ -139,7 +139,7 @@
                                     [ngClass]="{
                                         'bg-light': col.diaSemana === 'SÁB' || col.diaSemana === 'DOM',
                                         'tiene-datos': obtenerMarcacionPorTipo(empleado, col.fecha, 1),
-                                        'vacaciones-sin-marcacion': tieneHorarioAsignado(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
+                                        'vacaciones-sin-marcacion': esVacacion(empleado, col.fecha) && !tieneMarcacionEnFecha(empleado, col.fecha)
                                     }"
                                     (click)="onCellClick(empleado, col.fecha, 1)" style="cursor: pointer;">
                                     <button *ngFor="let marcacion of obtenerMarcacionesPorTipo(empleado, col.fecha, 1); trackBy: trackByMarcacion"
@@ -167,12 +167,12 @@
                             </ng-container>
                         </tr>
                         </ng-container>
-                        <tr *ngIf="!hayDatosTabla">
+                        <tr *ngIf="datosReporte.length === 0">
                             <td [attr.colspan]="calcularColspan()" class="text-center text-muted">
                                 No hay datos para mostrar en el rango de fechas seleccionado
                             </td>
                         </tr>
-                        <tr *ngIf="hayDatosTabla && datosAgrupados.length === 0">
+                        <tr *ngIf="datosReporte.length > 0 && datosAgrupados.length === 0">
                             <td [attr.colspan]="calcularColspan()" class="text-center text-muted">
                                 No se encontró personal que coincida con la búsqueda
                             </td>
