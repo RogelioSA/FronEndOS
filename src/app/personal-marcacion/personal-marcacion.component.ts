@@ -17,6 +17,7 @@ interface RegistroAsistencia {
     ordenTrabajoCabeceraId?: number;
     ordenTrabajoCabecera?: RegistroAsistencia['ordenTrabajoCabecera'];
   } | null;
+  registroAsistenciaAdjuntos?: { adjuntoId: number; tipo: number }[] | null;
   tipoEvento: number;
   esTardanza: boolean;
   diferenciaMinutos: number;
@@ -52,6 +53,7 @@ interface JornalMarcaciones {
 export class PersonalMarcacionComponent implements OnInit {
   @BlockUI() blockUI!: NgBlockUI;
   @ViewChild('dialogoFirma') private dialogoFirma!: ElementRef<HTMLDialogElement>;
+  @ViewChild('dialogoFirmaGuardada') private dialogoFirmaGuardada!: ElementRef<HTMLDialogElement>;
   @ViewChild('lienzoFirma') private lienzoFirma!: ElementRef<HTMLCanvasElement>;
 
   jornales: JornalMarcaciones[] = [];
@@ -60,7 +62,8 @@ export class PersonalMarcacionComponent implements OnInit {
   tieneFirma = false;
   guardandoFirma = false;
   errorFirma = '';
-  jornalesFirmados = new Set<string>();
+  jornalesFirmados = new Map<string, number>();
+  firmaGuardada: { fecha: string; url: string; cargando: boolean; error: boolean } | null = null;
   private punteroFirma: number | null = null;
   private adjuntoFirmaId: number | null = null;
 
@@ -214,11 +217,18 @@ export class PersonalMarcacionComponent implements OnInit {
 
   private agruparJornales(): void {
     const porJornal = new Map<string, RegistroAsistencia[]>();
+    this.jornalesFirmados.clear();
     for (const registro of this.registrosAsistencia) {
       const fecha = registro.fechaJornal?.slice(0, 10) ?? '';
       const registros = porJornal.get(fecha) ?? [];
       registros.push(registro);
       porJornal.set(fecha, registros);
+      const firma = registro.registroAsistenciaAdjuntos?.find(
+        adjunto => adjunto?.tipo === 3 && Number.isSafeInteger(adjunto.adjuntoId) && adjunto.adjuntoId > 0
+      );
+      if (fecha && firma && !this.jornalesFirmados.has(fecha)) {
+        this.jornalesFirmados.set(fecha, firma.adjuntoId);
+      }
     }
 
     this.jornales = [...porJornal.entries()].sort(([a], [b]) => b.localeCompare(a)).map(([fecha, registros]) => {
@@ -347,7 +357,8 @@ export class PersonalMarcacionComponent implements OnInit {
   }
 
   async enviarFirma(): Promise<void> {
-    if (!this.jornalFirma || !this.aceptaFirma || !this.tieneFirma || this.guardandoFirma) return;
+    if (!this.jornalFirma || this.jornalesFirmados.has(this.jornalFirma)
+        || !this.aceptaFirma || !this.tieneFirma || this.guardandoFirma) return;
 
     this.guardandoFirma = true;
     this.errorFirma = '';
@@ -365,13 +376,42 @@ export class PersonalMarcacionComponent implements OnInit {
       await firstValueFrom(this.apiService.registrarFirmasAsistencia([
         { fecha: `${this.jornalFirma}T00:00:00.000Z`, adjuntoId: this.adjuntoFirmaId }
       ]));
-      this.jornalesFirmados.add(this.jornalFirma);
+      this.jornalesFirmados.set(this.jornalFirma, this.adjuntoFirmaId);
       this.dialogoFirma.nativeElement.close();
     } catch {
       this.errorFirma = 'No se pudo guardar la firma. Intenta enviarla nuevamente.';
     } finally {
       this.guardandoFirma = false;
     }
+  }
+
+  async verFirmaGuardada(fecha: string): Promise<void> {
+    const adjuntoId = this.jornalesFirmados.get(fecha);
+    if (adjuntoId == null) return;
+    const vista = { fecha, url: '', cargando: true, error: false };
+    this.firmaGuardada = vista;
+    this.dialogoFirmaGuardada.nativeElement.showModal();
+
+    try {
+      const url = await firstValueFrom(this.apiService.obtenerAdjuntoImagen(adjuntoId));
+      if (this.firmaGuardada === vista) {
+        vista.url = typeof url === 'string' ? url.trim() : '';
+        vista.error = !vista.url;
+      }
+    } catch {
+      if (this.firmaGuardada === vista) vista.error = true;
+    } finally {
+      if (this.firmaGuardada === vista) vista.cargando = false;
+    }
+  }
+
+  cerrarFirmaGuardada(): void {
+    this.firmaGuardada = null;
+    this.dialogoFirmaGuardada.nativeElement.close();
+  }
+
+  firmaGuardadaNoDisponible(): void {
+    if (this.firmaGuardada) this.firmaGuardada.error = true;
   }
 
   obtenerNombreTipoEvento(tipoEvento: number): string {

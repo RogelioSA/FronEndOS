@@ -196,6 +196,13 @@
 .estado-firma {
   color: #17623b;
   background: #e4f5e9;
+  border: 1px solid #a8d9b7;
+  min-height: 36px;
+}
+
+.estado-firma:hover {
+  background: #ceeeda;
+  text-decoration: underline;
 }
 
 .otros-eventos {
@@ -223,6 +230,7 @@
 }
 
 .firma-dialog,
+.firma-guardada-dialog,
 .map-card {
   width: min(100% - 2rem, 640px);
   max-height: calc(100dvh - 2rem);
@@ -249,8 +257,25 @@
 }
 
 .firma-dialog::backdrop,
+.firma-guardada-dialog::backdrop,
 .map-backdrop {
   background: #14243b88;
+}
+
+.firma-guardada-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  padding: 0;
+}
+
+.firma-guardada-imagen {
+  display: block;
+  width: 100%;
+  max-height: 65dvh;
+  object-fit: contain;
+  background: #f9eddb;
+  border-radius: 8px;
 }
 
 .firma-dialog h2 {
