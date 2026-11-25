@@ -385,6 +385,14 @@ export class ApiService{
       );
     }
 
+    registrarFirmasAsistencia(firmas: { fecha: string; adjuntoId: number }[]): Observable<unknown> {
+      return this.https.post(
+        `${this.baseUrl}/rrhh/RegistroAsistencia/firmas`,
+        firmas,
+        { headers: this.getHeaders() }
+      );
+    }
+
     getRegistroAsistenciaPersonal(UsuarioId: string, fechaInicio: string, fechaFin: string): Observable<any> {
       return this.https.get(
         `${this.baseUrl}/rrhh/RegistroAsistenciaOrdenTrabajo/by_currentuser_and_range_date`,

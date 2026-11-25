@@ -1,8 +1,7 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
-import { DxDataGridComponent } from 'devextreme-angular';
 
 // Declarar Leaflet para TypeScript
 declare var L: any;
@@ -13,6 +12,11 @@ interface RegistroAsistencia {
   personalId: number;
   fecha: string;
   fechaJornal: string;
+  ordenTrabajoCabecera?: { id?: number; nombre?: string } | null;
+  registroAsistenciaOrdenTrabajo?: {
+    ordenTrabajoCabeceraId?: number;
+    ordenTrabajoCabecera?: RegistroAsistencia['ordenTrabajoCabecera'];
+  } | null;
   tipoEvento: number;
   esTardanza: boolean;
   diferenciaMinutos: number;
@@ -26,6 +30,20 @@ interface RegistroAsistencia {
   };
 }
 
+interface TramoJornal {
+  orden: string;
+  entrada?: RegistroAsistencia;
+  salida?: RegistroAsistencia;
+  total: string;
+  ubicacion?: RegistroAsistencia;
+}
+
+interface JornalMarcaciones {
+  fecha: string;
+  tramos: TramoJornal[];
+  otrosEventos: RegistroAsistencia[];
+}
+
 @Component({
   selector: 'app-personal-marcacion',
   standalone: false,
@@ -34,7 +52,18 @@ interface RegistroAsistencia {
 })
 export class PersonalMarcacionComponent implements OnInit {
   @BlockUI() blockUI!: NgBlockUI;
-  @ViewChild(DxDataGridComponent) dataGrid?: DxDataGridComponent;
+  @ViewChild('dialogoFirma') private dialogoFirma!: ElementRef<HTMLDialogElement>;
+  @ViewChild('lienzoFirma') private lienzoFirma!: ElementRef<HTMLCanvasElement>;
+
+  jornales: JornalMarcaciones[] = [];
+  jornalFirma = '';
+  aceptaFirma = false;
+  tieneFirma = false;
+  guardandoFirma = false;
+  errorFirma = '';
+  jornalesFirmados = new Set<string>();
+  private punteroFirma: number | null = null;
+  private adjuntoFirmaId: number | null = null;
 
   registrosAsistencia: RegistroAsistencia[] = [];
   usuarioId: string = '0';
@@ -134,6 +163,7 @@ export class PersonalMarcacionComponent implements OnInit {
       
       this.registrosAsistencia = Array.isArray(response) ? response : [];
       this.calcularEstadisticas();
+      this.agruparJornales();
     } catch (error) {
       console.error('❌ Error al cargar registros:', error);
       alert('Error al cargar los registros de asistencia');
@@ -179,33 +209,166 @@ export class PersonalMarcacionComponent implements OnInit {
 
     this.registrosAsistencia = [];
     this.calcularEstadisticas();
-    this.dataGrid?.instance.clearFilter();
-    this.dataGrid?.instance.searchByText('');
-    this.dataGrid?.instance.pageIndex(0);
+    this.jornales = [];
     await this.cargarRegistros();
   }
 
-  formatearFechaHora = (cellInfo: any): string => {
-    if (!cellInfo.value) return 'N/A';
-    const date = new Date(cellInfo.value);
-    return date.toLocaleString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+  private agruparJornales(): void {
+    const porJornal = new Map<string, RegistroAsistencia[]>();
+    for (const registro of this.registrosAsistencia) {
+      const fecha = registro.fechaJornal?.slice(0, 10) ?? '';
+      const registros = porJornal.get(fecha) ?? [];
+      registros.push(registro);
+      porJornal.set(fecha, registros);
+    }
+
+    this.jornales = [...porJornal.entries()].sort(([a], [b]) => b.localeCompare(a)).map(([fecha, registros]) => {
+      const tramos: TramoJornal[] = [];
+      const otrosEventos: RegistroAsistencia[] = [];
+      const pendientesPorOrden = new Map<string, TramoJornal[]>();
+      registros.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime() || a.id - b.id);
+
+      for (const registro of registros) {
+        const relacion = registro.registroAsistenciaOrdenTrabajo;
+        const cabecera = relacion?.ordenTrabajoCabecera ?? registro.ordenTrabajoCabecera;
+        const orden = cabecera?.nombre?.trim() || '—';
+        const claveOrden = String(relacion?.ordenTrabajoCabeceraId ?? cabecera?.id ?? orden);
+        const pendientes = pendientesPorOrden.get(claveOrden) ?? [];
+        if (registro.tipoEvento === 0) {
+          const tramo = { orden, entrada: registro, total: '—', ubicacion: this.tieneUbicacion(registro) ? registro : undefined };
+          tramos.push(tramo);
+          pendientes.push(tramo);
+          pendientesPorOrden.set(claveOrden, pendientes);
+        } else if (registro.tipoEvento === 1) {
+          const ubicacion = this.tieneUbicacion(registro) ? registro : undefined;
+          const tramo = pendientes.shift();
+          if (tramo?.entrada) {
+            tramo.salida = registro;
+            tramo.total = this.formatearDuracion(tramo.entrada.fecha, registro.fecha);
+            tramo.ubicacion ??= ubicacion;
+          } else {
+            tramos.push({ orden, salida: registro, total: '—', ubicacion });
+          }
+        } else {
+          otrosEventos.push(registro);
+        }
+      }
+      return { fecha, tramos, otrosEventos };
     });
   }
 
-  formatearSoloFecha = (cellInfo: any): string => {
-    if (!cellInfo.value) return 'N/A';
-    const date = new Date(cellInfo.value);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+  private formatearDuracion(entrada: string, salida: string): string {
+    const segundos = Math.floor((new Date(salida).getTime() - new Date(entrada).getTime()) / 1000);
+    if (!Number.isFinite(segundos) || segundos < 0) return '—';
+    const horas = Math.floor(segundos / 3600);
+    const minutos = Math.floor(segundos / 60) % 60;
+    const resto = segundos % 60;
+    return [horas && `${horas} h`, minutos && `${minutos} min`, resto && `${resto} s`].filter(Boolean).join(' ') || '0 min';
+  }
+
+  formatearFechaHora(fecha?: string): string {
+    if (!fecha) return '—';
+    const date = new Date(fecha);
+    return date.toLocaleString('es-ES', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
+  }
+
+  formatearFechaJornal(value?: string | null): string {
+    const fecha = /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/.exec(value ?? '');
+    if (!fecha) return 'N/A';
+    const [, anio, mes, dia] = fecha;
+    return `${dia}/${mes}/${anio}`;
+  }
+
+  abrirFirma(fecha: string): void {
+    if (this.jornalesFirmados.has(fecha) || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return;
+    this.jornalFirma = fecha;
+    this.aceptaFirma = false;
+    this.limpiarFirma();
+    this.dialogoFirma.nativeElement.showModal();
+  }
+
+  cerrarFirma(): void {
+    if (!this.guardandoFirma) this.dialogoFirma.nativeElement.close();
+  }
+
+  cancelarFirma(evento: Event): void {
+    if (this.guardandoFirma) evento.preventDefault();
+  }
+
+  limpiarFirma(): void {
+    const canvas = this.lienzoFirma.nativeElement;
+    canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    this.punteroFirma = null;
+    this.tieneFirma = false;
+    this.adjuntoFirmaId = null;
+    this.errorFirma = '';
+  }
+
+  dibujarFirma(evento: PointerEvent): void {
+    if (this.guardandoFirma) return;
+    const inicio = evento.type === 'pointerdown';
+    if (inicio ? this.punteroFirma !== null || evento.button !== 0 : this.punteroFirma !== evento.pointerId) return;
+
+    const canvas = this.lienzoFirma.nativeElement;
+    const contexto = canvas.getContext('2d');
+    if (!contexto) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (evento.clientX - rect.left) * canvas.width / rect.width;
+    const y = (evento.clientY - rect.top) * canvas.height / rect.height;
+    if (inicio) {
+      this.punteroFirma = evento.pointerId;
+      canvas.setPointerCapture(evento.pointerId);
+      contexto.beginPath();
+      contexto.moveTo(x, y);
+      return;
+    }
+
+    contexto.lineCap = 'round';
+    contexto.lineJoin = 'round';
+    contexto.lineWidth = 5;
+    contexto.strokeStyle = '#182a43';
+    contexto.lineTo(x, y);
+    contexto.stroke();
+    contexto.beginPath();
+    contexto.moveTo(x, y);
+    this.tieneFirma = true;
+    this.adjuntoFirmaId = null;
+    this.errorFirma = '';
+  }
+
+  finalizarTrazo(evento: PointerEvent): void {
+    if (this.punteroFirma === evento.pointerId) this.punteroFirma = null;
+  }
+
+  async enviarFirma(): Promise<void> {
+    if (!this.jornalFirma || !this.aceptaFirma || !this.tieneFirma || this.guardandoFirma) return;
+
+    this.guardandoFirma = true;
+    this.errorFirma = '';
+    try {
+      if (this.adjuntoFirmaId === null) {
+        const imagen = await new Promise<Blob | null>(resolve => this.lienzoFirma.nativeElement.toBlob(resolve, 'image/png'));
+        if (!imagen) throw new Error('No se pudo generar la imagen de la firma');
+        const archivo = new File([imagen], `firma-jornal-${this.jornalFirma}.png`, { type: 'image/png' });
+        const respuesta = await firstValueFrom(this.apiService.subirAdjunto(1, archivo));
+        const id = Number(respuesta?.id);
+        if (!Number.isSafeInteger(id) || id <= 0) throw new Error('El adjunto no devolvió un ID válido');
+        this.adjuntoFirmaId = id;
+      }
+
+      await firstValueFrom(this.apiService.registrarFirmasAsistencia([
+        { fecha: `${this.jornalFirma}T00:00:00.000Z`, adjuntoId: this.adjuntoFirmaId }
+      ]));
+      this.jornalesFirmados.add(this.jornalFirma);
+      this.dialogoFirma.nativeElement.close();
+    } catch {
+      this.errorFirma = 'No se pudo guardar la firma. Intenta enviarla nuevamente.';
+    } finally {
+      this.guardandoFirma = false;
+    }
   }
 
   obtenerNombreTipoEvento(tipoEvento: number): string {
@@ -213,18 +376,12 @@ export class PersonalMarcacionComponent implements OnInit {
     return tipo ? tipo.text : 'Desconocido';
   }
 
-  obtenerColorTipoEvento(tipoEvento: number): string {
-    const tipo = this.tiposEvento.find(t => t.value === tipoEvento);
-    return tipo ? tipo.color : 'secondary';
+  tieneUbicacion(registro: RegistroAsistencia): boolean {
+    return Number.isFinite(registro.latitud) && Number.isFinite(registro.longitud);
   }
 
-  mostrarMapa = (e: any) => {
-    const rowData = e.row.data;
-    
-    if (!rowData.latitud || !rowData.longitud) {
-      alert('No hay coordenadas disponibles para este registro');
-      return;
-    }
+  mostrarMapa(rowData: RegistroAsistencia): void {
+    if (!this.tieneUbicacion(rowData)) return;
 
     this.coordenadasSeleccionadas = {
       latitud: rowData.latitud,
@@ -234,7 +391,7 @@ export class PersonalMarcacionComponent implements OnInit {
     this.mostrarModalMapa = true;
 
     setTimeout(() => {
-      this.inicializarMapa();
+      if (this.mostrarModalMapa) this.inicializarMapa();
     }, 100);
   }
 
@@ -242,7 +399,7 @@ export class PersonalMarcacionComponent implements OnInit {
     const lat = this.coordenadasSeleccionadas.latitud;
     const lng = this.coordenadasSeleccionadas.longitud;
 
-    if (!lat || !lng) return;
+    if (lat == null || lng == null) return;
 
     if (this.map) {
       this.map.remove();
@@ -268,7 +425,4 @@ export class PersonalMarcacionComponent implements OnInit {
     }
   }
 
-  calcularCellValue = (rowData: any) => {
-    return this.obtenerNombreTipoEvento(rowData.tipoEvento);
-  }
 }
