@@ -1,220 +1,144 @@
-<div class="container-fluid px-2 px-md-3">
-  <div class="row g-1 mt-2 mb-4 marcaciones-page">
-    <div class="col-12">
-      <!-- Header -->
-      <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-3">
-        <h3 class="mb-0">
-          <i class="bi bi-clock-history me-2"></i>
-          <!-- <span class="d-none d-md-inline">Asistencia</span> -->
-          <!-- <span class="d-inline d-md-none">Asistencia</span> -->
-        </h3>
-
-        <!-- Navegación de mes -->
-        <div class="d-flex align-items-center gap-2 gap-md-3 w-100 w-md-auto justify-content-between">
-          <button
-            class="btn btn-outline-primary btn-sm month-button"
-            (click)="cambiarMes(-1)"
-            [disabled]="cargando"
-            aria-label="Ver mes anterior"
-          >
-            <span class="d-inline d-sm-none fw-bold">&lt;</span>
-            <span class="d-none d-sm-inline">
-              <i class="bi bi-chevron-left"></i>
-              Anterior
-            </span>
-          </button>
-
-          <h5 class="month-label mb-0 text-capitalize fw-bold fs-6 fs-md-5">{{ mesActual }}</h5>
-
-          <button
-            class="btn btn-outline-primary btn-sm month-button"
-            (click)="cambiarMes(1)"
-            [disabled]="cargando"
-            aria-label="Ver mes siguiente"
-          >
-            <span class="d-none d-sm-inline">
-              Siguiente
-              <i class="bi bi-chevron-right"></i>
-            </span>
-            <span class="d-inline d-sm-none fw-bold">&gt;</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Tarjetas de estadísticas -->
-      <div class="row g-2 g-md-3 mb-3 mb-md-4">
-        <div class="col-6 col-lg-3">
-          <div class="card shadow-sm h-100">
-            <div class="card-body text-center p-2 p-md-3">
-              <i class="bi bi-list-check fs-3 fs-md-1 text-primary mb-1 mb-md-2"></i>
-              <h6 class="card-title text-muted small mb-1">Total</h6>
-              <h3 class="h4 h2-md text-primary mb-0">{{ totalRegistros }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-6 col-lg-3">
-          <div class="card shadow-sm h-100">
-            <div class="card-body text-center p-2 p-md-3">
-              <i class="bi bi-box-arrow-in-right fs-3 fs-md-1 text-success mb-1 mb-md-2"></i>
-              <h6 class="card-title text-muted small mb-1">Entradas</h6>
-              <h3 class="h4 h2-md text-success mb-0">{{ registrosEntrada }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-6 col-lg-3">
-          <div class="card shadow-sm h-100">
-            <div class="card-body text-center p-2 p-md-3">
-              <i class="bi bi-box-arrow-right fs-3 fs-md-1 text-danger mb-1 mb-md-2"></i>
-              <h6 class="card-title text-muted small mb-1">Salidas</h6>
-              <h3 class="h4 h2-md text-danger mb-0">{{ registrosSalida }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-6 col-lg-3">
-          <div class="card shadow-sm border-warning h-100">
-            <div class="card-body text-center p-2 p-md-3">
-              <i class="bi bi-exclamation-triangle fs-3 fs-md-1 text-warning mb-1 mb-md-2"></i>
-              <h6 class="card-title text-muted small mb-1">Tardanzas</h6>
-              <h3 class="h4 h2-md text-warning mb-0">{{ totalTardanzas }}</h3>
-              <small class="text-muted d-block" style="font-size: 0.7rem;">{{ minutosAcumulados }} min</small>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tabla de registros -->
-      <div class="card shadow-sm detail-card">
-        <div class="card-header bg-white p-2 p-md-3">
-          <div class="d-flex align-items-center justify-content-between gap-2">
-            <h5 class="mb-0 fs-6 fs-md-5">
-              <i class="bi bi-table me-2"></i>
-              <span>Detalle de Marcaciones</span>
-            </h5>
-            <button
-              type="button"
-              class="btn btn-primary btn-sm refresh-button"
-              (click)="actualizarMarcaciones()"
-              [disabled]="cargando"
-              aria-label="Actualizar marcaciones"
-            >
-              <i
-                class="fa-solid"
-                [class.fa-arrows-rotate]="!cargando"
-                [class.fa-spinner]="cargando"
-                [class.fa-spin]="cargando"
-                aria-hidden="true"
-              ></i>
-              <span>ACTUALIZAR</span>
-            </button>
-          </div>
-        </div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <dx-data-grid
-              id="gridContainer"
-              [dataSource]="registrosAsistencia"
-              keyExpr="id"
-              [showBorders]="true"
-              [columnHidingEnabled]="true"
-              [rowAlternationEnabled]="true"
-              [showColumnLines]="true"
-              [showRowLines]="true"
-              [allowColumnResizing]="true"
-              [columnAutoWidth]="true"
-              [wordWrapEnabled]="true"
-              [width]="'100%'"
-              [noDataText]="cargando ? 'Cargando marcaciones...' : 'No hay marcaciones en este periodo'"
-            >
-              <dxo-paging [pageSize]="50"></dxo-paging>
-              <dxo-pager
-                [visible]="true"
-                [showPageSizeSelector]="true"
-                [allowedPageSizes]="[50, 100, 150, 200]"
-                [showInfo]="true"
-              ></dxo-pager>
-
-              <dxo-filter-row [visible]="true"></dxo-filter-row>
-              <dxo-header-filter [visible]="true"></dxo-header-filter>
-              <dxo-search-panel [visible]="true" placeholder="Buscar..."></dxo-search-panel>
-
-              <dxi-column
-                dataField="fecha"
-                caption="Fecha/Hora"
-                [customizeText]="formatearFechaHora"
-                sortOrder="desc"
-                [hidingPriority]="8"
-              ></dxi-column>
-
-              <dxi-column
-                dataField="fechaJornal"
-                caption="Fecha Jornal"
-                [customizeText]="formatearSoloFecha"
-                [hidingPriority]="2"
-              ></dxi-column>
-
-              <dxi-column
-                dataField="tipoEvento"
-                caption="Tipo"
-                alignment="center"
-                [calculateCellValue]="calcularCellValue"
-                cellTemplate="tipoEventoTemplate"
-                [hidingPriority]="7"
-              ></dxi-column>
-
-              <dxi-column
-                type="buttons"
-                [width]="60"
-                caption="Mapa"
-                [fixed]="true"
-                fixedPosition="right"
-                [hidingPriority]="9"
-              >
-                <dxi-button
-                  icon="map"
-                  hint="Ver ubicación"
-                  [onClick]="mostrarMapa"
-                ></dxi-button>
-              </dxi-column>
-
-              <!-- Templates -->
-              <div *dxTemplate="let cell of 'tipoEventoTemplate'">
-                <span [class]="'badge bg-' + obtenerColorTipoEvento(cell.data.tipoEvento)">
-                  {{ obtenerNombreTipoEvento(cell.data.tipoEvento) }}
-                </span>
-              </div>
-
-            </dx-data-grid>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal del Mapa -->
-      <div *ngIf="mostrarModalMapa" class="modal-backdrop" (click)="cerrarMapa()">
-        <div class="map-card" (click)="$event.stopPropagation()">
-          <div class="map-card-header">
-            <h5 class="mb-0 fs-6 fs-md-5">
-              <i class="bi bi-geo-alt-fill me-2"></i>
-              Ubicación
-            </h5>
-            <button class="btn-close" (click)="cerrarMapa()">×</button>
-          </div>
-          <div class="map-card-body">
-            <div class="coordinates-info mb-3">
-              <div class="row g-2">
-                <div class="col-12 col-sm-6">
-                  <strong>Lat:</strong> {{ coordenadasSeleccionadas.latitud || 'N/A' }}
-                </div>
-                <div class="col-12 col-sm-6">
-                  <strong>Lng:</strong> {{ coordenadasSeleccionadas.longitud || 'N/A' }}
-                </div>
-              </div>
-            </div>
-            <div id="map" class="map-container"></div>
-          </div>
-        </div>
-      </div>
-
-      <block-ui></block-ui>
+<main class="marcaciones-page">
+  <header class="page-header">
+    <div>
+      <h1>Mis marcaciones</h1>
+      <p>Revisa y firma la conformidad de tus jornales.</p>
     </div>
-  </div>
-</div>
+    <button type="button" class="btn btn-outline-primary refresh-button" (click)="actualizarMarcaciones()" [disabled]="cargando">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="cargando" aria-hidden="true"></i>
+      Actualizar
+    </button>
+  </header>
+
+  <nav class="month-navigation" aria-label="Período de marcaciones">
+    <button type="button" class="btn month-button" (click)="cambiarMes(-1)" [disabled]="cargando" aria-label="Ver mes anterior">
+      <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </button>
+    <h2>{{ mesActual }}</h2>
+    <button type="button" class="btn month-button" (click)="cambiarMes(1)" [disabled]="cargando" aria-label="Ver mes siguiente">
+      <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </button>
+  </nav>
+
+  <dl class="summary">
+    <div><dt>Marcaciones</dt><dd>{{ totalRegistros }}</dd></div>
+    <div><dt>Entradas</dt><dd>{{ registrosEntrada }}</dd></div>
+    <div><dt>Salidas</dt><dd>{{ registrosSalida }}</dd></div>
+    <div><dt>Tardanzas</dt><dd>{{ totalTardanzas }} <small>· {{ minutosAcumulados }} min</small></dd></div>
+  </dl>
+
+  <section class="jornales" aria-label="Jornales del período" [attr.aria-busy]="cargando">
+    @if (cargando) {
+      <p class="empty-state" role="status">Cargando marcaciones…</p>
+    } @else if (jornales.length === 0) {
+      <p class="empty-state">No hay marcaciones en este período.</p>
+    } @else {
+      @for (jornal of jornales; track jornal.fecha) {
+        <article class="jornal-card">
+          <header class="jornal-header">
+            <h3><i class="bi bi-calendar3" aria-hidden="true"></i> {{ formatearFechaJornal(jornal.fecha) }}</h3>
+            @if (jornalesFirmados.has(jornal.fecha)) {
+              <span class="estado-firma" role="status"><i class="bi bi-check-circle" aria-hidden="true"></i> Conformidad firmada</span>
+            }
+          </header>
+
+          @if (jornal.tramos.length) {
+            <div class="tramos" role="table" [attr.aria-label]="'Marcaciones del ' + formatearFechaJornal(jornal.fecha)">
+              <div class="tramo-columnas" role="row">
+                <span role="columnheader">Entrada</span>
+                <span role="columnheader">Salida</span>
+                <span role="columnheader">Total</span>
+                <span role="columnheader">OT/Adm</span>
+              </div>
+              @for (tramo of jornal.tramos; track tramo.entrada?.id ?? tramo.salida?.id) {
+                <div class="tramo" role="row">
+                  <div role="cell"><span class="etiqueta-movil" aria-hidden="true">Entrada</span>{{ formatearFechaHora(tramo.entrada?.fecha) }}</div>
+                  <div role="cell"><span class="etiqueta-movil" aria-hidden="true">Salida</span>{{ formatearFechaHora(tramo.salida?.fecha) }}</div>
+                  <div role="cell"><span class="etiqueta-movil" aria-hidden="true">Total</span><strong>{{ tramo.total }}</strong></div>
+                  <div class="orden-tramo" role="cell">
+                    <span class="etiqueta-movil" aria-hidden="true">OT/Adm</span>
+                    <span class="orden">{{ tramo.orden }}</span>
+                    @if (tramo.ubicacion; as ubicacion) {
+                      <button type="button" class="btn map-button" (click)="mostrarMapa(ubicacion)" aria-label="Ver ubicación de la marcación" title="Ver ubicación">
+                        <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          @if (jornal.otrosEventos.length) {
+            <ul class="otros-eventos" aria-label="Otras marcaciones">
+              @for (evento of jornal.otrosEventos; track evento.id) {
+                <li>
+                  <span><strong>{{ obtenerNombreTipoEvento(evento.tipoEvento) }}</strong> · {{ formatearFechaHora(evento.fecha) }}</span>
+                  @if (tieneUbicacion(evento)) {
+                    <button type="button" class="btn map-button" (click)="mostrarMapa(evento)" aria-label="Ver ubicación de la marcación">
+                      <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          }
+
+          @if (jornal.fecha && !jornalesFirmados.has(jornal.fecha)) {
+            <footer class="jornal-footer">
+              <button type="button" class="btn btn-primary" (click)="abrirFirma(jornal.fecha)">
+                <i class="bi bi-pen" aria-hidden="true"></i> Firmar conformidad
+              </button>
+            </footer>
+          }
+        </article>
+      }
+    }
+  </section>
+
+  <dialog #dialogoFirma class="firma-dialog" aria-labelledby="tituloFirma" (cancel)="cancelarFirma($event)">
+    <h2 id="tituloFirma">Firmar conformidad</h2>
+    <p>Jornal del {{ formatearFechaJornal(jornalFirma) }}. Dibuja tu firma en el recuadro.</p>
+    <canvas #lienzoFirma width="900" height="420" class="lienzo-firma" aria-label="Área para dibujar la firma"
+      (pointerdown)="dibujarFirma($event)" (pointermove)="dibujarFirma($event)"
+      (pointerup)="finalizarTrazo($event)" (pointercancel)="finalizarTrazo($event)"
+      (lostpointercapture)="finalizarTrazo($event)">
+    </canvas>
+    <label class="aceptacion">
+      <input type="checkbox" class="form-check-input" [checked]="aceptaFirma"
+        [disabled]="guardandoFirma" (change)="aceptaFirma = $any($event.target).checked">
+      <span>Acepto usar mi firma digital para dar conformidad a las marcaciones de este jornal.</span>
+    </label>
+    @if (errorFirma) {
+      <p class="firma-error" role="alert">{{ errorFirma }}</p>
+    }
+    <div class="firma-acciones">
+      <button type="button" class="btn btn-success" (click)="enviarFirma()" [disabled]="!aceptaFirma || !tieneFirma || guardandoFirma">
+        <i class="bi bi-send" aria-hidden="true"></i> {{ guardandoFirma ? 'Enviando…' : 'Enviar' }}
+      </button>
+      <button type="button" class="btn btn-warning" (click)="limpiarFirma()" [disabled]="guardandoFirma">
+        <i class="bi bi-eraser" aria-hidden="true"></i> Limpiar
+      </button>
+      <button type="button" class="btn btn-danger" (click)="cerrarFirma()" [disabled]="guardandoFirma">
+        <i class="bi bi-x-lg" aria-hidden="true"></i> Cerrar
+      </button>
+    </div>
+  </dialog>
+
+  @if (mostrarModalMapa) {
+    <div class="map-backdrop" (click)="cerrarMapa()" (keydown.escape)="cerrarMapa()">
+      <section class="map-card" role="dialog" aria-modal="true" aria-labelledby="tituloMapa" (click)="$event.stopPropagation()">
+        <header class="map-card-header">
+          <h2 id="tituloMapa"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i> Ubicación</h2>
+          <button type="button" class="btn-close" aria-label="Cerrar mapa" (click)="cerrarMapa()"></button>
+        </header>
+        <div class="map-card-body">
+          <p>Lat: {{ coordenadasSeleccionadas.latitud }} · Lng: {{ coordenadasSeleccionadas.longitud }}</p>
+          <div id="map" class="map-container"></div>
+        </div>
+      </section>
+    </div>
+  }
+
+  <block-ui></block-ui>
+</main>
