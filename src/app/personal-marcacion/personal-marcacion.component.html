@@ -12,11 +12,11 @@
 
   <nav class="month-navigation" aria-label="Período de marcaciones">
     <button type="button" class="btn month-button" (click)="cambiarMes(-1)" [disabled]="cargando" aria-label="Ver mes anterior">
-      <i class="bi bi-chevron-left" aria-hidden="true"></i>
+      <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
     </button>
     <h2>{{ mesActual }}</h2>
     <button type="button" class="btn month-button" (click)="cambiarMes(1)" [disabled]="cargando" aria-label="Ver mes siguiente">
-      <i class="bi bi-chevron-right" aria-hidden="true"></i>
+      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
     </button>
   </nav>
 
@@ -36,9 +36,9 @@
       @for (jornal of jornales; track jornal.fecha) {
         <article class="jornal-card">
           <header class="jornal-header">
-            <h3><i class="bi bi-calendar3" aria-hidden="true"></i> {{ formatearFechaJornal(jornal.fecha) }}</h3>
+            <h3><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> {{ formatearFechaJornal(jornal.fecha) }}</h3>
             @if (jornalesFirmados.has(jornal.fecha)) {
-              <span class="estado-firma" role="status"><i class="bi bi-check-circle" aria-hidden="true"></i> Conformidad firmada</span>
+              <span class="estado-firma" role="status"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Conformidad firmada</span>
             }
           </header>
 
@@ -52,17 +52,38 @@
               </div>
               @for (tramo of jornal.tramos; track tramo.entrada?.id ?? tramo.salida?.id) {
                 <div class="tramo" role="row">
-                  <div role="cell"><span class="etiqueta-movil" aria-hidden="true">Entrada</span>{{ formatearFechaHora(tramo.entrada?.fecha) }}</div>
-                  <div role="cell"><span class="etiqueta-movil" aria-hidden="true">Salida</span>{{ formatearFechaHora(tramo.salida?.fecha) }}</div>
+                  <div role="cell">
+                    <span class="etiqueta-movil" aria-hidden="true">Entrada</span>
+                    @if (tramo.entrada; as entrada) {
+                      @if (tieneUbicacion(entrada)) {
+                        <button type="button" class="marca-mapa" (click)="mostrarMapa(entrada)"
+                          [attr.aria-label]="'Ver ubicación de entrada del ' + formatearFechaHora(entrada.fecha)">
+                          {{ formatearFechaHora(entrada.fecha) }}
+                          <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                        </button>
+                      } @else {
+                        {{ formatearFechaHora(entrada.fecha) }}
+                      }
+                    } @else { — }
+                  </div>
+                  <div role="cell">
+                    <span class="etiqueta-movil" aria-hidden="true">Salida</span>
+                    @if (tramo.salida; as salida) {
+                      @if (tieneUbicacion(salida)) {
+                        <button type="button" class="marca-mapa" (click)="mostrarMapa(salida)"
+                          [attr.aria-label]="'Ver ubicación de salida del ' + formatearFechaHora(salida.fecha)">
+                          {{ formatearFechaHora(salida.fecha) }}
+                          <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                        </button>
+                      } @else {
+                        {{ formatearFechaHora(salida.fecha) }}
+                      }
+                    } @else { — }
+                  </div>
                   <div role="cell"><span class="etiqueta-movil" aria-hidden="true">Total</span><strong>{{ tramo.total }}</strong></div>
-                  <div class="orden-tramo" role="cell">
+                  <div role="cell">
                     <span class="etiqueta-movil" aria-hidden="true">OT/Adm</span>
                     <span class="orden">{{ tramo.orden }}</span>
-                    @if (tramo.ubicacion; as ubicacion) {
-                      <button type="button" class="btn map-button" (click)="mostrarMapa(ubicacion)" aria-label="Ver ubicación de la marcación" title="Ver ubicación">
-                        <i class="bi bi-geo-alt" aria-hidden="true"></i>
-                      </button>
-                    }
                   </div>
                 </div>
               }
@@ -76,7 +97,7 @@
                   <span><strong>{{ obtenerNombreTipoEvento(evento.tipoEvento) }}</strong> · {{ formatearFechaHora(evento.fecha) }}</span>
                   @if (tieneUbicacion(evento)) {
                     <button type="button" class="btn map-button" (click)="mostrarMapa(evento)" aria-label="Ver ubicación de la marcación">
-                      <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                      <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
                     </button>
                   }
                 </li>
@@ -87,7 +108,7 @@
           @if (jornal.fecha && !jornalesFirmados.has(jornal.fecha)) {
             <footer class="jornal-footer">
               <button type="button" class="btn btn-primary" (click)="abrirFirma(jornal.fecha)">
-                <i class="bi bi-pen" aria-hidden="true"></i> Firmar conformidad
+                <i class="fa-solid fa-pen" aria-hidden="true"></i> Firmar conformidad
               </button>
             </footer>
           }
@@ -99,11 +120,13 @@
   <dialog #dialogoFirma class="firma-dialog" aria-labelledby="tituloFirma" (cancel)="cancelarFirma($event)">
     <h2 id="tituloFirma">Firmar conformidad</h2>
     <p>Jornal del {{ formatearFechaJornal(jornalFirma) }}. Dibuja tu firma en el recuadro.</p>
-    <canvas #lienzoFirma width="900" height="420" class="lienzo-firma" aria-label="Área para dibujar la firma"
-      (pointerdown)="dibujarFirma($event)" (pointermove)="dibujarFirma($event)"
-      (pointerup)="finalizarTrazo($event)" (pointercancel)="finalizarTrazo($event)"
-      (lostpointercapture)="finalizarTrazo($event)">
-    </canvas>
+    <div class="firma-superficie">
+      <canvas #lienzoFirma class="lienzo-firma" aria-label="Área para dibujar la firma"
+        (pointerdown)="dibujarFirma($event)" (pointermove)="dibujarFirma($event)"
+        (pointerup)="finalizarTrazo($event)" (pointercancel)="finalizarTrazo($event)"
+        (lostpointercapture)="finalizarTrazo($event)">
+      </canvas>
+    </div>
     <label class="aceptacion">
       <input type="checkbox" class="form-check-input" [checked]="aceptaFirma"
         [disabled]="guardandoFirma" (change)="aceptaFirma = $any($event.target).checked">
@@ -114,13 +137,13 @@
     }
     <div class="firma-acciones">
       <button type="button" class="btn btn-success" (click)="enviarFirma()" [disabled]="!aceptaFirma || !tieneFirma || guardandoFirma">
-        <i class="bi bi-send" aria-hidden="true"></i> {{ guardandoFirma ? 'Enviando…' : 'Enviar' }}
+        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> {{ guardandoFirma ? 'Enviando…' : 'Enviar' }}
       </button>
       <button type="button" class="btn btn-warning" (click)="limpiarFirma()" [disabled]="guardandoFirma">
-        <i class="bi bi-eraser" aria-hidden="true"></i> Limpiar
+        <i class="fa-solid fa-eraser" aria-hidden="true"></i> Limpiar
       </button>
       <button type="button" class="btn btn-danger" (click)="cerrarFirma()" [disabled]="guardandoFirma">
-        <i class="bi bi-x-lg" aria-hidden="true"></i> Cerrar
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i> Cerrar
       </button>
     </div>
   </dialog>
@@ -129,7 +152,7 @@
     <div class="map-backdrop" (click)="cerrarMapa()" (keydown.escape)="cerrarMapa()">
       <section class="map-card" role="dialog" aria-modal="true" aria-labelledby="tituloMapa" (click)="$event.stopPropagation()">
         <header class="map-card-header">
-          <h2 id="tituloMapa"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i> Ubicación</h2>
+          <h2 id="tituloMapa"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Ubicación</h2>
           <button type="button" class="btn-close" aria-label="Cerrar mapa" (click)="cerrarMapa()"></button>
         </header>
         <div class="map-card-body">

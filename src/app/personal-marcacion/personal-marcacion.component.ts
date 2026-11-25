@@ -35,7 +35,6 @@ interface TramoJornal {
   entrada?: RegistroAsistencia;
   salida?: RegistroAsistencia;
   total: string;
-  ubicacion?: RegistroAsistencia;
 }
 
 interface JornalMarcaciones {
@@ -235,19 +234,17 @@ export class PersonalMarcacionComponent implements OnInit {
         const claveOrden = String(relacion?.ordenTrabajoCabeceraId ?? cabecera?.id ?? orden);
         const pendientes = pendientesPorOrden.get(claveOrden) ?? [];
         if (registro.tipoEvento === 0) {
-          const tramo = { orden, entrada: registro, total: '—', ubicacion: this.tieneUbicacion(registro) ? registro : undefined };
+          const tramo = { orden, entrada: registro, total: '—' };
           tramos.push(tramo);
           pendientes.push(tramo);
           pendientesPorOrden.set(claveOrden, pendientes);
         } else if (registro.tipoEvento === 1) {
-          const ubicacion = this.tieneUbicacion(registro) ? registro : undefined;
           const tramo = pendientes.shift();
           if (tramo?.entrada) {
             tramo.salida = registro;
             tramo.total = this.formatearDuracion(tramo.entrada.fecha, registro.fecha);
-            tramo.ubicacion ??= ubicacion;
           } else {
-            tramos.push({ orden, salida: registro, total: '—', ubicacion });
+            tramos.push({ orden, salida: registro, total: '—' });
           }
         } else {
           otrosEventos.push(registro);
@@ -258,8 +255,9 @@ export class PersonalMarcacionComponent implements OnInit {
   }
 
   private formatearDuracion(entrada: string, salida: string): string {
-    const segundos = Math.floor((new Date(salida).getTime() - new Date(entrada).getTime()) / 1000);
-    if (!Number.isFinite(segundos) || segundos < 0) return '—';
+    const diferencia = new Date(salida).getTime() - new Date(entrada).getTime();
+    if (!Number.isFinite(diferencia) || diferencia < 0) return '—';
+    const segundos = Math.floor(diferencia / 1000) - (diferencia > 8 * 3600 * 1000 ? 3600 : 0);
     const horas = Math.floor(segundos / 3600);
     const minutos = Math.floor(segundos / 60) % 60;
     const resto = segundos % 60;
@@ -288,6 +286,11 @@ export class PersonalMarcacionComponent implements OnInit {
     this.aceptaFirma = false;
     this.limpiarFirma();
     this.dialogoFirma.nativeElement.showModal();
+    const canvas = this.lienzoFirma.nativeElement;
+    const { width, height } = canvas.getBoundingClientRect();
+    const escala = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.max(1, Math.round(width * escala));
+    canvas.height = Math.max(1, Math.round(height * escala));
   }
 
   cerrarFirma(): void {
@@ -328,7 +331,7 @@ export class PersonalMarcacionComponent implements OnInit {
 
     contexto.lineCap = 'round';
     contexto.lineJoin = 'round';
-    contexto.lineWidth = 5;
+    contexto.lineWidth = 2.5 * canvas.width / rect.width;
     contexto.strokeStyle = '#182a43';
     contexto.lineTo(x, y);
     contexto.stroke();
