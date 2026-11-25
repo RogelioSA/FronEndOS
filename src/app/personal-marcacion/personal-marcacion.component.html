@@ -38,7 +38,10 @@
           <header class="jornal-header">
             <h3><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> {{ formatearFechaJornal(jornal.fecha) }}</h3>
             @if (jornalesFirmados.has(jornal.fecha)) {
-              <span class="estado-firma" role="status"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Conformidad firmada</span>
+              <button type="button" class="estado-firma" (click)="verFirmaGuardada(jornal.fecha)"
+                [attr.aria-label]="'Conformidad firmada. Ver firma del ' + formatearFechaJornal(jornal.fecha)">
+                <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Conformidad firmada
+              </button>
             }
           </header>
 
@@ -146,6 +149,27 @@
         <i class="fa-solid fa-xmark" aria-hidden="true"></i> Cerrar
       </button>
     </div>
+  </dialog>
+
+  <dialog #dialogoFirmaGuardada class="firma-guardada-dialog" aria-labelledby="tituloFirmaGuardada"
+    (cancel)="$event.preventDefault(); cerrarFirmaGuardada()">
+    <header class="map-card-header">
+      <h2 id="tituloFirmaGuardada">Conformidad firmada</h2>
+      <button type="button" class="btn-close" aria-label="Cerrar firma" (click)="cerrarFirmaGuardada()"></button>
+    </header>
+    @if (firmaGuardada; as vista) {
+      <div class="map-card-body">
+        <p>Jornal del {{ formatearFechaJornal(vista.fecha) }}</p>
+        @if (vista.cargando) {
+          <p role="status">Cargando firma…</p>
+        } @else if (vista.error) {
+          <p role="alert">No se pudo mostrar la imagen de la firma.</p>
+        } @else {
+          <img class="firma-guardada-imagen" [src]="vista.url" alt="Firma de conformidad del jornal"
+            (error)="firmaGuardadaNoDisponible()">
+        }
+      </div>
+    }
   </dialog>
 
   @if (mostrarModalMapa) {

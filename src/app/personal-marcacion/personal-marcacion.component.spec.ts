@@ -10,7 +10,9 @@ describe('PersonalMarcacionComponent', () => {
   let apiService: jasmine.SpyObj<any>;
 
   beforeEach(() => {
-    apiService = jasmine.createSpyObj('ApiService', ['getRegistroAsistenciaPersonal', 'subirAdjunto', 'registrarFirmasAsistencia']);
+    apiService = jasmine.createSpyObj('ApiService', [
+      'getRegistroAsistenciaPersonal', 'subirAdjunto', 'registrarFirmasAsistencia', 'obtenerAdjuntoImagen'
+    ]);
     apiService.getRegistroAsistenciaPersonal.and.returnValue(of([]));
     component = new PersonalMarcacionComponent(apiService);
     component.blockUI = jasmine.createSpyObj('NgBlockUI', ['start', 'stop']);
@@ -169,14 +171,20 @@ describe('PersonalMarcacionComponent', () => {
     expect(apiService.registrarFirmasAsistencia).toHaveBeenCalledWith([
       { fecha: '2026-11-24T00:00:00.000Z', adjuntoId: 42 }
     ]);
-    expect(component.jornalesFirmados.has('2026-11-24')).toBeTrue();
+    expect(component.jornalesFirmados.get('2026-11-24')).toBe(42);
     expect(cerrar).toHaveBeenCalledTimes(1);
+
+    await component.enviarFirma();
+    expect(apiService.subirAdjunto).toHaveBeenCalledTimes(1);
+    expect(apiService.registrarFirmasAsistencia).toHaveBeenCalledTimes(2);
   });
 
   it('abre el diálogo desde una tarjeta y habilita el envío tras firmar y aceptar', async () => {
     apiService.getRegistroAsistenciaPersonal.and.returnValue(of([
-      { id: 1, fecha: '2026-11-24T08:30:31', fechaJornal: '2026-11-24', tipoEvento: 0, latitud: -12, longitud: -77, ordenTrabajoCabecera: { nombre: 'OFI' } },
-      { id: 2, fecha: '2026-11-24T10:30:31', fechaJornal: '2026-11-24', tipoEvento: 1, latitud: -13, longitud: -76, ordenTrabajoCabecera: { nombre: 'OFI' } }
+      { id: 1, fecha: '2026-11-24T08:30:31', fechaJornal: '2026-11-24', tipoEvento: 0, latitud: -12, longitud: -77, ordenTrabajoCabecera: { nombre: 'OFI' }, registroAsistenciaAdjuntos: [] },
+      { id: 2, fecha: '2026-11-24T10:30:31', fechaJornal: '2026-11-24', tipoEvento: 1, latitud: -13, longitud: -76, ordenTrabajoCabecera: { nombre: 'OFI' }, registroAsistenciaAdjuntos: [{ adjuntoId: 30, tipo: 1 }] },
+      { id: 3, fecha: '2026-11-23T08:30:31', fechaJornal: '2026-11-23', tipoEvento: 0, registroAsistenciaAdjuntos: [{ adjuntoId: 24382, tipo: 3 }] },
+      { id: 4, fecha: '2026-11-23T10:30:31', fechaJornal: '2026-11-23', tipoEvento: 1, registroAsistenciaAdjuntos: [{ adjuntoId: 24382, tipo: 3 }] }
     ]));
     await TestBed.configureTestingModule({
       declarations: [PersonalMarcacionComponent],
@@ -231,5 +239,22 @@ describe('PersonalMarcacionComponent', () => {
     expect(enviar.disabled).toBeTrue();
     cerrar.click();
     expect(dialogo.open).toBeFalse();
+
+    const tarjetaFirmada = vista.querySelectorAll('.jornal-card')[1];
+    expect(tarjetaFirmada.querySelector('footer button')).toBeNull();
+    expect(tarjetaFirmada.querySelectorAll('.estado-firma').length).toBe(1);
+    expect(fixture.componentInstance.jornalesFirmados.size).toBe(1);
+    const imagenFirma = document.createElement('canvas').toDataURL();
+    apiService.obtenerAdjuntoImagen.and.returnValue(of(imagenFirma));
+    tarjetaFirmada.querySelector<HTMLButtonElement>('.estado-firma')!.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const visor = vista.querySelector<HTMLDialogElement>('.firma-guardada-dialog')!;
+    expect(visor.open).toBeTrue();
+    expect(visor.textContent).toContain('23/11/2026');
+    expect(apiService.obtenerAdjuntoImagen).toHaveBeenCalledOnceWith(24382);
+    expect(visor.querySelector('img')?.getAttribute('src')).toBe(imagenFirma);
+    visor.querySelector('button')!.click();
+    expect(visor.open).toBeFalse();
   });
 });
