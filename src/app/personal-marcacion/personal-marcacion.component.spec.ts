@@ -100,8 +100,8 @@ describe('PersonalMarcacionComponent', () => {
     expect(component.jornales.map(jornal => jornal.fecha)).toEqual(['2026-11-24', '2026-11-23']);
     expect(component.jornales[0].tramos.map(({ orden, entrada, salida, total }) =>
       [orden, entrada?.id, salida?.id, total]
-    )).toEqual([['OFI', 2, 4, '2 h'], ['QUE', 3, 5, '15 h']]);
-    expect(component.jornales[0].tramos[1].ubicacion?.id).toBe(3);
+    )).toEqual([['OFI', 2, 4, '2 h'], ['QUE', 3, 5, '14 h']]);
+    expect(component.tieneUbicacion(component.jornales[0].tramos[1].entrada!)).toBeTrue();
     expect(component.jornales[0].otrosEventos.map(evento => evento.id)).toEqual([6]);
     expect(component.jornales[1].tramos[0].total).toBe('—');
   });
@@ -122,9 +122,22 @@ describe('PersonalMarcacionComponent', () => {
     expect(component.jornales[0].tramos.map(({ entrada, salida, total, orden }) =>
       [entrada?.id, salida?.id, total, orden]
     )).toEqual([
-      [1, 2, '13 h 29 min 24 s', 'BAMBAS CW2275191'],
+      [1, 2, '12 h 29 min 24 s', 'BAMBAS CW2275191'],
       [undefined, 3, '—', 'BAMBAS CW2275191']
     ]);
+  });
+
+  it('descuenta una hora de refrigerio solo al superar ocho horas', async () => {
+    apiService.getRegistroAsistenciaPersonal.and.returnValue(of([
+      { id: 1, fecha: '2026-11-24T08:00:00', fechaJornal: '2026-11-24', tipoEvento: 0 },
+      { id: 2, fecha: '2026-11-24T16:00:00', fechaJornal: '2026-11-24', tipoEvento: 1 },
+      { id: 3, fecha: '2026-11-25T08:00:00', fechaJornal: '2026-11-25', tipoEvento: 0 },
+      { id: 4, fecha: '2026-11-25T16:00:01', fechaJornal: '2026-11-25', tipoEvento: 1 }
+    ]));
+
+    await component.cargarRegistros();
+
+    expect(component.jornales.map(jornal => jornal.tramos[0].total)).toEqual(['7 h 1 s', '8 h']);
   });
 
   it('envía la firma del jornal con el adjunto y reutiliza el ID si falla el registro', async () => {
@@ -162,8 +175,8 @@ describe('PersonalMarcacionComponent', () => {
 
   it('abre el diálogo desde una tarjeta y habilita el envío tras firmar y aceptar', async () => {
     apiService.getRegistroAsistenciaPersonal.and.returnValue(of([
-      { id: 1, fecha: '2026-11-24T08:30:31', fechaJornal: '2026-11-24', tipoEvento: 0, ordenTrabajoCabecera: { nombre: 'OFI' } },
-      { id: 2, fecha: '2026-11-24T10:30:31', fechaJornal: '2026-11-24', tipoEvento: 1, ordenTrabajoCabecera: { nombre: 'OFI' } }
+      { id: 1, fecha: '2026-11-24T08:30:31', fechaJornal: '2026-11-24', tipoEvento: 0, latitud: -12, longitud: -77, ordenTrabajoCabecera: { nombre: 'OFI' } },
+      { id: 2, fecha: '2026-11-24T10:30:31', fechaJornal: '2026-11-24', tipoEvento: 1, latitud: -13, longitud: -76, ordenTrabajoCabecera: { nombre: 'OFI' } }
     ]));
     await TestBed.configureTestingModule({
       declarations: [PersonalMarcacionComponent],
@@ -179,11 +192,26 @@ describe('PersonalMarcacionComponent', () => {
     const tarjeta = vista.querySelector('.jornal-card')!;
     expect(tarjeta.textContent).toContain('24/11/2026');
     expect(tarjeta.textContent).toContain('2 h');
+    const mapa = spyOn(fixture.componentInstance, 'mostrarMapa');
+    const [entrada, salida] = Array.from(tarjeta.querySelectorAll<HTMLButtonElement>('.marca-mapa'));
+    entrada.click();
+    salida.click();
+    expect(mapa.calls.allArgs().map(([registro]) => [registro.latitud, registro.longitud]))
+      .toEqual([[-12, -77], [-13, -76]]);
     tarjeta.querySelector('footer button')!.dispatchEvent(new MouseEvent('click'));
     fixture.detectChanges();
     const dialogo = vista.querySelector('dialog')!;
     expect(dialogo.open).toBeTrue();
+    const rectDialogo = dialogo.getBoundingClientRect();
+    const { clientWidth, clientHeight } = document.documentElement;
+    expect(rectDialogo.left).toBeCloseTo((clientWidth - rectDialogo.width) / 2, 0);
+    expect(rectDialogo.top).toBeCloseTo((clientHeight - rectDialogo.height) / 2, 0);
     const canvas = dialogo.querySelector('canvas')!;
+    if (window.matchMedia('(max-width: 600px)').matches) {
+      expect(rectDialogo.width).toBe(clientWidth);
+      expect(rectDialogo.height).toBe(clientHeight);
+      expect(canvas.getBoundingClientRect().height).toBeGreaterThan(rectDialogo.height / 2);
+    }
     spyOn(canvas, 'setPointerCapture');
     const { left, top } = canvas.getBoundingClientRect();
     canvas.dispatchEvent(new PointerEvent('pointerdown', {
